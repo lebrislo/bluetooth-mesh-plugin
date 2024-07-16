@@ -21,6 +21,7 @@ class NrfMeshPlugin : Plugin() {
         val value = call.getString("value")
 
         implementation.loadMeshNetwork()
+        implementation.scanUnprovisionedDevices()
         val ret = JSObject()
         ret.put("value", implementation.echo(value!!))
         call.resolve(ret)

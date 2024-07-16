@@ -2,13 +2,18 @@ package com.lebrislo.bluetooth.mesh
 
 import android.content.Context
 import android.util.Log
+import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
 import com.lebrislo.bluetooth.mesh.utils.Permissions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
 import no.nordicsemi.android.mesh.transport.GenericOnOffSet
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode
+import no.nordicsemi.android.support.v18.scanner.ScanResult
 import java.util.UUID
 
 class NrfMeshManager(private var context: Context) {
@@ -18,7 +23,7 @@ class NrfMeshManager(private var context: Context) {
     private val meshCallbacksManager: MeshCallbacksManager
     private val meshProvisioningCallbacksManager: MeshProvisioningCallbacksManager
     private val meshStatusCallbacksManager: MeshStatusCallbacksManager
-
+    private val scannerRepository: ScannerRepository
     private val unprovisionedMeshNode: ArrayList<UnprovisionedMeshNode> = ArrayList()
     var currentProvisionedMeshNode: ProvisionedMeshNode? = null
 
@@ -27,6 +32,7 @@ class NrfMeshManager(private var context: Context) {
         meshProvisioningCallbacksManager =
             MeshProvisioningCallbacksManager(unprovisionedMeshNode)
         meshStatusCallbacksManager = MeshStatusCallbacksManager()
+        scannerRepository = ScannerRepository(context, meshManagerApi)
 
         meshManagerApi.setMeshManagerCallbacks(meshCallbacksManager)
         meshManagerApi.setProvisioningStatusCallbacks(meshProvisioningCallbacksManager)
@@ -46,7 +52,23 @@ class NrfMeshManager(private var context: Context) {
     }
 
     fun scanUnprovisionedDevices() {
+        if (!Permissions.isBleEnabled(context)) {
+            return
+        }
 
+        if (!Permissions.isLocationGranted(context)) {
+            return
+        }
+
+        if (scannerRepository.isScanning) {
+            return
+        }
+
+        GlobalScope.launch(Dispatchers.Main) {
+            val results: List<ScanResult> =
+                scannerRepository.startScan(MeshManagerApi.MESH_PROVISIONING_UUID, 5000)
+            Log.i(tag, results.size.toString())
+        }
     }
 
     fun handleNotifications(mtu: Int, pdu: ByteArray) {
