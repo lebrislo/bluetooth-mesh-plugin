@@ -7,4 +7,8 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('ECHO', options);
     return options;
   }
+
+  async scanUnprovisionedDevices(): Promise<void> {
+    console.log('scanUnprovisionedDevices');
+  }
 }

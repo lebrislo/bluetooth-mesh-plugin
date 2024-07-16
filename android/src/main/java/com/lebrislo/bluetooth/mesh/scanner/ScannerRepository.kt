@@ -8,9 +8,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.MeshNetwork
@@ -33,17 +30,14 @@ class ScannerRepository(
     private var filterUuid: UUID? = null
     private var scanJob: Job? = null
     var isScanning: Boolean = false
-
-    private val flowScanResult: MutableStateFlow<List<ScanResult>> =
-        MutableStateFlow<List<ScanResult>>(emptyList())
-    private val scanResults: StateFlow<List<ScanResult>> = flowScanResult.asStateFlow()
+    var scanResults: MutableMap<String, ScanResult> = mutableMapOf()
 
     private val scanCallbacks: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             try {
                 if (filterUuid == MeshManagerApi.MESH_PROVISIONING_UUID) {
 
-                    updateScannerLiveData(result)
+                    updateScannedData(result)
                 } else if (filterUuid == MeshManagerApi.MESH_PROXY_UUID) {
                     val serviceData: ByteArray? =
                         Utils.getServiceData(result, MeshManagerApi.MESH_PROXY_UUID)
@@ -52,14 +46,14 @@ class ScannerRepository(
                         )
                     ) {
                         if (this@ScannerRepository.meshManagerApi.networkIdMatches(serviceData)) {
-                            updateScannerLiveData(result)
+                            updateScannedData(result)
                         }
                     } else if (this@ScannerRepository.meshManagerApi.isAdvertisedWithNodeIdentity(
                             serviceData
                         )
                     ) {
                         if (checkIfNodeIdentityMatches(serviceData!!)) {
-                            updateScannerLiveData(result)
+                            updateScannedData(result)
                         }
                     }
                 }
@@ -73,15 +67,15 @@ class ScannerRepository(
         }
 
         override fun onScanFailed(errorCode: Int) {
-            flowScanResult.value = emptyList()
+            stopScan()
         }
     }
 
-    private fun updateScannerLiveData(result: ScanResult) {
+    private fun updateScannedData(result: ScanResult) {
         val scanRecord = result.scanRecord
         if (scanRecord != null) {
             if (scanRecord.bytes != null) {
-                flowScanResult.value += result
+                scanResults.put(result.device.address, result)
             }
         }
     }
@@ -93,7 +87,7 @@ class ScannerRepository(
      */
     private fun scanDevices(filterUuid: UUID, timeoutMs: Long) {
         this.filterUuid = filterUuid
-        flowScanResult.value = emptyList()
+        scanResults = mutableMapOf()
 
         if (isScanning) {
             return
@@ -133,11 +127,11 @@ class ScannerRepository(
      * @param timeout The duration (in milliseconds) for which the scan should run
      * @return List of ScanResult
      */
-    suspend fun startScan(filterUuid: UUID, timeout: Long): List<ScanResult> {
+    suspend fun startScan(filterUuid: UUID, timeout: Long): MutableMap<String, ScanResult> {
         scanDevices(filterUuid, timeout)
         delay(timeout)
         stopScan()
-        return scanResults.value
+        return scanResults
     }
 
     /**

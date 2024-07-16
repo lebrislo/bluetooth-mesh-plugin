@@ -2,10 +2,13 @@ package com.lebrislo.bluetooth.mesh
 
 import android.content.Context
 import android.util.Log
+import com.lebrislo.bluetooth.mesh.models.UnprovisionedDevice
+import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
 import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
 import com.lebrislo.bluetooth.mesh.utils.Permissions
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
@@ -23,8 +26,10 @@ class NrfMeshManager(private var context: Context) {
     private val meshCallbacksManager: MeshCallbacksManager
     private val meshProvisioningCallbacksManager: MeshProvisioningCallbacksManager
     private val meshStatusCallbacksManager: MeshStatusCallbacksManager
+    private val scanScope = CoroutineScope(Dispatchers.Main + Job())
     private val scannerRepository: ScannerRepository
     private val unprovisionedMeshNode: ArrayList<UnprovisionedMeshNode> = ArrayList()
+
     var currentProvisionedMeshNode: ProvisionedMeshNode? = null
 
     init {
@@ -51,7 +56,7 @@ class NrfMeshManager(private var context: Context) {
         Log.d(tag, "Ble enable: $bleEnabled")
     }
 
-    fun scanUnprovisionedDevices() {
+    fun scanUnprovisionedDevices(callback: ScanCallback) {
         if (!Permissions.isBleEnabled(context)) {
             return
         }
@@ -64,10 +69,25 @@ class NrfMeshManager(private var context: Context) {
             return
         }
 
-        GlobalScope.launch(Dispatchers.Main) {
-            val results: List<ScanResult> =
-                scannerRepository.startScan(MeshManagerApi.MESH_PROVISIONING_UUID, 5000)
-            Log.i(tag, results.size.toString())
+        scanScope.launch {
+            try {
+                val results: MutableMap<String, ScanResult> =
+                    scannerRepository.startScan(MeshManagerApi.MESH_PROVISIONING_UUID, 5000)
+                Log.i(tag, results.keys.toString())
+
+                val unprovisionedDevices = results.map { (macAddress, scanResult) ->
+                    UnprovisionedDevice(
+                        rssi = scanResult.rssi,
+                        macAddress = macAddress,
+                        name = scanResult.scanRecord?.deviceName ?: "Unknown",
+                        advData = scanResult.scanRecord?.bytes ?: ByteArray(0)
+                    )
+                }
+
+                callback.onScanCompleted(unprovisionedDevices)
+            } catch (e: Exception) {
+                callback.onScanFailed(e.message ?: "Unknown Error")
+            }
         }
     }
 
