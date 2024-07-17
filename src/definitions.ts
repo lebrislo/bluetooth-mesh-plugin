@@ -1,6 +1,7 @@
 interface BleMeshDevice {
   name: string;
-  advData: string;
+  uuid?: number[];
+  advData: number[];
   rssi: number;
   macAddress: string;
 }

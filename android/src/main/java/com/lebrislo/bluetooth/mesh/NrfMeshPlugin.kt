@@ -38,13 +38,18 @@ class NrfMeshPlugin : Plugin() {
                 val devicesArray = JSArray()
                 bleMeshDevices.map { device ->
                     val advDataArray = JSArray()
+                    val uuidArray = JSArray()
                     device.advData.forEach { byte ->
                         advDataArray.put(byte.toInt() and 0xFF)
+                    }
+                    device.uuid?.forEach { byte ->
+                        uuidArray.put(byte.toInt() and 0xFF)
                     }
                     val deviceJson = JSObject().apply {
                         put("rssi", device.rssi)
                         put("macAddress", device.macAddress)
                         put("name", device.name)
+                        put("uuid", uuidArray)
                         put("advData", advDataArray)
                     }
                     devicesArray.put(deviceJson)

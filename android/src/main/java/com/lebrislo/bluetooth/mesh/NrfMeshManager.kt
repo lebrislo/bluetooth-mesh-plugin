@@ -1,6 +1,7 @@
 package com.lebrislo.bluetooth.mesh
 
 import android.content.Context
+import android.os.ParcelUuid
 import android.util.Log
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
@@ -80,6 +81,7 @@ class NrfMeshManager(private var context: Context) {
                         rssi = scanResult.rssi,
                         macAddress = macAddress,
                         name = scanResult.scanRecord?.deviceName ?: "Unknown",
+                        uuid = scanResult.scanRecord?.serviceData?.get(ParcelUuid(MeshManagerApi.MESH_PROVISIONING_UUID)),
                         advData = scanResult.scanRecord?.bytes ?: ByteArray(0)
                     )
                 }
