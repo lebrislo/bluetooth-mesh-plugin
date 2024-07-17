@@ -3,7 +3,6 @@ package com.lebrislo.bluetooth.mesh.scanner
 import android.content.Context
 import android.os.ParcelUuid
 import android.util.Log
-import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,26 +35,21 @@ class ScannerRepository(
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             try {
                 if (filterUuid == MeshManagerApi.MESH_PROVISIONING_UUID) {
-
                     updateScannedData(result)
                 } else if (filterUuid == MeshManagerApi.MESH_PROXY_UUID) {
-                    val serviceData: ByteArray? =
-                        Utils.getServiceData(result, MeshManagerApi.MESH_PROXY_UUID)
-                    if (this@ScannerRepository.meshManagerApi.isAdvertisingWithNetworkIdentity(
-                            serviceData
-                        )
-                    ) {
-                        if (this@ScannerRepository.meshManagerApi.networkIdMatches(serviceData)) {
-                            updateScannedData(result)
-                        }
-                    } else if (this@ScannerRepository.meshManagerApi.isAdvertisedWithNodeIdentity(
-                            serviceData
-                        )
-                    ) {
-                        if (checkIfNodeIdentityMatches(serviceData!!)) {
-                            updateScannedData(result)
-                        }
-                    }
+//                    TODO: Process the scan result
+//                    val serviceData: ByteArray? =
+//                        Utils.getServiceData(result, MeshManagerApi.MESH_PROXY_UUID)
+//                    if (meshManagerApi.isAdvertisingWithNetworkIdentity(serviceData)) {
+//                        if (meshManagerApi.networkIdMatches(serviceData)) {
+//                            updateScannedData(result)
+//                        }
+//                    } else if (meshManagerApi.isAdvertisedWithNodeIdentity(serviceData)) {
+//                        if (checkIfNodeIdentityMatches(serviceData!!)) {
+//                            updateScannedData(result)
+//                        }
+//                    }
+                    updateScannedData(result)
                 }
             } catch (ex: Exception) {
                 Log.e(tag, "Error: " + ex.message)
@@ -74,8 +68,8 @@ class ScannerRepository(
     private fun updateScannedData(result: ScanResult) {
         val scanRecord = result.scanRecord
         if (scanRecord != null) {
-            if (scanRecord.bytes != null) {
-                scanResults.put(result.device.address, result)
+            if (scanRecord.bytes != null && scanRecord.serviceUuids != null) {
+                scanResults[result.device.address] = result
             }
         }
     }
@@ -85,7 +79,7 @@ class ScannerRepository(
      *
      * @param filterUuid UUID to filter scan results with
      */
-    private fun scanDevices(filterUuid: UUID, timeoutMs: Long) {
+    private fun scanDevices(filterUuid: UUID, timeoutMs: Int) {
         this.filterUuid = filterUuid
         scanResults = mutableMapOf()
 
@@ -115,7 +109,7 @@ class ScannerRepository(
         scanner.startScan(filters, settings, scanCallbacks)
 
         scanJob = CoroutineScope(Dispatchers.Main).launch {
-            delay(timeoutMs)
+            delay(timeoutMs.toLong())
             stopScan()
         }
     }
@@ -127,9 +121,9 @@ class ScannerRepository(
      * @param timeout The duration (in milliseconds) for which the scan should run
      * @return List of ScanResult
      */
-    suspend fun startScan(filterUuid: UUID, timeout: Long): MutableMap<String, ScanResult> {
+    suspend fun startScan(filterUuid: UUID, timeout: Int): MutableMap<String, ScanResult> {
         scanDevices(filterUuid, timeout)
-        delay(timeout)
+        delay(timeout.toLong())
         stopScan()
         return scanResults
     }

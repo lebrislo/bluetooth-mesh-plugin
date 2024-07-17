@@ -14,7 +14,9 @@ npx cap sync
 <docgen-index>
 
 * [`echo(...)`](#echo)
-* [`scanUnprovisionedDevices()`](#scanunprovisioneddevices)
+* [`scanUnprovisionedDevices(...)`](#scanunprovisioneddevices)
+* [`scanProvisionedDevices(...)`](#scanprovisioneddevices)
+* [Interfaces](#interfaces)
 
 </docgen-index>
 
@@ -36,12 +38,53 @@ echo(options: { value: string; }) => Promise<{ value: string; }>
 --------------------
 
 
-### scanUnprovisionedDevices()
+### scanUnprovisionedDevices(...)
 
 ```typescript
-scanUnprovisionedDevices() => Promise<void>
+scanUnprovisionedDevices(options: { timeout: number; }) => Promise<ScanDevicesResponse>
 ```
 
+| Param         | Type                              |
+| ------------- | --------------------------------- |
+| **`options`** | <code>{ timeout: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#scandevicesresponse">ScanDevicesResponse</a>&gt;</code>
+
 --------------------
+
+
+### scanProvisionedDevices(...)
+
+```typescript
+scanProvisionedDevices(options: { timeout: number; }) => Promise<ScanDevicesResponse>
+```
+
+| Param         | Type                              |
+| ------------- | --------------------------------- |
+| **`options`** | <code>{ timeout: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#scandevicesresponse">ScanDevicesResponse</a>&gt;</code>
+
+--------------------
+
+
+### Interfaces
+
+
+#### ScanDevicesResponse
+
+| Prop          | Type                         |
+| ------------- | ---------------------------- |
+| **`devices`** | <code>BleMeshDevice[]</code> |
+
+
+#### BleMeshDevice
+
+| Prop             | Type                |
+| ---------------- | ------------------- |
+| **`name`**       | <code>string</code> |
+| **`advData`**    | <code>string</code> |
+| **`rssi`**       | <code>number</code> |
+| **`macAddress`** | <code>string</code> |
 
 </docgen-api>

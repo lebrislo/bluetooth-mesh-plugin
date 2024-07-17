@@ -2,7 +2,7 @@ package com.lebrislo.bluetooth.mesh
 
 import android.content.Context
 import android.util.Log
-import com.lebrislo.bluetooth.mesh.models.UnprovisionedDevice
+import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
 import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
 import com.lebrislo.bluetooth.mesh.utils.Permissions
@@ -56,7 +56,7 @@ class NrfMeshManager(private var context: Context) {
         Log.d(tag, "Ble enable: $bleEnabled")
     }
 
-    fun scanUnprovisionedDevices(callback: ScanCallback) {
+    fun scanUnprovisionedDevices(callback: ScanCallback, timeoutMs: Int = 5000) {
         if (!Permissions.isBleEnabled(context)) {
             return
         }
@@ -72,11 +72,11 @@ class NrfMeshManager(private var context: Context) {
         scanScope.launch {
             try {
                 val results: MutableMap<String, ScanResult> =
-                    scannerRepository.startScan(MeshManagerApi.MESH_PROVISIONING_UUID, 5000)
-                Log.i(tag, results.keys.toString())
+                    scannerRepository.startScan(MeshManagerApi.MESH_PROVISIONING_UUID, timeoutMs)
+                Log.d(tag, "scanUnprovisionedDevices: ${results.keys}")
 
-                val unprovisionedDevices = results.map { (macAddress, scanResult) ->
-                    UnprovisionedDevice(
+                val bleMeshDevices = results.map { (macAddress, scanResult) ->
+                    BleMeshDevice(
                         rssi = scanResult.rssi,
                         macAddress = macAddress,
                         name = scanResult.scanRecord?.deviceName ?: "Unknown",
@@ -84,7 +84,42 @@ class NrfMeshManager(private var context: Context) {
                     )
                 }
 
-                callback.onScanCompleted(unprovisionedDevices)
+                callback.onScanCompleted(bleMeshDevices)
+            } catch (e: Exception) {
+                callback.onScanFailed(e.message ?: "Unknown Error")
+            }
+        }
+    }
+
+    fun scanProvisionedDevices(callback: ScanCallback, timeoutMs: Int = 5000) {
+        if (!Permissions.isBleEnabled(context)) {
+            return
+        }
+
+        if (!Permissions.isLocationGranted(context)) {
+            return
+        }
+
+        if (scannerRepository.isScanning) {
+            return
+        }
+
+        scanScope.launch {
+            try {
+                val results: MutableMap<String, ScanResult> =
+                    scannerRepository.startScan(MeshManagerApi.MESH_PROXY_UUID, timeoutMs)
+                Log.d(tag, "scanProvisionedDevices: ${results.keys}")
+
+                val provisionedDevices = results.map { (macAddress, scanResult) ->
+                    BleMeshDevice(
+                        rssi = scanResult.rssi,
+                        macAddress = macAddress,
+                        name = scanResult.scanRecord?.deviceName ?: "Unknown",
+                        advData = scanResult.scanRecord?.bytes ?: ByteArray(0)
+                    )
+                }
+
+                callback.onScanCompleted(provisionedDevices)
             } catch (e: Exception) {
                 callback.onScanFailed(e.message ?: "Unknown Error")
             }

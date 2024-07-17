@@ -1,8 +1,8 @@
 package com.lebrislo.bluetooth.mesh.scanner
 
-import com.lebrislo.bluetooth.mesh.models.UnprovisionedDevice
+import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 
 interface ScanCallback {
-    fun onScanCompleted(unprovisionedDevices: List<UnprovisionedDevice>)
+    fun onScanCompleted(bleMeshDevices: List<BleMeshDevice>)
     fun onScanFailed(error: String)
 }
