@@ -1,7 +1,6 @@
 interface BleMeshDevice {
   name: string;
-  uuid?: number[];
-  advData: number[];
+  uuid: string;
   rssi: number;
   macAddress: string;
 }
@@ -14,4 +13,5 @@ export interface NrfMeshPlugin {
   echo(options: { value: string }): Promise<{ value: string }>;
   scanUnprovisionedDevices(options: { timeout: number }): Promise<ScanDevicesResponse>;
   scanProvisionedDevices(options: { timeout: number }): Promise<ScanDevicesResponse>;
+  provisionDevice(options: { uuid: string }): Promise<void>;
 }

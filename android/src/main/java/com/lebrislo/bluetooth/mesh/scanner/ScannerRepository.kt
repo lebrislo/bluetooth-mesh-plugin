@@ -3,11 +3,13 @@ package com.lebrislo.bluetooth.mesh.scanner
 import android.content.Context
 import android.os.ParcelUuid
 import android.util.Log
+import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import no.nordicsemi.android.mesh.MeshBeacon
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.MeshNetwork
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
@@ -29,13 +31,13 @@ class ScannerRepository(
     private var filterUuid: UUID? = null
     private var scanJob: Job? = null
     var isScanning: Boolean = false
-    var scanResults: MutableMap<String, ScanResult> = mutableMapOf()
+    var discoveredDevices: MutableMap<String, ExtendedBluetoothDevice> = mutableMapOf()
 
     private val scanCallbacks: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             try {
                 if (filterUuid == MeshManagerApi.MESH_PROVISIONING_UUID) {
-                    updateScannedData(result)
+                    updateScannerData(result)
                 } else if (filterUuid == MeshManagerApi.MESH_PROXY_UUID) {
 //                    TODO: Process the scan result
 //                    val serviceData: ByteArray? =
@@ -49,7 +51,7 @@ class ScannerRepository(
 //                            updateScannedData(result)
 //                        }
 //                    }
-                    updateScannedData(result)
+                    updateScannerData(result)
                 }
             } catch (ex: Exception) {
                 Log.e(tag, "Error: " + ex.message)
@@ -65,11 +67,40 @@ class ScannerRepository(
         }
     }
 
-    private fun updateScannedData(result: ScanResult) {
+    private fun updateScannerData(result: ScanResult) {
         val scanRecord = result.scanRecord
         if (scanRecord != null) {
+            if (scanRecord.bytes != null) {
+                val beaconData = meshManagerApi.getMeshBeaconData(scanRecord.bytes!!)
+                if (beaconData != null) {
+                    deviceDiscovered(result, meshManagerApi.getMeshBeacon(beaconData)!!)
+                } else {
+                    deviceDiscovered(result)
+                }
+            }
+        }
+    }
+
+    private fun deviceDiscovered(result: ScanResult, meshBeacon: MeshBeacon) {
+        val device: ExtendedBluetoothDevice
+        val scanRecord = result.scanRecord
+
+        if (scanRecord != null) {
             if (scanRecord.bytes != null && scanRecord.serviceUuids != null) {
-                scanResults[result.device.address] = result
+                device = ExtendedBluetoothDevice(result, meshBeacon)
+                discoveredDevices[result.device.address] = device
+            }
+        }
+    }
+
+    private fun deviceDiscovered(result: ScanResult) {
+        val device: ExtendedBluetoothDevice
+        val scanRecord = result.scanRecord
+
+        if (scanRecord != null) {
+            if (scanRecord.bytes != null && scanRecord.serviceUuids != null) {
+                device = ExtendedBluetoothDevice(result)
+                discoveredDevices[result.device.address] = device
             }
         }
     }
@@ -81,7 +112,7 @@ class ScannerRepository(
      */
     private fun scanDevices(filterUuid: UUID, timeoutMs: Int) {
         this.filterUuid = filterUuid
-        scanResults = mutableMapOf()
+        discoveredDevices = mutableMapOf()
 
         if (isScanning) {
             return
@@ -121,11 +152,14 @@ class ScannerRepository(
      * @param timeout The duration (in milliseconds) for which the scan should run
      * @return List of ScanResult
      */
-    suspend fun startScan(filterUuid: UUID, timeout: Int): MutableMap<String, ScanResult> {
+    suspend fun startScan(
+        filterUuid: UUID,
+        timeout: Int
+    ): MutableMap<String, ExtendedBluetoothDevice> {
         scanDevices(filterUuid, timeout)
         delay(timeout.toLong())
         stopScan()
-        return scanResults
+        return discoveredDevices
     }
 
     /**

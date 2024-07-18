@@ -6,8 +6,11 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
+import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
+import com.lebrislo.bluetooth.mesh.utils.Utils
+import no.nordicsemi.android.mesh.MeshManagerApi
+import java.util.UUID
 
 @CapacitorPlugin(name = "NrfMesh")
 class NrfMeshPlugin : Plugin() {
@@ -22,8 +25,6 @@ class NrfMeshPlugin : Plugin() {
     @PluginMethod
     fun echo(call: PluginCall) {
         val value = call.getString("value")
-
-        implementation.loadMeshNetwork()
         val ret = JSObject()
         ret.put("value", implementation.echo(value!!))
         call.resolve(ret)
@@ -34,23 +35,19 @@ class NrfMeshPlugin : Plugin() {
         val timeout = call.getInt("timeout", 5000)
 
         implementation.scanUnprovisionedDevices(object : ScanCallback {
-            override fun onScanCompleted(bleMeshDevices: List<BleMeshDevice>) {
+            override fun onScanCompleted(bleMeshDevices: List<ExtendedBluetoothDevice>?) {
                 val devicesArray = JSArray()
-                bleMeshDevices.map { device ->
-                    val advDataArray = JSArray()
-                    val uuidArray = JSArray()
-                    device.advData.forEach { byte ->
-                        advDataArray.put(byte.toInt() and 0xFF)
-                    }
-                    device.uuid?.forEach { byte ->
-                        uuidArray.put(byte.toInt() and 0xFF)
-                    }
+                bleMeshDevices?.map { device ->
+                    val serviceData = Utils.getServiceData(
+                        device.scanResult!!,
+                        MeshManagerApi.MESH_PROVISIONING_UUID
+                    )
+                    val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData!!)
                     val deviceJson = JSObject().apply {
                         put("rssi", device.rssi)
-                        put("macAddress", device.macAddress)
+                        put("macAddress", device.address)
                         put("name", device.name)
-                        put("uuid", uuidArray)
-                        put("advData", advDataArray)
+                        put("uuid", uuid)
                     }
                     devicesArray.put(deviceJson)
                 }
@@ -70,18 +67,19 @@ class NrfMeshPlugin : Plugin() {
         val timeout = call.getInt("timeout", 5000)
 
         implementation.scanProvisionedDevices(object : ScanCallback {
-            override fun onScanCompleted(bleMeshDevices: List<BleMeshDevice>) {
+            override fun onScanCompleted(bleMeshDevices: List<ExtendedBluetoothDevice>?) {
                 val devicesArray = JSArray()
-                bleMeshDevices.map { device ->
-                    val advDataArray = JSArray()
-                    device.advData.forEach { byte ->
-                        advDataArray.put(byte.toInt() and 0xFF)
-                    }
+                bleMeshDevices?.map { device ->
+                    val serviceData = Utils.getServiceData(
+                        device.scanResult!!,
+                        MeshManagerApi.MESH_PROVISIONING_UUID
+                    )
+                    val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData!!)
                     val deviceJson = JSObject().apply {
                         put("rssi", device.rssi)
-                        put("macAddress", device.macAddress)
+                        put("macAddress", device.address)
                         put("name", device.name)
-                        put("advData", advDataArray)
+                        put("uuid", uuid)
                     }
                     devicesArray.put(deviceJson)
                 }
@@ -94,5 +92,16 @@ class NrfMeshPlugin : Plugin() {
                 call.reject(error)
             }
         }, timeout!!)
+    }
+
+    @PluginMethod
+    fun provisionDevice(call: PluginCall) {
+        val uuid = call.getString("uuid")
+
+        if (uuid == null) {
+            call.reject("UUID is required")
+        }
+
+        implementation.provisionDevice(UUID.fromString(uuid))
     }
 }

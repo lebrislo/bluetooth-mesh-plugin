@@ -16,6 +16,7 @@ npx cap sync
 * [`echo(...)`](#echo)
 * [`scanUnprovisionedDevices(...)`](#scanunprovisioneddevices)
 * [`scanProvisionedDevices(...)`](#scanprovisioneddevices)
+* [`provisionDevice(...)`](#provisiondevice)
 * [Interfaces](#interfaces)
 
 </docgen-index>
@@ -68,6 +69,19 @@ scanProvisionedDevices(options: { timeout: number; }) => Promise<ScanDevicesResp
 --------------------
 
 
+### provisionDevice(...)
+
+```typescript
+provisionDevice(options: { uuid: string; }) => Promise<void>
+```
+
+| Param         | Type                           |
+| ------------- | ------------------------------ |
+| **`options`** | <code>{ uuid: string; }</code> |
+
+--------------------
+
+
 ### Interfaces
 
 
@@ -83,7 +97,7 @@ scanProvisionedDevices(options: { timeout: number; }) => Promise<ScanDevicesResp
 | Prop             | Type                |
 | ---------------- | ------------------- |
 | **`name`**       | <code>string</code> |
-| **`advData`**    | <code>string</code> |
+| **`uuid`**       | <code>string</code> |
 | **`rssi`**       | <code>number</code> |
 | **`macAddress`** | <code>string</code> |
 

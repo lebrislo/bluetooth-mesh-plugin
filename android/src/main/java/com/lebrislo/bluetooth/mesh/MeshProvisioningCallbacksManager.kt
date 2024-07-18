@@ -6,7 +6,10 @@ import no.nordicsemi.android.mesh.provisionerstates.ProvisioningState
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode
 
-class MeshProvisioningCallbacksManager(var unprovisionedMeshNodes: ArrayList<UnprovisionedMeshNode>) :
+class MeshProvisioningCallbacksManager(
+    var unprovisionedMeshNodes: ArrayList<UnprovisionedMeshNode>,
+    var nrfMeshManager: NrfMeshManager
+) :
     MeshProvisioningStatusCallbacks {
     private val tag: String = MeshProvisioningCallbacksManager::class.java.simpleName
 
@@ -16,6 +19,9 @@ class MeshProvisioningCallbacksManager(var unprovisionedMeshNodes: ArrayList<Unp
         data: ByteArray?
     ) {
         Log.d(tag, "onProvisioningStateChanged" + meshNode?.toString())
+        if (state == ProvisioningState.States.PROVISIONING_CAPABILITIES) {
+            nrfMeshManager.meshManagerApi.startProvisioning(meshNode!!)
+        }
     }
 
     override fun onProvisioningFailed(

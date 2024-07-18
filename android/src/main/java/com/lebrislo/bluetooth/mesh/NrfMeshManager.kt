@@ -1,12 +1,14 @@
 package com.lebrislo.bluetooth.mesh
 
 import android.content.Context
-import android.os.ParcelUuid
 import android.util.Log
-import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
+import com.lebrislo.bluetooth.mesh.ble.BleCallbacksManager
+import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
+import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
 import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
 import com.lebrislo.bluetooth.mesh.utils.Permissions
+import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,44 +19,44 @@ import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
 import no.nordicsemi.android.mesh.transport.GenericOnOffSet
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode
-import no.nordicsemi.android.support.v18.scanner.ScanResult
 import java.util.UUID
 
 class NrfMeshManager(private var context: Context) {
     private val tag: String = NrfMeshManager::class.java.simpleName
 
-    private var meshManagerApi: MeshManagerApi = MeshManagerApi(context)
     private val meshCallbacksManager: MeshCallbacksManager
     private val meshProvisioningCallbacksManager: MeshProvisioningCallbacksManager
     private val meshStatusCallbacksManager: MeshStatusCallbacksManager
+    private val bleCallbacksManager: BleCallbacksManager
     private val scanScope = CoroutineScope(Dispatchers.Main + Job())
     private val scannerRepository: ScannerRepository
-    private val unprovisionedMeshNode: ArrayList<UnprovisionedMeshNode> = ArrayList()
+    private val unprovisionedMeshNodes: ArrayList<UnprovisionedMeshNode> = ArrayList()
+    private val unprovisionedBluetoothDevices: ArrayList<ExtendedBluetoothDevice> = ArrayList()
+
+    var bleMeshManager: BleMeshManager = BleMeshManager(context)
+    var meshManagerApi: MeshManagerApi = MeshManagerApi(context)
 
     var currentProvisionedMeshNode: ProvisionedMeshNode? = null
 
     init {
-        meshCallbacksManager = MeshCallbacksManager()
+        meshCallbacksManager = MeshCallbacksManager(bleMeshManager)
         meshProvisioningCallbacksManager =
-            MeshProvisioningCallbacksManager(unprovisionedMeshNode)
+            MeshProvisioningCallbacksManager(unprovisionedMeshNodes, this)
         meshStatusCallbacksManager = MeshStatusCallbacksManager()
+        bleCallbacksManager = BleCallbacksManager(meshManagerApi)
         scannerRepository = ScannerRepository(context, meshManagerApi)
 
         meshManagerApi.setMeshManagerCallbacks(meshCallbacksManager)
         meshManagerApi.setProvisioningStatusCallbacks(meshProvisioningCallbacksManager)
         meshManagerApi.setMeshStatusCallbacks(meshStatusCallbacksManager)
+        bleMeshManager.setGattCallbacks(bleCallbacksManager)
 
+        meshManagerApi.loadMeshNetwork()
     }
 
     fun echo(value: String): String {
         Log.i(tag, value)
         return value
-    }
-
-    fun loadMeshNetwork() {
-        meshManagerApi.loadMeshNetwork()
-        val bleEnabled: Boolean = Permissions.isBleEnabled(context)
-        Log.d(tag, "Ble enable: $bleEnabled")
     }
 
     fun scanUnprovisionedDevices(callback: ScanCallback, timeoutMs: Int = 5000) {
@@ -72,21 +74,18 @@ class NrfMeshManager(private var context: Context) {
 
         scanScope.launch {
             try {
-                val results: MutableMap<String, ScanResult> =
+                val results: MutableMap<String, ExtendedBluetoothDevice> =
                     scannerRepository.startScan(MeshManagerApi.MESH_PROVISIONING_UUID, timeoutMs)
                 Log.d(tag, "scanUnprovisionedDevices: ${results.keys}")
 
-                val bleMeshDevices = results.map { (macAddress, scanResult) ->
-                    BleMeshDevice(
-                        rssi = scanResult.rssi,
-                        macAddress = macAddress,
-                        name = scanResult.scanRecord?.deviceName ?: "Unknown",
-                        uuid = scanResult.scanRecord?.serviceData?.get(ParcelUuid(MeshManagerApi.MESH_PROVISIONING_UUID)),
-                        advData = scanResult.scanRecord?.bytes ?: ByteArray(0)
-                    )
+                val bluetoothDevices = results.map { (macAddress, bluetoothDevice) ->
+                    bluetoothDevice
                 }
 
-                callback.onScanCompleted(bleMeshDevices)
+                unprovisionedBluetoothDevices.clear()
+                unprovisionedBluetoothDevices.addAll(bluetoothDevices)
+
+                callback.onScanCompleted(bluetoothDevices)
             } catch (e: Exception) {
                 callback.onScanFailed(e.message ?: "Unknown Error")
             }
@@ -108,24 +107,34 @@ class NrfMeshManager(private var context: Context) {
 
         scanScope.launch {
             try {
-                val results: MutableMap<String, ScanResult> =
+                val results: MutableMap<String, ExtendedBluetoothDevice> =
                     scannerRepository.startScan(MeshManagerApi.MESH_PROXY_UUID, timeoutMs)
                 Log.d(tag, "scanProvisionedDevices: ${results.keys}")
 
-                val provisionedDevices = results.map { (macAddress, scanResult) ->
-                    BleMeshDevice(
-                        rssi = scanResult.rssi,
-                        macAddress = macAddress,
-                        name = scanResult.scanRecord?.deviceName ?: "Unknown",
-                        advData = scanResult.scanRecord?.bytes ?: ByteArray(0)
-                    )
+                val bluetoothDevices = results.map { (macAddress, bluetoothDevice) ->
+                    bluetoothDevice
                 }
 
-                callback.onScanCompleted(provisionedDevices)
+                callback.onScanCompleted(bluetoothDevices)
             } catch (e: Exception) {
                 callback.onScanFailed(e.message ?: "Unknown Error")
             }
         }
+    }
+
+    fun provisionDevice(uuid: UUID) {
+        val bluetoothDevice: ExtendedBluetoothDevice? =
+            unprovisionedBluetoothDevices.firstOrNull { device ->
+                val serviceData = Utils.getServiceData(
+                    device.scanResult!!,
+                    MeshManagerApi.MESH_PROVISIONING_UUID
+                )
+                val deviceUuid: UUID = meshManagerApi.getDeviceUuid(serviceData!!)
+                deviceUuid == uuid
+            }
+
+        bleMeshManager.connect(bluetoothDevice?.device!!).retry(3, 200).await()
+        meshManagerApi.identifyNode(uuid)
     }
 
     fun handleNotifications(mtu: Int, pdu: ByteArray) {

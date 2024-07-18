@@ -1,11 +1,12 @@
 package com.lebrislo.bluetooth.mesh
 
 import android.util.Log
+import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import no.nordicsemi.android.mesh.MeshManagerCallbacks
 import no.nordicsemi.android.mesh.MeshNetwork
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 
-class MeshCallbacksManager : MeshManagerCallbacks {
+class MeshCallbacksManager(val bleMeshManager: BleMeshManager) : MeshManagerCallbacks {
     private val tag: String = MeshCallbacksManager::class.java.simpleName
 
     override fun onNetworkLoaded(meshNetwork: MeshNetwork?) {
@@ -30,14 +31,16 @@ class MeshCallbacksManager : MeshManagerCallbacks {
 
     override fun sendProvisioningPdu(meshNode: UnprovisionedMeshNode?, pdu: ByteArray?) {
         Log.d(tag, "sendProvisioningPdu")
+        bleMeshManager.sendPdu(pdu)
     }
 
     override fun onMeshPduCreated(pdu: ByteArray?) {
         Log.d(tag, "onMeshPduCreated")
+        bleMeshManager.sendPdu(pdu)
     }
 
     override fun getMtu(): Int {
         Log.d(tag, "getMtu")
-        return 0
+        return bleMeshManager.maximumPacketSize
     }
 }
