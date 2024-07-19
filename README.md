@@ -16,6 +16,7 @@ npx cap sync
 * [`echo(...)`](#echo)
 * [`scanUnprovisionedDevices(...)`](#scanunprovisioneddevices)
 * [`scanProvisionedDevices(...)`](#scanprovisioneddevices)
+* [`getProvisioningCapabilities(...)`](#getprovisioningcapabilities)
 * [`provisionDevice(...)`](#provisiondevice)
 * [Interfaces](#interfaces)
 
@@ -69,6 +70,21 @@ scanProvisionedDevices(options: { timeout: number; }) => Promise<ScanDevicesResp
 --------------------
 
 
+### getProvisioningCapabilities(...)
+
+```typescript
+getProvisioningCapabilities(options: { uuid: string; }) => Promise<ProvisioningCapabilities | void>
+```
+
+| Param         | Type                           |
+| ------------- | ------------------------------ |
+| **`options`** | <code>{ uuid: string; }</code> |
+
+**Returns:** <code>Promise&lt;void | <a href="#provisioningcapabilities">ProvisioningCapabilities</a>&gt;</code>
+
+--------------------
+
+
 ### provisionDevice(...)
 
 ```typescript
@@ -100,5 +116,19 @@ provisionDevice(options: { uuid: string; }) => Promise<void>
 | **`uuid`**       | <code>string</code> |
 | **`rssi`**       | <code>number</code> |
 | **`macAddress`** | <code>string</code> |
+
+
+#### ProvisioningCapabilities
+
+| Prop                   | Type                  |
+| ---------------------- | --------------------- |
+| **`numberOfElements`** | <code>number</code>   |
+| **`algorithms`**       | <code>number</code>   |
+| **`publicKeyType`**    | <code>number</code>   |
+| **`staticOobTypes`**   | <code>number</code>   |
+| **`outputOobSize`**    | <code>number</code>   |
+| **`outputOobActions`** | <code>string[]</code> |
+| **`inputOobSize`**     | <code>number</code>   |
+| **`inputOobActions`**  | <code>string[]</code> |
 
 </docgen-api>

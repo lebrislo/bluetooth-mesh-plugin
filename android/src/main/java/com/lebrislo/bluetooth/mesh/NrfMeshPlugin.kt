@@ -9,6 +9,8 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
 import com.lebrislo.bluetooth.mesh.utils.Utils
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import no.nordicsemi.android.mesh.MeshManagerApi
 import java.util.UUID
 
@@ -92,6 +94,32 @@ class NrfMeshPlugin : Plugin() {
                 call.reject(error)
             }
         }, timeout!!)
+    }
+
+    @PluginMethod
+    fun getProvisioningCapabilities(call: PluginCall) {
+        val uuid = call.getString("uuid")
+
+        if (uuid == null) {
+            call.reject("UUID is required")
+        }
+
+        GlobalScope.launch {
+            val result = implementation.getProvisioningCapabilities(UUID.fromString(uuid))
+            when (result) {
+                is DeviceProvisioningStateData.Success -> call.resolve(
+                    JSObject().put(
+                        "result",
+                        result.meshNode.toString()
+                    )
+                )
+
+                is DeviceProvisioningStateData.Failure -> call.reject(
+                    "Error provisioning capabilities",
+                    result.exception
+                )
+            }
+        }
     }
 
     @PluginMethod

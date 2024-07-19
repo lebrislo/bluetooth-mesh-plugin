@@ -122,6 +122,25 @@ class NrfMeshManager(private var context: Context) {
         }
     }
 
+    suspend fun getProvisioningCapabilities(uuid: UUID) {
+        val bluetoothDevice: ExtendedBluetoothDevice? =
+            unprovisionedBluetoothDevices.firstOrNull { device ->
+                val serviceData = Utils.getServiceData(
+                    device.scanResult!!,
+                    MeshManagerApi.MESH_PROVISIONING_UUID
+                )
+                val deviceUuid: UUID = meshManagerApi.getDeviceUuid(serviceData!!)
+                deviceUuid == uuid
+            }
+
+        bleMeshManager.connect(bluetoothDevice?.device!!).retry(3, 200).await()
+        meshManagerApi.identifyNode(uuid)
+
+        meshProvisioningCallbacksManager.deviceProvisioningState.collect { state ->
+            Log.d(tag, "Provisioning state: $state")
+        }
+    }
+
     fun provisionDevice(uuid: UUID) {
         val bluetoothDevice: ExtendedBluetoothDevice? =
             unprovisionedBluetoothDevices.firstOrNull { device ->
