@@ -1,6 +1,6 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { NrfMeshPlugin, ProvisioningCapabilities, ScanDevicesResponse } from './definitions';
+import type { NrfMeshPlugin, ProvisioningCapabilities, ProvisioningStatus, ScanDevicesResponse } from './definitions';
 
 export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
   async echo(options: { value: string }): Promise<{ value: string }> {
@@ -23,8 +23,8 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     return;
   }
 
-  async provisionDevice(): Promise<void> {
+  async provisionDevice(): Promise<ProvisioningStatus> {
     console.log('provisionDevice');
-    return;
+    return { provisioningComplete: true, uuid: '1234' };
   }
 }

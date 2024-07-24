@@ -88,12 +88,14 @@ getProvisioningCapabilities(options: { uuid: string; }) => Promise<ProvisioningC
 ### provisionDevice(...)
 
 ```typescript
-provisionDevice(options: { uuid: string; }) => Promise<void>
+provisionDevice(options: { uuid: string; }) => Promise<ProvisioningStatus>
 ```
 
 | Param         | Type                           |
 | ------------- | ------------------------------ |
 | **`options`** | <code>{ uuid: string; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#provisioningstatus">ProvisioningStatus</a>&gt;</code>
 
 --------------------
 
@@ -120,15 +122,25 @@ provisionDevice(options: { uuid: string; }) => Promise<void>
 
 #### ProvisioningCapabilities
 
-| Prop                   | Type                  |
-| ---------------------- | --------------------- |
-| **`numberOfElements`** | <code>number</code>   |
-| **`algorithms`**       | <code>number</code>   |
-| **`publicKeyType`**    | <code>number</code>   |
-| **`staticOobTypes`**   | <code>number</code>   |
-| **`outputOobSize`**    | <code>number</code>   |
-| **`outputOobActions`** | <code>string[]</code> |
-| **`inputOobSize`**     | <code>number</code>   |
-| **`inputOobActions`**  | <code>string[]</code> |
+| Prop                    | Type                  |
+| ----------------------- | --------------------- |
+| **`numberOfElements`**  | <code>number</code>   |
+| **`availableOOBTypes`** | <code>string[]</code> |
+| **`algorithms`**        | <code>number</code>   |
+| **`publicKeyType`**     | <code>number</code>   |
+| **`staticOobTypes`**    | <code>number</code>   |
+| **`outputOobSize`**     | <code>number</code>   |
+| **`outputOobActions`**  | <code>number</code>   |
+| **`inputOobSize`**      | <code>number</code>   |
+| **`inputOobActions`**   | <code>number</code>   |
+
+
+#### ProvisioningStatus
+
+| Prop                       | Type                 |
+| -------------------------- | -------------------- |
+| **`provisioningComplete`** | <code>boolean</code> |
+| **`uuid`**                 | <code>string</code>  |
+| **`unicastAddress`**       | <code>number</code>  |
 
 </docgen-api>

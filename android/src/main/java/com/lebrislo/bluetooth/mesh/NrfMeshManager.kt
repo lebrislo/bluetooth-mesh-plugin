@@ -5,10 +5,12 @@ import android.util.Log
 import com.lebrislo.bluetooth.mesh.ble.BleCallbacksManager
 import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
+import com.lebrislo.bluetooth.mesh.models.MeshDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
 import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
 import com.lebrislo.bluetooth.mesh.utils.Permissions
 import com.lebrislo.bluetooth.mesh.utils.Utils
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,6 +22,7 @@ import no.nordicsemi.android.mesh.transport.GenericOnOffSet
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class NrfMeshManager(private var context: Context) {
     private val tag: String = NrfMeshManager::class.java.simpleName
@@ -37,6 +40,8 @@ class NrfMeshManager(private var context: Context) {
     var meshManagerApi: MeshManagerApi = MeshManagerApi(context)
 
     var currentProvisionedMeshNode: ProvisionedMeshNode? = null
+    private val provisioningCapabilitiesMap = ConcurrentHashMap<UUID, CompletableDeferred<UnprovisionedMeshNode?>>()
+    private val provisioningStatusMap = ConcurrentHashMap<String, CompletableDeferred<MeshDevice?>>()
 
     init {
         meshCallbacksManager = MeshCallbacksManager(bleMeshManager)
@@ -122,38 +127,75 @@ class NrfMeshManager(private var context: Context) {
         }
     }
 
-    suspend fun getProvisioningCapabilities(uuid: UUID) {
-        val bluetoothDevice: ExtendedBluetoothDevice? =
-            unprovisionedBluetoothDevices.firstOrNull { device ->
-                val serviceData = Utils.getServiceData(
-                    device.scanResult!!,
-                    MeshManagerApi.MESH_PROVISIONING_UUID
-                )
-                val deviceUuid: UUID = meshManagerApi.getDeviceUuid(serviceData!!)
+    fun getProvisioningCapabilities(uuid: UUID): CompletableDeferred<UnprovisionedMeshNode?> {
+        val deferred = CompletableDeferred<UnprovisionedMeshNode?>()
+        provisioningCapabilitiesMap[uuid] = deferred
+
+        val bluetoothDevice = unprovisionedBluetoothDevices.firstOrNull { device ->
+            device.scanResult?.let {
+                val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
+                val deviceUuid = meshManagerApi.getDeviceUuid(serviceData!!)
                 deviceUuid == uuid
-            }
+            } ?: false
+        }
 
-        bleMeshManager.connect(bluetoothDevice?.device!!).retry(3, 200).await()
-        meshManagerApi.identifyNode(uuid)
+        try {
+            bluetoothDevice?.device?.let {
+                bleMeshManager.connect(it).retry(3, 200).await()
+                meshManagerApi.identifyNode(uuid)
+            } ?: deferred.complete(null)
+        } catch (e: Exception) {
+            deferred.completeExceptionally(e)
+        }
 
-        meshProvisioningCallbacksManager.deviceProvisioningState.collect { state ->
-            Log.d(tag, "Provisioning state: $state")
+        return deferred
+    }
+
+    fun onProvisioningCapabilitiesReceived(meshNode: UnprovisionedMeshNode?) {
+        val uuid = meshNode?.deviceUuid
+        if (uuid != null) {
+            provisioningCapabilitiesMap[uuid]?.complete(meshNode)
+            provisioningCapabilitiesMap.remove(uuid)
         }
     }
 
-    fun provisionDevice(uuid: UUID) {
-        val bluetoothDevice: ExtendedBluetoothDevice? =
-            unprovisionedBluetoothDevices.firstOrNull { device ->
-                val serviceData = Utils.getServiceData(
-                    device.scanResult!!,
-                    MeshManagerApi.MESH_PROVISIONING_UUID
-                )
-                val deviceUuid: UUID = meshManagerApi.getDeviceUuid(serviceData!!)
-                deviceUuid == uuid
+    fun provisionDevice(uuid: UUID): CompletableDeferred<MeshDevice?>? {
+        val deferred = CompletableDeferred<MeshDevice?>()
+        provisioningStatusMap[uuid.toString()] = deferred
+
+        val unprovisionedMeshNode = unprovisionedMeshNodes.firstOrNull { node ->
+            node.deviceUuid == uuid
+        }
+
+        if (unprovisionedMeshNode == null) {
+            Log.e(tag, "Unprovisioned Mesh Node not found, try identifying the node first")
+            return null
+        }
+
+        meshManagerApi.startProvisioning(unprovisionedMeshNode)
+
+        return deferred
+    }
+
+    fun onProvisioningFinish(meshDevice: MeshDevice?) {
+        when (meshDevice) {
+            is MeshDevice.Provisioned -> {
+                val uuid = meshDevice.node.uuid
+                provisioningStatusMap[uuid]?.complete(meshDevice)
+                provisioningStatusMap.remove(uuid)
+                currentProvisionedMeshNode = meshDevice.node
             }
 
-        bleMeshManager.connect(bluetoothDevice?.device!!).retry(3, 200).await()
-        meshManagerApi.identifyNode(uuid)
+            is MeshDevice.Unprovisioned -> {
+                val uuid = meshDevice.node.deviceUuid
+                provisioningStatusMap[uuid.toString()]?.complete(meshDevice)
+                provisioningStatusMap.remove(uuid.toString())
+            }
+
+            null -> {
+                Log.e(tag, "Unknown provisioning  state")
+            }
+        }
     }
 
     fun handleNotifications(mtu: Int, pdu: ByteArray) {

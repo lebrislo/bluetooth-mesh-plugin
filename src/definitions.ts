@@ -11,13 +11,20 @@ export interface ScanDevicesResponse {
 
 export interface ProvisioningCapabilities {
   numberOfElements: number;
+  availableOOBTypes: string[];
   algorithms: number;
   publicKeyType: number;
   staticOobTypes: number;
   outputOobSize: number;
-  outputOobActions: string[];
+  outputOobActions: number
   inputOobSize: number;
-  inputOobActions: string[];
+  inputOobActions: number
+}
+
+export interface ProvisioningStatus {
+  provisioningComplete: boolean;
+  uuid: string;
+  unicastAddress?: number;
 }
 
 export interface NrfMeshPlugin {
@@ -25,5 +32,5 @@ export interface NrfMeshPlugin {
   scanUnprovisionedDevices(options: { timeout: number }): Promise<ScanDevicesResponse>;
   scanProvisionedDevices(options: { timeout: number }): Promise<ScanDevicesResponse>;
   getProvisioningCapabilities(options: { uuid: string }): Promise<ProvisioningCapabilities | void>;
-  provisionDevice(options: { uuid: string }): Promise<void>;
+  provisionDevice(options: { uuid: string }): Promise<ProvisioningStatus>;
 }

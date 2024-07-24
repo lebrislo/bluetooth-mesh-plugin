@@ -1,8 +1,7 @@
 package com.lebrislo.bluetooth.mesh
 
 import android.util.Log
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import com.lebrislo.bluetooth.mesh.models.MeshDevice
 import no.nordicsemi.android.mesh.MeshProvisioningStatusCallbacks
 import no.nordicsemi.android.mesh.provisionerstates.ProvisioningState
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
@@ -15,9 +14,6 @@ class MeshProvisioningCallbacksManager(
     MeshProvisioningStatusCallbacks {
     private val tag: String = MeshProvisioningCallbacksManager::class.java.simpleName
 
-    private val _deviceProvisioningState = MutableStateFlow<DeviceProvisioningStateData?>(null)
-    val deviceProvisioningState: StateFlow<DeviceProvisioningStateData?> get() = _deviceProvisioningState
-
     override fun onProvisioningStateChanged(
         meshNode: UnprovisionedMeshNode?,
         state: ProvisioningState.States?,
@@ -25,7 +21,8 @@ class MeshProvisioningCallbacksManager(
     ) {
         Log.d(tag, "onProvisioningStateChanged" + meshNode?.toString())
         if (state == ProvisioningState.States.PROVISIONING_CAPABILITIES) {
-            _deviceProvisioningState.value = DeviceProvisioningStateData.Success(meshNode!!, state)
+            unprovisionedMeshNodes.add(meshNode!!)
+            nrfMeshManager.onProvisioningCapabilitiesReceived(meshNode)
         }
     }
 
@@ -35,6 +32,9 @@ class MeshProvisioningCallbacksManager(
         data: ByteArray?
     ) {
         Log.d(tag, "onProvisioningFailed" + meshNode?.toString())
+        if (state == ProvisioningState.States.PROVISIONING_FAILED) {
+            nrfMeshManager.onProvisioningFinish(MeshDevice.Unprovisioned(meshNode!!))
+        }
     }
 
     override fun onProvisioningCompleted(
@@ -43,12 +43,8 @@ class MeshProvisioningCallbacksManager(
         data: ByteArray?
     ) {
         Log.d(tag, "onProvisioningCompleted" + meshNode?.toString())
+        if (state == ProvisioningState.States.PROVISIONING_COMPLETE) {
+            nrfMeshManager.onProvisioningFinish(MeshDevice.Provisioned(meshNode!!))
+        }
     }
-}
-
-sealed class DeviceProvisioningStateData {
-    data class Success(val meshNode: UnprovisionedMeshNode, val state: ProvisioningState.States) :
-        DeviceProvisioningStateData()
-
-    data class Failure(val exception: Exception) : DeviceProvisioningStateData()
 }

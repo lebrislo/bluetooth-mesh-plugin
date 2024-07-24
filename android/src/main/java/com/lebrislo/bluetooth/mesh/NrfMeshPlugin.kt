@@ -7,9 +7,11 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
+import com.lebrislo.bluetooth.mesh.models.MeshDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
 import com.lebrislo.bluetooth.mesh.utils.Utils
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import no.nordicsemi.android.mesh.MeshManagerApi
 import java.util.UUID
@@ -98,26 +100,42 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun getProvisioningCapabilities(call: PluginCall) {
-        val uuid = call.getString("uuid")
-
-        if (uuid == null) {
+        val uuidString = call.getString("uuid")
+        if (uuidString == null) {
             call.reject("UUID is required")
+            return
         }
+        val uuid = UUID.fromString(uuidString)
 
-        GlobalScope.launch {
-            val result = implementation.getProvisioningCapabilities(UUID.fromString(uuid))
-            when (result) {
-                is DeviceProvisioningStateData.Success -> call.resolve(
-                    JSObject().put(
-                        "result",
-                        result.meshNode.toString()
-                    )
-                )
+        val deferred = implementation.getProvisioningCapabilities(uuid)
 
-                is DeviceProvisioningStateData.Failure -> call.reject(
-                    "Error provisioning capabilities",
-                    result.exception
-                )
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val unprovisionedDevice = deferred.await()
+                if (unprovisionedDevice != null) {
+
+                    val result = JSObject().apply {
+                        put("numberOfElements", unprovisionedDevice.provisioningCapabilities.numberOfElements)
+                        val oobTypeArray = JSArray().apply {
+                            unprovisionedDevice.provisioningCapabilities.availableOOBTypes.forEach {
+                                put(it)
+                            }
+                        }
+                        put("availableOOBTypes", oobTypeArray)
+                        put("algorithms", unprovisionedDevice.provisioningCapabilities.rawAlgorithm)
+                        put("publicKeyType", unprovisionedDevice.provisioningCapabilities.rawPublicKeyType)
+                        put("staticOobTypes", unprovisionedDevice.provisioningCapabilities.rawStaticOOBType)
+                        put("outputOobSize", unprovisionedDevice.provisioningCapabilities.outputOOBSize)
+                        put("outputOobActions", unprovisionedDevice.provisioningCapabilities.rawOutputOOBAction)
+                        put("inputOobSize", unprovisionedDevice.provisioningCapabilities.inputOOBSize)
+                        put("inputOobActions", unprovisionedDevice.provisioningCapabilities.rawInputOOBAction)
+                    }
+                    call.resolve(result)
+                } else {
+                    call.reject("Failed to get provisioning capabilities")
+                }
+            } catch (e: Exception) {
+                call.reject("Error: ${e.message}")
             }
         }
     }
@@ -130,6 +148,42 @@ class NrfMeshPlugin : Plugin() {
             call.reject("UUID is required")
         }
 
-        implementation.provisionDevice(UUID.fromString(uuid))
+        val deferred = implementation.provisionDevice(UUID.fromString(uuid))
+
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                if (deferred == null) {
+                    call.reject("Failed to provision device")
+                    return@launch
+                }
+
+                val meshDevice = deferred.await()
+                if (meshDevice == null) {
+                    call.reject("Failed to provision device")
+                    return@launch
+                }
+
+                when (meshDevice) {
+                    is MeshDevice.Provisioned -> {
+                        val result = JSObject().apply {
+                            put("provisioningComplete", true)
+                            put("uuid", meshDevice.node.uuid)
+                            put("unicastAddress", meshDevice.node.unicastAddress)
+                        }
+                        call.resolve(result)
+                    }
+
+                    is MeshDevice.Unprovisioned -> {
+                        val result = JSObject().apply {
+                            put("provisioningComplete", false)
+                            put("uuid", meshDevice.node.deviceUuid)
+                        }
+                        call.resolve(result)
+                    }
+                }
+            } catch (e: Exception) {
+                call.reject("Error: ${e.message}")
+            }
+        }
     }
 }
