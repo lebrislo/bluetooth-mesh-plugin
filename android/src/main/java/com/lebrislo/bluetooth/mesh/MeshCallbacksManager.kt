@@ -9,8 +9,21 @@ import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 class MeshCallbacksManager(val bleMeshManager: BleMeshManager) : MeshManagerCallbacks {
     private val tag: String = MeshCallbacksManager::class.java.simpleName
 
+    private var meshNetwork: MeshNetwork? = null
+
     override fun onNetworkLoaded(meshNetwork: MeshNetwork?) {
         Log.d(tag, "onNetworkLoaded")
+
+        if (meshNetwork == null) {
+            return
+        }
+
+        this.meshNetwork = meshNetwork
+
+        if (!this.meshNetwork!!.isProvisionerSelected()) {
+            val provisioner = this.meshNetwork!!.provisioners[0]
+            this.meshNetwork!!.selectProvisioner(provisioner)
+        }
     }
 
     override fun onNetworkUpdated(meshNetwork: MeshNetwork?) {

@@ -18,6 +18,7 @@ npx cap sync
 * [`scanProvisionedDevices(...)`](#scanprovisioneddevices)
 * [`getProvisioningCapabilities(...)`](#getprovisioningcapabilities)
 * [`provisionDevice(...)`](#provisiondevice)
+* [`unprovisionDevice(...)`](#unprovisiondevice)
 * [Interfaces](#interfaces)
 
 </docgen-index>
@@ -96,6 +97,19 @@ provisionDevice(options: { uuid: string; }) => Promise<ProvisioningStatus>
 | **`options`** | <code>{ uuid: string; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#provisioningstatus">ProvisioningStatus</a>&gt;</code>
+
+--------------------
+
+
+### unprovisionDevice(...)
+
+```typescript
+unprovisionDevice(options: { unicastAddress: number; }) => Promise<void>
+```
+
+| Param         | Type                                     |
+| ------------- | ---------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; }</code> |
 
 --------------------
 

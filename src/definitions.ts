@@ -33,4 +33,5 @@ export interface NrfMeshPlugin {
   scanProvisionedDevices(options: { timeout: number }): Promise<ScanDevicesResponse>;
   getProvisioningCapabilities(options: { uuid: string }): Promise<ProvisioningCapabilities | void>;
   provisionDevice(options: { uuid: string }): Promise<ProvisioningStatus>;
+  unprovisionDevice(options: { unicastAddress: number }): Promise<void>;
 }

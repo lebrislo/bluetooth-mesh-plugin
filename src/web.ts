@@ -27,4 +27,8 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('provisionDevice');
     return { provisioningComplete: true, uuid: '1234' };
   }
+
+  async unprovisionDevice(): Promise<void> {
+    console.log('unprovisionDevice');
+  }
 }

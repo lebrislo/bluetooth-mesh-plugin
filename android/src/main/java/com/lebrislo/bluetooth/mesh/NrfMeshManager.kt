@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
+import no.nordicsemi.android.mesh.transport.ConfigNodeReset
 import no.nordicsemi.android.mesh.transport.GenericOnOffSet
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode
@@ -172,6 +173,13 @@ class NrfMeshManager(private var context: Context) {
             return null
         }
 
+        val provisioner = meshManagerApi.meshNetwork?.selectedProvisioner
+        val unicastAddress = meshManagerApi.meshNetwork?.nextAvailableUnicastAddress(
+            unprovisionedMeshNode.numberOfElements,
+            provisioner!!
+        )
+        meshManagerApi.meshNetwork?.assignUnicastAddress(unicastAddress!!)
+
         meshManagerApi.startProvisioning(unprovisionedMeshNode)
 
         return deferred
@@ -196,6 +204,13 @@ class NrfMeshManager(private var context: Context) {
                 Log.e(tag, "Unknown provisioning  state")
             }
         }
+    }
+
+    fun unprovisionDevice(unicastAddress: Int) {
+        val provisionedNode = meshManagerApi.meshNetwork?.getNode(unicastAddress) ?: return
+
+        val configNodeReset = ConfigNodeReset()
+        meshManagerApi.createMeshPdu(unicastAddress, configNodeReset)
     }
 
     fun handleNotifications(mtu: Int, pdu: ByteArray) {

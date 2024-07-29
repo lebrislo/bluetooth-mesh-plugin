@@ -186,4 +186,14 @@ class NrfMeshPlugin : Plugin() {
             }
         }
     }
+
+    @PluginMethod
+    fun unprovisionDevice(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        if (unicastAddress == null) {
+            call.reject("unicastAddress is required")
+        }
+        val deferred = implementation.unprovisionDevice(unicastAddress!!)
+
+    }
 }
