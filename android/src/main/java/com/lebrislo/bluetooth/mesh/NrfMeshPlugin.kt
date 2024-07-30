@@ -190,10 +190,24 @@ class NrfMeshPlugin : Plugin() {
     @PluginMethod
     fun unprovisionDevice(call: PluginCall) {
         val unicastAddress = call.getInt("unicastAddress")
+
         if (unicastAddress == null) {
             call.reject("unicastAddress is required")
         }
+
         val deferred = implementation.unprovisionDevice(unicastAddress!!)
 
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val result = deferred.await()
+                if (result!!) {
+                    call.resolve(JSObject().put("success", true))
+                } else {
+                    call.reject("Failed to unprovision device")
+                }
+            } catch (e: Exception) {
+                call.reject("Error: ${e.message}")
+            }
+        }
     }
 }

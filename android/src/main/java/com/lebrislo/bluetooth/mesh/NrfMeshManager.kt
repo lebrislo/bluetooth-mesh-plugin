@@ -19,6 +19,7 @@ import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
 import no.nordicsemi.android.mesh.transport.ConfigNodeReset
+import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.GenericOnOffSet
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode
@@ -46,12 +47,13 @@ class NrfMeshManager(private var context: Context) {
     var currentProvisionedMeshNode: ProvisionedMeshNode? = null
     private val provisioningCapabilitiesMap = ConcurrentHashMap<UUID, CompletableDeferred<UnprovisionedMeshNode?>>()
     private val provisioningStatusMap = ConcurrentHashMap<String, CompletableDeferred<MeshDevice?>>()
+    private val unprovisionStatusMap = ConcurrentHashMap<Int, CompletableDeferred<Boolean?>>()
 
     init {
         meshCallbacksManager = MeshCallbacksManager(bleMeshManager)
         meshProvisioningCallbacksManager =
             MeshProvisioningCallbacksManager(unprovisionedMeshNodes, this)
-        meshStatusCallbacksManager = MeshStatusCallbacksManager()
+        meshStatusCallbacksManager = MeshStatusCallbacksManager(this)
         bleCallbacksManager = BleCallbacksManager(meshManagerApi)
         scannerRepository = ScannerRepository(context, meshManagerApi)
 
@@ -227,21 +229,46 @@ class NrfMeshManager(private var context: Context) {
         bleMeshManager.disconnect().enqueue()
     }
 
-    fun unprovisionDevice(unicastAddress: Int) {
-        val provisionedNode = meshManagerApi.meshNetwork?.getNode(unicastAddress) ?: return
+    fun unprovisionDevice(unicastAddress: Int): CompletableDeferred<Boolean?> {
+        val differed = CompletableDeferred<Boolean?>()
+        unprovisionStatusMap[unicastAddress] = differed
+
+        val provisionedNode = meshManagerApi.meshNetwork?.getNode(unicastAddress)
+        if (provisionedNode == null) {
+            differed.complete(false)
+            return differed
+        }
 
         val bluetoothDevice = provisionedBluetoothDevices.firstOrNull { device ->
             device.scanResult?.let {
                 val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
                 val deviceUuid = meshManagerApi.getDeviceUuid(serviceData!!)
-                deviceUuid.toString() == provisionedNode.uuid
+                deviceUuid.toString() == provisionedNode!!.uuid
             } ?: false
-        } ?: return
+        }
 
-        bleMeshManager.connect(bluetoothDevice.device!!).retry(3, 200).await()
+        if (bluetoothDevice == null) {
+            differed.complete(false)
+            return differed
+        }
+
+        bleMeshManager.connect(bluetoothDevice!!.device!!).retry(3, 200).await()
 
         val configNodeReset = ConfigNodeReset()
         meshManagerApi.createMeshPdu(unicastAddress, configNodeReset)
+
+        return differed
+    }
+
+    fun onNodeResetStatusReceived(meshMessage: ConfigNodeResetStatus) {
+        val unicastAddress = meshMessage.src
+
+        val operarionSucceded = meshMessage.statusCode == 0
+
+        if (operarionSucceded) {
+            unprovisionStatusMap[unicastAddress]?.complete(true)
+            unprovisionStatusMap.remove(unicastAddress)
+        }
     }
 
     fun handleNotifications(mtu: Int, pdu: ByteArray) {

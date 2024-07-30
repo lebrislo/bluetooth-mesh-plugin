@@ -2,10 +2,11 @@ package com.lebrislo.bluetooth.mesh
 
 import android.util.Log
 import no.nordicsemi.android.mesh.MeshStatusCallbacks
+import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.ControlMessage
 import no.nordicsemi.android.mesh.transport.MeshMessage
 
-class MeshStatusCallbacksManager : MeshStatusCallbacks {
+class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatusCallbacks {
     private val tag: String = MeshStatusCallbacksManager::class.java.simpleName
 
     override fun onTransactionFailed(dst: Int, hasIncompleteTimerExpired: Boolean) {
@@ -30,6 +31,9 @@ class MeshStatusCallbacksManager : MeshStatusCallbacks {
 
     override fun onMeshMessageReceived(src: Int, meshMessage: MeshMessage) {
         Log.d(tag, "onMeshMessageReceived")
+        if (meshMessage is ConfigNodeResetStatus) {
+            nrfMeshManager.onNodeResetStatusReceived(meshMessage)
+        }
     }
 
     override fun onMessageDecryptionFailed(meshLayer: String?, errorMessage: String?) {
