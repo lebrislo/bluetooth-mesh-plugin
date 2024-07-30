@@ -34,8 +34,11 @@ class NrfMeshManager(private var context: Context) {
     private val bleCallbacksManager: BleCallbacksManager
     private val scanScope = CoroutineScope(Dispatchers.Main + Job())
     private val scannerRepository: ScannerRepository
+
     private val unprovisionedMeshNodes: ArrayList<UnprovisionedMeshNode> = ArrayList()
+    private val provisionedMeshNodes: ArrayList<ProvisionedMeshNode> = ArrayList()
     private val unprovisionedBluetoothDevices: ArrayList<ExtendedBluetoothDevice> = ArrayList()
+    private val provisionedBluetoothDevices: ArrayList<ExtendedBluetoothDevice> = ArrayList()
 
     var bleMeshManager: BleMeshManager = BleMeshManager(context)
     var meshManagerApi: MeshManagerApi = MeshManagerApi(context)
@@ -191,6 +194,22 @@ class NrfMeshManager(private var context: Context) {
                 val uuid = meshDevice.node.uuid
                 provisioningStatusMap[uuid]?.complete(meshDevice)
                 provisioningStatusMap.remove(uuid)
+                unprovisionedMeshNodes.firstOrNull { node ->
+                    node.deviceUuid.toString() == uuid
+                }?.let {
+                    unprovisionedMeshNodes.remove(it)
+                    provisionedMeshNodes.add(meshDevice.node)
+                }
+                unprovisionedBluetoothDevices.firstOrNull { device ->
+                    device.scanResult?.let {
+                        val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
+                        val deviceUuid = meshManagerApi.getDeviceUuid(serviceData!!)
+                        deviceUuid.toString() == uuid
+                    } ?: false
+                }?.let {
+                    unprovisionedBluetoothDevices.remove(it)
+                    provisionedBluetoothDevices.add(it)
+                }
                 currentProvisionedMeshNode = meshDevice.node
             }
 
@@ -204,10 +223,22 @@ class NrfMeshManager(private var context: Context) {
                 Log.e(tag, "Unknown provisioning  state")
             }
         }
+
+        bleMeshManager.disconnect().enqueue()
     }
 
     fun unprovisionDevice(unicastAddress: Int) {
         val provisionedNode = meshManagerApi.meshNetwork?.getNode(unicastAddress) ?: return
+
+        val bluetoothDevice = provisionedBluetoothDevices.firstOrNull { device ->
+            device.scanResult?.let {
+                val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
+                val deviceUuid = meshManagerApi.getDeviceUuid(serviceData!!)
+                deviceUuid.toString() == provisionedNode.uuid
+            } ?: false
+        } ?: return
+
+        bleMeshManager.connect(bluetoothDevice.device!!).retry(3, 200).await()
 
         val configNodeReset = ConfigNodeReset()
         meshManagerApi.createMeshPdu(unicastAddress, configNodeReset)
