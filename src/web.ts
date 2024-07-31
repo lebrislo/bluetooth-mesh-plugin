@@ -31,4 +31,33 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
   async unprovisionDevice(): Promise<void> {
     console.log('unprovisionDevice');
   }
+
+  async createApplicationKey(): Promise<void> {
+    console.log('createApplicationKey');
+  }
+
+  async removeApplicationKey(): Promise<void> {
+    console.log('removeApplicationKey');
+  }
+
+  async addApplicationKeyToNode(): Promise<void> {
+    console.log('addApplicationKeyToNode');
+  }
+
+  async bindApplicationKeyToModel(): Promise<void> {
+    console.log('bindApplicationKeyToModel');
+  }
+
+  async compositionDataGet(): Promise<void> {
+    console.log('compositionDataGet');
+  }
+
+  async sendGenericOnOffSet(): Promise<void> {
+    console.log('sendGenericOnOffSet');
+  }
+
+  async exportMeshNetwork(): Promise<object> {
+    console.log('exportMeshNetwork');
+    return {};
+  }
 }

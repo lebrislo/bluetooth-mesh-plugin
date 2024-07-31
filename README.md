@@ -19,6 +19,13 @@ npx cap sync
 * [`getProvisioningCapabilities(...)`](#getprovisioningcapabilities)
 * [`provisionDevice(...)`](#provisiondevice)
 * [`unprovisionDevice(...)`](#unprovisiondevice)
+* [`createApplicationKey()`](#createapplicationkey)
+* [`removeApplicationKey(...)`](#removeapplicationkey)
+* [`addApplicationKeyToNode(...)`](#addapplicationkeytonode)
+* [`bindApplicationKeyToModel(...)`](#bindapplicationkeytomodel)
+* [`compositionDataGet(...)`](#compositiondataget)
+* [`sendGenericOnOffSet(...)`](#sendgenericonoffset)
+* [`exportMeshNetwork()`](#exportmeshnetwork)
 * [Interfaces](#interfaces)
 
 </docgen-index>
@@ -110,6 +117,91 @@ unprovisionDevice(options: { unicastAddress: number; }) => Promise<void>
 | Param         | Type                                     |
 | ------------- | ---------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; }</code> |
+
+--------------------
+
+
+### createApplicationKey()
+
+```typescript
+createApplicationKey() => Promise<void>
+```
+
+--------------------
+
+
+### removeApplicationKey(...)
+
+```typescript
+removeApplicationKey(options: { appKeyIndex: number; }) => Promise<void>
+```
+
+| Param         | Type                                  |
+| ------------- | ------------------------------------- |
+| **`options`** | <code>{ appKeyIndex: number; }</code> |
+
+--------------------
+
+
+### addApplicationKeyToNode(...)
+
+```typescript
+addApplicationKeyToNode(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<void>
+```
+
+| Param         | Type                                                          |
+| ------------- | ------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
+
+--------------------
+
+
+### bindApplicationKeyToModel(...)
+
+```typescript
+bindApplicationKeyToModel(options: { elementAddress: number; appKeyIndex: number; modelId: number; }) => Promise<void>
+```
+
+| Param         | Type                                                                           |
+| ------------- | ------------------------------------------------------------------------------ |
+| **`options`** | <code>{ elementAddress: number; appKeyIndex: number; modelId: number; }</code> |
+
+--------------------
+
+
+### compositionDataGet(...)
+
+```typescript
+compositionDataGet(options: { unicastAddress: number; }) => Promise<void>
+```
+
+| Param         | Type                                     |
+| ------------- | ---------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; }</code> |
+
+--------------------
+
+
+### sendGenericOnOffSet(...)
+
+```typescript
+sendGenericOnOffSet(options: { unicastAddress: number; appKeyIndex: number; onOff: boolean; }) => Promise<void>
+```
+
+| Param         | Type                                                                          |
+| ------------- | ----------------------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; onOff: boolean; }</code> |
+
+--------------------
+
+
+### exportMeshNetwork()
+
+```typescript
+exportMeshNetwork() => Promise<object>
+```
+
+**Returns:** <code>Promise&lt;object&gt;</code>
 
 --------------------
 

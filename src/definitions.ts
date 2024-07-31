@@ -34,4 +34,11 @@ export interface NrfMeshPlugin {
   getProvisioningCapabilities(options: { uuid: string }): Promise<ProvisioningCapabilities | void>;
   provisionDevice(options: { uuid: string }): Promise<ProvisioningStatus>;
   unprovisionDevice(options: { unicastAddress: number }): Promise<void>;
+  createApplicationKey(): Promise<void>;
+  removeApplicationKey(options: { appKeyIndex: number}): Promise<void>;
+  addApplicationKeyToNode(options: { unicastAddress: number, appKeyIndex: number }): Promise<void>;
+  bindApplicationKeyToModel(options: { elementAddress: number, appKeyIndex: number, modelId: number }): Promise<void>;
+  compositionDataGet(options: { unicastAddress: number }): Promise<void>;
+  sendGenericOnOffSet(options: { unicastAddress: number, appKeyIndex: number, onOff: boolean }): Promise<void>;
+  exportMeshNetwork(): Promise<object>;
 }

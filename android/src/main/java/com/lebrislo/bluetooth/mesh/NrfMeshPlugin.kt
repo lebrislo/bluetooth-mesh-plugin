@@ -27,14 +27,6 @@ class NrfMeshPlugin : Plugin() {
     }
 
     @PluginMethod
-    fun echo(call: PluginCall) {
-        val value = call.getString("value")
-        val ret = JSObject()
-        ret.put("value", implementation.echo(value!!))
-        call.resolve(ret)
-    }
-
-    @PluginMethod
     fun scanUnprovisionedDevices(call: PluginCall) {
         val timeout = call.getInt("timeout", 5000)
 
@@ -152,11 +144,6 @@ class NrfMeshPlugin : Plugin() {
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                if (deferred == null) {
-                    call.reject("Failed to provision device")
-                    return@launch
-                }
-
                 val meshDevice = deferred.await()
                 if (meshDevice == null) {
                     call.reject("Failed to provision device")
@@ -183,6 +170,8 @@ class NrfMeshPlugin : Plugin() {
                 }
             } catch (e: Exception) {
                 call.reject("Error: ${e.message}")
+            } finally {
+                implementation.disconnectBle()
             }
         }
     }
@@ -208,6 +197,133 @@ class NrfMeshPlugin : Plugin() {
             } catch (e: Exception) {
                 call.reject("Error: ${e.message}")
             }
+        }
+    }
+
+    @PluginMethod
+    fun createApplicationKey(call: PluginCall) {
+        val result = implementation.createApplicationKey()
+
+        if (result) {
+            call.resolve()
+        } else {
+            call.reject("Failed to add application key")
+        }
+    }
+
+    @PluginMethod
+    fun removeApplicationKey(call: PluginCall) {
+        val appKeyIndex = call.getInt("appKeyIndex")
+
+        if (appKeyIndex == null) {
+            call.reject("appKeyIndex is required")
+        }
+
+        val result = implementation.removeApplicationKey(appKeyIndex!!)
+
+        if (result) {
+            call.resolve()
+        } else {
+            call.reject("Failed to remove application key")
+        }
+    }
+
+    @PluginMethod
+    fun addApplicationKeyToNode(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+
+        if (appKeyIndex == null || unicastAddress == null) {
+            call.reject("appKeyIndex and unicastAddress are required")
+        }
+
+        val result = implementation.addApplicationKeyToNode(unicastAddress!!, appKeyIndex!!)
+
+        if (result) {
+            call.resolve()
+        } else {
+            call.reject("Failed to add application to node")
+        }
+
+//        implementation.disconnectBle()
+    }
+
+    @PluginMethod
+    fun bindApplicationKeyToModel(call: PluginCall) {
+        val elementAddress = call.getInt("elementAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+        val modelId = call.getInt("modelId")
+
+        if (elementAddress == null || appKeyIndex == null || modelId == null) {
+            call.reject("elementAddress, appKeyIndex and modelId are required")
+        }
+
+        val result = implementation.bindApplicationKeyToModel(elementAddress!!, appKeyIndex!!, modelId!!)
+
+        if (result) {
+            call.resolve()
+        } else {
+            call.reject("Failed to bind application key")
+        }
+
+//        implementation.disconnectBle()
+    }
+
+    @PluginMethod
+    fun compositionDataGet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+
+        if (unicastAddress == null) {
+            call.reject("unicastAddress is required")
+        }
+
+        val deferred = implementation.compositionDataGet(unicastAddress!!)
+
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val result = deferred.await()
+                if (result!!) {
+                    val meshNetwork = implementation.exportMeshNetwork()
+                    call.resolve(JSObject().put("meshNetwork", meshNetwork))
+                } else {
+                    call.reject("Failed to get composition data")
+                }
+            } catch (e: Exception) {
+                call.reject("Error: ${e.message}")
+            }
+        }
+    }
+
+    @PluginMethod
+    fun sendGenericOnOffSet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+        val onOff = call.getBoolean("onOff")
+        if (unicastAddress == null || appKeyIndex == null || onOff == null) {
+            call.reject("unicastAddress, appKeyIndex, and onOff are required")
+        }
+        val result = implementation.sendGenericOnOffSet(
+            unicastAddress!!,
+            onOff!!,
+            appKeyIndex!!,
+            0
+        )
+
+        if (result) {
+            call.resolve()
+        } else {
+            call.reject("Failed to send Generic OnOff Set")
+        }
+    }
+
+    @PluginMethod
+    fun exportMeshNetwork(call: PluginCall) {
+        val result = implementation.exportMeshNetwork()
+
+        if (result != null) {
+            call.resolve(JSObject().put("meshNetwork", result))
+        } else {
+            call.reject("Failed to export mesh network")
         }
     }
 }
