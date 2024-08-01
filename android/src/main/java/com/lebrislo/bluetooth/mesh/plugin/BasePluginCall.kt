@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-open abstract class BasePluginCall(val call: PluginCall, val timeout: Int = 10000) {
+abstract class BasePluginCall(val call: PluginCall, val timeout: Int = 10000) {
 
     private var isResolved: Boolean = false
 
@@ -15,7 +15,12 @@ open abstract class BasePluginCall(val call: PluginCall, val timeout: Int = 1000
         CoroutineScope(Dispatchers.Default).launch {
             delay(timeout.toLong())
             if (!isResolved) {
-                reject("Operation timed out")
+                val rejectObject = JSObject()
+                rejectObject.put("methodName", call.methodName)
+                call.data.keys().forEach { key ->
+                    rejectObject.put(key, call.data.get(key))
+                }
+                reject("Operation timed out", rejectObject)
             }
         }
     }
@@ -25,7 +30,7 @@ open abstract class BasePluginCall(val call: PluginCall, val timeout: Int = 1000
         call.resolve(result)
     }
 
-    fun reject(message: String) {
-        call.reject(message)
+    private fun reject(message: String, data: JSObject? = null) {
+        call.reject(message, data)
     }
 }

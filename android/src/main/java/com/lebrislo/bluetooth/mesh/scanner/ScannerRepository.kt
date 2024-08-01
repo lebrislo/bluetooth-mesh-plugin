@@ -39,18 +39,6 @@ class ScannerRepository(
                 if (filterUuid == MeshManagerApi.MESH_PROVISIONING_UUID) {
                     updateScannerData(result)
                 } else if (filterUuid == MeshManagerApi.MESH_PROXY_UUID) {
-//                    TODO: Process the scan result
-//                    val serviceData: ByteArray? =
-//                        Utils.getServiceData(result, MeshManagerApi.MESH_PROXY_UUID)
-//                    if (meshManagerApi.isAdvertisingWithNetworkIdentity(serviceData)) {
-//                        if (meshManagerApi.networkIdMatches(serviceData)) {
-//                            updateScannedData(result)
-//                        }
-//                    } else if (meshManagerApi.isAdvertisedWithNodeIdentity(serviceData)) {
-//                        if (checkIfNodeIdentityMatches(serviceData!!)) {
-//                            updateScannedData(result)
-//                        }
-//                    }
                     updateScannerData(result)
                 }
             } catch (ex: Exception) {

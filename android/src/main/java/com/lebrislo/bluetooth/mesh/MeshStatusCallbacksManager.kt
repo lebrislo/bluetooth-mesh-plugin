@@ -1,11 +1,13 @@
 package com.lebrislo.bluetooth.mesh
 
 import android.util.Log
+import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import no.nordicsemi.android.mesh.MeshStatusCallbacks
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
 import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.ControlMessage
+import no.nordicsemi.android.mesh.transport.GenericOnOffStatus
 import no.nordicsemi.android.mesh.transport.MeshMessage
 
 class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatusCallbacks {
@@ -39,6 +41,8 @@ class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatu
             nrfMeshManager.onAppKeyStatusReceived(meshMessage)
         } else if (meshMessage is ConfigCompositionDataStatus) {
             nrfMeshManager.onCompositionDataStatusReceived(meshMessage)
+        } else if (meshMessage is GenericOnOffStatus) {
+            PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
         }
     }
 

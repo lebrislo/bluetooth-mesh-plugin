@@ -56,6 +56,10 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('sendGenericOnOffSet');
   }
 
+  async sendGenericPowerLevelSet(): Promise<void> {
+    console.log('sendGenericPowerLevelSet');
+  }
+
   async exportMeshNetwork(): Promise<object> {
     console.log('exportMeshNetwork');
     return {};

@@ -8,12 +8,14 @@ import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.models.MeshDevice
+import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import no.nordicsemi.android.mesh.MeshManagerApi
+import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes
 import java.util.UUID
 
 @CapacitorPlugin(name = "NrfMesh")
@@ -301,19 +303,18 @@ class NrfMeshPlugin : Plugin() {
         val onOff = call.getBoolean("onOff")
         if (unicastAddress == null || appKeyIndex == null || onOff == null) {
             call.reject("unicastAddress, appKeyIndex, and onOff are required")
+            return
         }
+
+        PluginCallManager.getInstance()
+            .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_SET, unicastAddress, call)
+
         val result = implementation.sendGenericOnOffSet(
-            unicastAddress!!,
-            onOff!!,
-            appKeyIndex!!,
+            unicastAddress,
+            onOff,
+            appKeyIndex,
             0
         )
-
-        if (result) {
-            call.resolve()
-        } else {
-            call.reject("Failed to send Generic OnOff Set")
-        }
     }
 
     @PluginMethod

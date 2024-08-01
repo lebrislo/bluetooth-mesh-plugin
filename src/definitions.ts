@@ -40,5 +40,6 @@ export interface NrfMeshPlugin {
   bindApplicationKeyToModel(options: { elementAddress: number, appKeyIndex: number, modelId: number }): Promise<void>;
   compositionDataGet(options: { unicastAddress: number }): Promise<void>;
   sendGenericOnOffSet(options: { unicastAddress: number, appKeyIndex: number, onOff: boolean }): Promise<void>;
+  sendGenericPowerLevelSet(options: { unicastAddress: number, appKeyIndex: number, powerLevel: number }): Promise<void>;
   exportMeshNetwork(): Promise<object>;
 }
