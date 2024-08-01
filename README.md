@@ -25,6 +25,8 @@ npx cap sync
 * [`bindApplicationKeyToModel(...)`](#bindapplicationkeytomodel)
 * [`compositionDataGet(...)`](#compositiondataget)
 * [`sendGenericOnOffSet(...)`](#sendgenericonoffset)
+* [`sendGenericPowerLevelSet(...)`](#sendgenericpowerlevelset)
+* [`sendLightHslSet(...)`](#sendlighthslset)
 * [`exportMeshNetwork()`](#exportmeshnetwork)
 * [Interfaces](#interfaces)
 
@@ -191,6 +193,32 @@ sendGenericOnOffSet(options: { unicastAddress: number; appKeyIndex: number; onOf
 | Param         | Type                                                                          |
 | ------------- | ----------------------------------------------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; onOff: boolean; }</code> |
+
+--------------------
+
+
+### sendGenericPowerLevelSet(...)
+
+```typescript
+sendGenericPowerLevelSet(options: { unicastAddress: number; appKeyIndex: number; powerLevel: number; }) => Promise<void>
+```
+
+| Param         | Type                                                                              |
+| ------------- | --------------------------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; powerLevel: number; }</code> |
+
+--------------------
+
+
+### sendLightHslSet(...)
+
+```typescript
+sendLightHslSet(options: { unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }) => Promise<void>
+```
+
+| Param         | Type                                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }</code> |
 
 --------------------
 

@@ -301,6 +301,7 @@ class NrfMeshPlugin : Plugin() {
         val unicastAddress = call.getInt("unicastAddress")
         val appKeyIndex = call.getInt("appKeyIndex")
         val onOff = call.getBoolean("onOff")
+
         if (unicastAddress == null || appKeyIndex == null || onOff == null) {
             call.reject("unicastAddress, appKeyIndex, and onOff are required")
             return
@@ -315,6 +316,52 @@ class NrfMeshPlugin : Plugin() {
             appKeyIndex,
             0
         )
+
+        if (!result) {
+            call.reject("Failed to send Generic OnOff Set")
+        }
+    }
+
+    @PluginMethod
+    fun sendGenericPowerLevelSet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+        val powerLevel = call.getInt("powerLevel")
+
+        if (unicastAddress == null || appKeyIndex == null || powerLevel == null) {
+            call.reject("unicastAddress, appKeyIndex, and powerLevel are required")
+            return
+        }
+    }
+
+    @PluginMethod
+    fun sendLightHslSet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+        val hue = call.getInt("hue")
+        val saturation = call.getInt("saturation")
+        val lightness = call.getInt("lightness")
+
+        if (unicastAddress == null || appKeyIndex == null || hue == null || saturation == null || lightness == null) {
+            call.reject("unicastAddress, appKeyIndex, hue, saturation, and lightness are required")
+            return
+        }
+
+        PluginCallManager.getInstance()
+            .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_SET, unicastAddress, call)
+
+        val result = implementation.sendLightHslSet(
+            unicastAddress,
+            hue,
+            saturation,
+            lightness,
+            appKeyIndex,
+            0
+        )
+
+        if (!result) {
+            call.reject("Failed to send Light HSL Set")
+        }
     }
 
     @PluginMethod

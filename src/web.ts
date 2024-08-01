@@ -60,6 +60,10 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('sendGenericPowerLevelSet');
   }
 
+  async sendLightHslSet(): Promise<void> {
+    console.log('SendLightHslSet');
+  }
+
   async exportMeshNetwork(): Promise<object> {
     console.log('exportMeshNetwork');
     return {};

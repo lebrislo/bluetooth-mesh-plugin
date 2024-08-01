@@ -25,6 +25,7 @@ import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
 import no.nordicsemi.android.mesh.transport.ConfigNodeReset
 import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.GenericOnOffSet
+import no.nordicsemi.android.mesh.transport.LightHslSet
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode
 import java.util.UUID
@@ -405,7 +406,7 @@ class NrfMeshManager(private var context: Context) {
         address: Int,
         value: Boolean,
         keyIndex: Int,
-        sequenceNumber: Int,
+        tId: Int,
         transitionStep: Int? = 0,
         transitionResolution: Int? = 0,
         delay: Int = 0
@@ -419,10 +420,42 @@ class NrfMeshManager(private var context: Context) {
         val meshMessage: MeshMessage = GenericOnOffSet(
             meshManagerApi.meshNetwork!!.getAppKey(keyIndex),
             value,
-            sequenceNumber,
+            tId,
             transitionStep,
             transitionResolution,
             delay
+        )
+        meshManagerApi.createMeshPdu(address, meshMessage)
+
+        return true
+    }
+
+    fun sendLightHslSet(
+        address: Int,
+        hue: Int,
+        saturation: Int,
+        lightness: Int,
+        keyIndex: Int,
+        tId: Int,
+        transitionStep: Int? = 0,
+        transitionResolution: Int? = 0,
+        delay: Int = 0
+    ): Boolean {
+        val result = connectToProvisionedDevice(address)
+        if (!result) {
+            Log.e(tag, "Failed to connect to provisioned device")
+            return false
+        }
+
+        val meshMessage: MeshMessage = LightHslSet(
+            meshManagerApi.meshNetwork!!.getAppKey(keyIndex),
+            transitionStep,
+            transitionResolution,
+            delay,
+            lightness,
+            hue,
+            saturation,
+            tId
         )
         meshManagerApi.createMeshPdu(address, meshMessage)
 

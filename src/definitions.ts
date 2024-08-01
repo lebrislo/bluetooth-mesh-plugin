@@ -41,5 +41,6 @@ export interface NrfMeshPlugin {
   compositionDataGet(options: { unicastAddress: number }): Promise<void>;
   sendGenericOnOffSet(options: { unicastAddress: number, appKeyIndex: number, onOff: boolean }): Promise<void>;
   sendGenericPowerLevelSet(options: { unicastAddress: number, appKeyIndex: number, powerLevel: number }): Promise<void>;
+  sendLightHslSet(options: { unicastAddress: number, appKeyIndex: number, hue: number, saturation: number, lightness: number }): Promise<void>;
   exportMeshNetwork(): Promise<object>;
 }
