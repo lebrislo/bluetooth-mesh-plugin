@@ -67,7 +67,8 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
 
-    implementation 'no.nordicsemi.android:mesh:3.3.4'
+//    implementation 'no.nordicsemi.android:mesh:3.3.4'
+    implementation project(':mesh')
 
     // Brings the new BluetoothLeScanner API to older platforms
     implementation 'no.nordicsemi.android:log:2.3.0'

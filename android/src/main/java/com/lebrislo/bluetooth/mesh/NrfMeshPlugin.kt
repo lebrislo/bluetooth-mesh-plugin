@@ -332,6 +332,20 @@ class NrfMeshPlugin : Plugin() {
             call.reject("unicastAddress, appKeyIndex, and powerLevel are required")
             return
         }
+
+        PluginCallManager.getInstance()
+            .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET, unicastAddress, call)
+
+        val result = implementation.sendGenericPowerLevelSet(
+            unicastAddress,
+            powerLevel,
+            appKeyIndex,
+            0
+        )
+
+        if (!result) {
+            call.reject("Failed to send Generic Power Level Set")
+        }
     }
 
     @PluginMethod

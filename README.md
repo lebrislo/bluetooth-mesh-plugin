@@ -187,12 +187,14 @@ compositionDataGet(options: { unicastAddress: number; }) => Promise<void>
 ### sendGenericOnOffSet(...)
 
 ```typescript
-sendGenericOnOffSet(options: { unicastAddress: number; appKeyIndex: number; onOff: boolean; }) => Promise<void>
+sendGenericOnOffSet(options: { unicastAddress: number; appKeyIndex: number; onOff: boolean; }) => Promise<void | PluginCallRejection>
 ```
 
 | Param         | Type                                                                          |
 | ------------- | ----------------------------------------------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; onOff: boolean; }</code> |
+
+**Returns:** <code>Promise&lt;void | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
 
 --------------------
 
@@ -200,12 +202,14 @@ sendGenericOnOffSet(options: { unicastAddress: number; appKeyIndex: number; onOf
 ### sendGenericPowerLevelSet(...)
 
 ```typescript
-sendGenericPowerLevelSet(options: { unicastAddress: number; appKeyIndex: number; powerLevel: number; }) => Promise<void>
+sendGenericPowerLevelSet(options: { unicastAddress: number; appKeyIndex: number; powerLevel: number; }) => Promise<void | PluginCallRejection>
 ```
 
 | Param         | Type                                                                              |
 | ------------- | --------------------------------------------------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; powerLevel: number; }</code> |
+
+**Returns:** <code>Promise&lt;void | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
 
 --------------------
 
@@ -213,12 +217,14 @@ sendGenericPowerLevelSet(options: { unicastAddress: number; appKeyIndex: number;
 ### sendLightHslSet(...)
 
 ```typescript
-sendLightHslSet(options: { unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }) => Promise<void>
+sendLightHslSet(options: { unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }) => Promise<void | PluginCallRejection>
 ```
 
 | Param         | Type                                                                                                              |
 | ------------- | ----------------------------------------------------------------------------------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }</code> |
+
+**Returns:** <code>Promise&lt;void | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
 
 --------------------
 
@@ -276,5 +282,13 @@ exportMeshNetwork() => Promise<object>
 | **`provisioningComplete`** | <code>boolean</code> |
 | **`uuid`**                 | <code>string</code>  |
 | **`unicastAddress`**       | <code>number</code>  |
+
+
+#### PluginCallRejection
+
+| Prop          | Type                                                     |
+| ------------- | -------------------------------------------------------- |
+| **`message`** | <code>string</code>                                      |
+| **`data`**    | <code>{ [key: string]: any; methodName: string; }</code> |
 
 </docgen-api>

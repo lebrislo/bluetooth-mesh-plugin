@@ -8,6 +8,7 @@ import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
 import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.ControlMessage
 import no.nordicsemi.android.mesh.transport.GenericOnOffStatus
+import no.nordicsemi.android.mesh.transport.GenericPowerLevelStatus
 import no.nordicsemi.android.mesh.transport.LightHslStatus
 import no.nordicsemi.android.mesh.transport.MeshMessage
 
@@ -43,6 +44,8 @@ class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatu
         } else if (meshMessage is ConfigCompositionDataStatus) {
             nrfMeshManager.onCompositionDataStatusReceived(meshMessage)
         } else if (meshMessage is GenericOnOffStatus) {
+            PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
+        } else if (meshMessage is GenericPowerLevelStatus) {
             PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
         } else if (meshMessage is LightHslStatus) {
             PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
