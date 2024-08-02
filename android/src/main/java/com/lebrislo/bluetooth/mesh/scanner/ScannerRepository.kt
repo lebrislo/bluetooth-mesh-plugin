@@ -4,12 +4,7 @@ import android.content.Context
 import android.os.ParcelUuid
 import android.util.Log
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import no.nordicsemi.android.mesh.MeshBeacon
+import com.lebrislo.bluetooth.mesh.utils.Utils
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.MeshNetwork
 import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
@@ -17,7 +12,6 @@ import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanFilter
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import no.nordicsemi.android.support.v18.scanner.ScanSettings
-import java.util.UUID
 
 
 /**
@@ -28,21 +22,31 @@ class ScannerRepository(
     private val meshManagerApi: MeshManagerApi
 ) {
     private val tag: String = ScannerRepository::class.java.simpleName
-    private var filterUuid: UUID? = null
-    private var scanJob: Job? = null
-    var isScanning: Boolean = false
-    var discoveredDevices: MutableMap<String, ExtendedBluetoothDevice> = mutableMapOf()
 
-    private val scanCallbacks: ScanCallback = object : ScanCallback() {
+    var isScanning: Boolean = false
+
+    val unprovisionedDevices: MutableList<ExtendedBluetoothDevice> = mutableListOf()
+    val provisionedDevices: MutableList<ExtendedBluetoothDevice> = mutableListOf()
+
+    private val scanCallback: ScanCallback = object : ScanCallback() {
+
         override fun onScanResult(callbackType: Int, result: ScanResult) {
-            try {
-                if (filterUuid == MeshManagerApi.MESH_PROVISIONING_UUID) {
-                    updateScannerData(result)
-                } else if (filterUuid == MeshManagerApi.MESH_PROXY_UUID) {
-                    updateScannerData(result)
+            val serviceUuid = result.scanRecord?.serviceUuids?.get(0)?.uuid
+
+            if (serviceUuid == MeshManagerApi.MESH_PROVISIONING_UUID) {
+                unprovDeviceDiscovered(result)
+
+            } else if (serviceUuid == MeshManagerApi.MESH_PROXY_UUID) {
+                val serviceData: ByteArray? = Utils.getServiceData(result, MeshManagerApi.MESH_PROXY_UUID)
+                if (meshManagerApi.isAdvertisingWithNetworkIdentity(serviceData)) {
+                    if (meshManagerApi.networkIdMatches(serviceData)) {
+                        provDeviceDiscovered(result)
+                    }
+                } else if (meshManagerApi.isAdvertisedWithNodeIdentity(serviceData)) {
+                    if (checkIfNodeIdentityMatches(serviceData!!)) {
+                        provDeviceDiscovered(result)
+                    }
                 }
-            } catch (ex: Exception) {
-                Log.e(tag, "Error: " + ex.message)
             }
         }
 
@@ -55,58 +59,46 @@ class ScannerRepository(
         }
     }
 
-    private fun updateScannerData(result: ScanResult) {
-        val scanRecord = result.scanRecord
-        if (scanRecord != null) {
-            if (scanRecord.bytes != null) {
-                val beaconData = meshManagerApi.getMeshBeaconData(scanRecord.bytes!!)
-                if (beaconData != null) {
-                    deviceDiscovered(result, meshManagerApi.getMeshBeacon(beaconData)!!)
-                } else {
-                    deviceDiscovered(result)
-                }
-            }
-        }
-    }
-
-    private fun deviceDiscovered(result: ScanResult, meshBeacon: MeshBeacon) {
-        val device: ExtendedBluetoothDevice
-        val scanRecord = result.scanRecord
-
-        if (scanRecord != null) {
-            if (scanRecord.bytes != null && scanRecord.serviceUuids != null) {
-                device = ExtendedBluetoothDevice(result, meshBeacon)
-                discoveredDevices[result.device.address] = device
-            }
-        }
-    }
-
-    private fun deviceDiscovered(result: ScanResult) {
+    private fun unprovDeviceDiscovered(result: ScanResult) {
         val device: ExtendedBluetoothDevice
         val scanRecord = result.scanRecord
 
         if (scanRecord != null) {
             if (scanRecord.bytes != null && scanRecord.serviceUuids != null) {
                 device = ExtendedBluetoothDevice(result)
-                discoveredDevices[result.device.address] = device
+                if (!unprovisionedDevices.contains(device)) {
+                    Log.d(tag, "Unprovisioned device discovered: ${result.device.address} ")
+                    unprovisionedDevices.add(device)
+                }
+            }
+        }
+    }
+
+    private fun provDeviceDiscovered(result: ScanResult) {
+        val device: ExtendedBluetoothDevice
+        val scanRecord = result.scanRecord
+
+        if (scanRecord != null) {
+            if (scanRecord.bytes != null && scanRecord.serviceUuids != null) {
+                device = ExtendedBluetoothDevice(result)
+                if (!provisionedDevices.contains(device)) {
+                    Log.d(tag, "Provisioned device discovered: ${result.device.address} ")
+                    provisionedDevices.add(device)
+                }
             }
         }
     }
 
     /**
      * Start scanning for Bluetooth devices.
-     *
-     * @param filterUuid UUID to filter scan results with
      */
-    private fun scanDevices(filterUuid: UUID, timeoutMs: Int) {
-        this.filterUuid = filterUuid
-        discoveredDevices = mutableMapOf()
-
+    fun startScanDevices() {
         if (isScanning) {
             return
         }
 
         isScanning = true
+
         //Scanning settings
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY) // Refresh the devices list every second
@@ -119,35 +111,20 @@ class ScannerRepository(
         filters.add(
             ScanFilter.Builder().setServiceUuid(
                 ParcelUuid(
-                    (filterUuid)
+                    (MeshManagerApi.MESH_PROVISIONING_UUID)
+                )
+            ).build()
+        )
+        filters.add(
+            ScanFilter.Builder().setServiceUuid(
+                ParcelUuid(
+                    (MeshManagerApi.MESH_PROXY_UUID)
                 )
             ).build()
         )
 
         val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
-        scanner.startScan(filters, settings, scanCallbacks)
-
-        scanJob = CoroutineScope(Dispatchers.Main).launch {
-            delay(timeoutMs.toLong())
-            stopScan()
-        }
-    }
-
-    /**
-     * Suspend function to scan for Bluetooth devices and return results after a timeout.
-     *
-     * @param filterUuid UUID to filter scan results with
-     * @param timeout The duration (in milliseconds) for which the scan should run
-     * @return List of ScanResult
-     */
-    suspend fun startScan(
-        filterUuid: UUID,
-        timeout: Int
-    ): MutableMap<String, ExtendedBluetoothDevice> {
-        scanDevices(filterUuid, timeout)
-        delay(timeout.toLong())
-        stopScan()
-        return discoveredDevices
+        scanner.startScan(filters, settings, scanCallback)
     }
 
     /**
@@ -155,9 +132,7 @@ class ScannerRepository(
      */
     fun stopScan() {
         val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
-        scanner.stopScan(scanCallbacks)
-        isScanning = false
-        scanJob?.cancel()
+        scanner.stopScan(scanCallback)
     }
 
     /**

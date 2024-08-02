@@ -6,15 +6,10 @@ import com.lebrislo.bluetooth.mesh.ble.BleCallbacksManager
 import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.models.MeshDevice
-import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
 import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
-import com.lebrislo.bluetooth.mesh.utils.Permissions
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyAdd
@@ -39,7 +34,6 @@ class NrfMeshManager(private var context: Context) {
     private val meshProvisioningCallbacksManager: MeshProvisioningCallbacksManager
     private val meshStatusCallbacksManager: MeshStatusCallbacksManager
     private val bleCallbacksManager: BleCallbacksManager
-    private val scanScope = CoroutineScope(Dispatchers.Main + Job())
     private val scannerRepository: ScannerRepository
 
     private val unprovisionedMeshNodes: ArrayList<UnprovisionedMeshNode> = ArrayList()
@@ -109,67 +103,16 @@ class NrfMeshManager(private var context: Context) {
         return true
     }
 
-    fun scanUnprovisionedDevices(callback: ScanCallback, timeoutMs: Int = 5000) {
-        if (!Permissions.isBleEnabled(context)) {
-            return
-        }
-
-        if (!Permissions.isLocationGranted(context)) {
-            return
-        }
-
-        if (scannerRepository.isScanning) {
-            return
-        }
-
-        scanScope.launch {
-            try {
-                val results: MutableMap<String, ExtendedBluetoothDevice> =
-                    scannerRepository.startScan(MeshManagerApi.MESH_PROVISIONING_UUID, timeoutMs)
-                Log.d(tag, "scanUnprovisionedDevices: ${results.keys}")
-
-                val bluetoothDevices = results.map { (macAddress, bluetoothDevice) ->
-                    bluetoothDevice
-                }
-
-                unprovisionedBluetoothDevices.clear()
-                unprovisionedBluetoothDevices.addAll(bluetoothDevices)
-
-                callback.onScanCompleted(bluetoothDevices)
-            } catch (e: Exception) {
-                callback.onScanFailed(e.message ?: "Unknown Error")
-            }
-        }
+    suspend fun scanUnprovisionedDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
+        scannerRepository.startScanDevices()
+        delay(scanDurationMs.toLong())
+        return scannerRepository.unprovisionedDevices
     }
 
-    fun scanProvisionedDevices(callback: ScanCallback, timeoutMs: Int = 5000) {
-        if (!Permissions.isBleEnabled(context)) {
-            return
-        }
-
-        if (!Permissions.isLocationGranted(context)) {
-            return
-        }
-
-        if (scannerRepository.isScanning) {
-            return
-        }
-
-        scanScope.launch {
-            try {
-                val results: MutableMap<String, ExtendedBluetoothDevice> =
-                    scannerRepository.startScan(MeshManagerApi.MESH_PROXY_UUID, timeoutMs)
-                Log.d(tag, "scanProvisionedDevices: ${results.keys}")
-
-                val bluetoothDevices = results.map { (macAddress, bluetoothDevice) ->
-                    bluetoothDevice
-                }
-
-                callback.onScanCompleted(bluetoothDevices)
-            } catch (e: Exception) {
-                callback.onScanFailed(e.message ?: "Unknown Error")
-            }
-        }
+    suspend fun scanProvisionedDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
+        scannerRepository.startScanDevices()
+        delay(scanDurationMs.toLong())
+        return scannerRepository.provisionedDevices
     }
 
     fun getProvisioningCapabilities(uuid: UUID): CompletableDeferred<UnprovisionedMeshNode?> {

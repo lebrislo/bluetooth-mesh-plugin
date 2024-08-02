@@ -6,10 +6,9 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.models.MeshDevice
 import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
-import com.lebrislo.bluetooth.mesh.scanner.ScanCallback
+import com.lebrislo.bluetooth.mesh.utils.Permissions
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,66 +29,72 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun scanUnprovisionedDevices(call: PluginCall) {
-        val timeout = call.getInt("timeout", 5000)
+        val scanDuration = call.getInt("timeout", 5000)
 
-        implementation.scanUnprovisionedDevices(object : ScanCallback {
-            override fun onScanCompleted(bleMeshDevices: List<ExtendedBluetoothDevice>?) {
-                val devicesArray = JSArray()
-                bleMeshDevices?.map { device ->
+        if (!Permissions.isBleEnabled(context)) {
+            call.reject("Bluetooth is disabled")
+        }
+
+        if (!Permissions.isLocationGranted(context)) {
+            call.reject("Location permission is required")
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val devices = implementation.scanUnprovisionedDevices(scanDuration!!)
+
+            val result = JSArray().apply {
+                devices.forEach {
                     val serviceData = Utils.getServiceData(
-                        device.scanResult!!,
+                        it.scanResult!!,
                         MeshManagerApi.MESH_PROVISIONING_UUID
                     )
                     val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData!!)
-                    val deviceJson = JSObject().apply {
-                        put("rssi", device.rssi)
-                        put("macAddress", device.address)
-                        put("name", device.name)
-                        put("uuid", uuid)
-                    }
-                    devicesArray.put(deviceJson)
-                }
-                val result = JSObject()
-                result.put("devices", devicesArray)
-                call.resolve(result)
-            }
 
-            override fun onScanFailed(error: String) {
-                call.reject(error)
+                    put(JSObject().apply {
+                        put("uuid", uuid.toString())
+                        put("macAddress", it.scanResult.device.address)
+                        put("rssi", it.rssi)
+                        put("name", it.name)
+                    })
+                }
             }
-        }, timeout!!)
+            call.resolve(JSObject().put("devices", result))
+        }
     }
 
     @PluginMethod
     fun scanProvisionedDevices(call: PluginCall) {
-        val timeout = call.getInt("timeout", 5000)
+        val scanDuration = call.getInt("timeout", 5000)
 
-        implementation.scanProvisionedDevices(object : ScanCallback {
-            override fun onScanCompleted(bleMeshDevices: List<ExtendedBluetoothDevice>?) {
-                val devicesArray = JSArray()
-                bleMeshDevices?.map { device ->
+        if (!Permissions.isBleEnabled(context)) {
+            call.reject("Bluetooth is disabled")
+        }
+
+        if (!Permissions.isLocationGranted(context)) {
+            call.reject("Location permission is required")
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val devices = implementation.scanProvisionedDevices(scanDuration!!)
+
+            val result = JSArray().apply {
+                devices.forEach {
                     val serviceData = Utils.getServiceData(
-                        device.scanResult!!,
-                        MeshManagerApi.MESH_PROVISIONING_UUID
+                        it.scanResult!!,
+                        MeshManagerApi.MESH_PROXY_UUID
                     )
                     val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData!!)
-                    val deviceJson = JSObject().apply {
-                        put("rssi", device.rssi)
-                        put("macAddress", device.address)
-                        put("name", device.name)
-                        put("uuid", uuid)
-                    }
-                    devicesArray.put(deviceJson)
-                }
-                val result = JSObject()
-                result.put("devices", devicesArray)
-                call.resolve(result)
-            }
 
-            override fun onScanFailed(error: String) {
-                call.reject(error)
+                    put(JSObject().apply {
+                        put("uuid", uuid.toString())
+                        put("macAddress", it.scanResult.device.address)
+                        put("rssi", it.rssi)
+                        put("name", it.name)
+                    })
+                }
             }
-        }, timeout!!)
+            call.resolve(JSObject().put("devices", result))
+        }
     }
 
     @PluginMethod

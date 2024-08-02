@@ -3,10 +3,6 @@ import { WebPlugin } from '@capacitor/core';
 import type { NrfMeshPlugin, ProvisioningCapabilities, ProvisioningStatus, ScanDevicesResponse } from './definitions';
 
 export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
-  async echo(options: { value: string }): Promise<{ value: string }> {
-    console.log('ECHO', options);
-    return options;
-  }
 
   async scanUnprovisionedDevices(): Promise<ScanDevicesResponse> {
     console.log('scanUnprovisionedDevices');
