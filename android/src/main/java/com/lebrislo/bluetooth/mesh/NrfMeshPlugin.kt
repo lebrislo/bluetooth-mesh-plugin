@@ -107,35 +107,43 @@ class NrfMeshPlugin : Plugin() {
         }
         val uuid = UUID.fromString(uuidString)
 
-        val deferred = implementation.getProvisioningCapabilities(uuid)
-
         CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val unprovisionedDevice = deferred.await()
-                if (unprovisionedDevice != null) {
+            val bluetoothDevice = withContext(Dispatchers.IO) {
+                implementation.searchUnprovisionedBluetoothDevice(uuidString)
+            }
+            if (bluetoothDevice == null) {
+                call.reject("Failed to find unprovisioned device")
+                return@launch
+            }
 
-                    val result = JSObject().apply {
-                        put("numberOfElements", unprovisionedDevice.provisioningCapabilities.numberOfElements)
-                        val oobTypeArray = JSArray().apply {
-                            unprovisionedDevice.provisioningCapabilities.availableOOBTypes.forEach {
-                                put(it)
-                            }
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(bluetoothDevice)
+            }
+
+            val deferred = implementation.getProvisioningCapabilities(uuid)
+
+            val unprovisionedDevice = deferred.await()
+            if (unprovisionedDevice != null) {
+
+                val result = JSObject().apply {
+                    put("numberOfElements", unprovisionedDevice.provisioningCapabilities.numberOfElements)
+                    val oobTypeArray = JSArray().apply {
+                        unprovisionedDevice.provisioningCapabilities.availableOOBTypes.forEach {
+                            put(it)
                         }
-                        put("availableOOBTypes", oobTypeArray)
-                        put("algorithms", unprovisionedDevice.provisioningCapabilities.rawAlgorithm)
-                        put("publicKeyType", unprovisionedDevice.provisioningCapabilities.rawPublicKeyType)
-                        put("staticOobTypes", unprovisionedDevice.provisioningCapabilities.rawStaticOOBType)
-                        put("outputOobSize", unprovisionedDevice.provisioningCapabilities.outputOOBSize)
-                        put("outputOobActions", unprovisionedDevice.provisioningCapabilities.rawOutputOOBAction)
-                        put("inputOobSize", unprovisionedDevice.provisioningCapabilities.inputOOBSize)
-                        put("inputOobActions", unprovisionedDevice.provisioningCapabilities.rawInputOOBAction)
                     }
-                    call.resolve(result)
-                } else {
-                    call.reject("Failed to get provisioning capabilities")
+                    put("availableOOBTypes", oobTypeArray)
+                    put("algorithms", unprovisionedDevice.provisioningCapabilities.rawAlgorithm)
+                    put("publicKeyType", unprovisionedDevice.provisioningCapabilities.rawPublicKeyType)
+                    put("staticOobTypes", unprovisionedDevice.provisioningCapabilities.rawStaticOOBType)
+                    put("outputOobSize", unprovisionedDevice.provisioningCapabilities.outputOOBSize)
+                    put("outputOobActions", unprovisionedDevice.provisioningCapabilities.rawOutputOOBAction)
+                    put("inputOobSize", unprovisionedDevice.provisioningCapabilities.inputOOBSize)
+                    put("inputOobActions", unprovisionedDevice.provisioningCapabilities.rawInputOOBAction)
                 }
-            } catch (e: Exception) {
-                call.reject("Error: ${e.message}")
+                call.resolve(result)
+            } else {
+                call.reject("Failed to get provisioning capabilities")
             }
         }
     }
@@ -148,39 +156,46 @@ class NrfMeshPlugin : Plugin() {
             call.reject("UUID is required")
         }
 
-        val deferred = implementation.provisionDevice(UUID.fromString(uuid))
-
         CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val meshDevice = deferred.await()
-                if (meshDevice == null) {
-                    call.reject("Failed to provision device")
-                    return@launch
-                }
-
-                when (meshDevice) {
-                    is BleMeshDevice.Provisioned -> {
-                        val result = JSObject().apply {
-                            put("provisioningComplete", true)
-                            put("uuid", meshDevice.node.uuid)
-                            put("unicastAddress", meshDevice.node.unicastAddress)
-                        }
-                        call.resolve(result)
-                    }
-
-                    is BleMeshDevice.Unprovisioned -> {
-                        val result = JSObject().apply {
-                            put("provisioningComplete", false)
-                            put("uuid", meshDevice.node.deviceUuid)
-                        }
-                        call.resolve(result)
-                    }
-                }
-            } catch (e: Exception) {
-                call.reject("Error: ${e.message}")
-            } finally {
-                implementation.disconnectBle()
+            val bluetoothDevice = withContext(Dispatchers.IO) {
+                implementation.searchUnprovisionedBluetoothDevice(uuid!!)
             }
+            if (bluetoothDevice == null) {
+                call.reject("Failed to find unprovisioned device")
+                return@launch
+            }
+
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(bluetoothDevice)
+            }
+
+            val deferred = implementation.provisionDevice(UUID.fromString(uuid))
+
+            val meshDevice = deferred.await()
+            if (meshDevice == null) {
+                call.reject("Failed to provision device")
+                return@launch
+            }
+
+            when (meshDevice) {
+                is BleMeshDevice.Provisioned -> {
+                    val result = JSObject().apply {
+                        put("provisioningComplete", true)
+                        put("uuid", meshDevice.node.uuid)
+                        put("unicastAddress", meshDevice.node.unicastAddress)
+                    }
+                    call.resolve(result)
+                }
+
+                is BleMeshDevice.Unprovisioned -> {
+                    val result = JSObject().apply {
+                        put("provisioningComplete", false)
+                        put("uuid", meshDevice.node.deviceUuid)
+                    }
+                    call.resolve(result)
+                }
+            }
+            implementation.disconnectBle()
         }
     }
 

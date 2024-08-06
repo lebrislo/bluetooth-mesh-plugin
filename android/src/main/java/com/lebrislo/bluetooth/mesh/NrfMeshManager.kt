@@ -39,14 +39,10 @@ class NrfMeshManager(private var context: Context) {
     private val scannerRepository: ScannerRepository
 
     private val unprovisionedMeshNodes: ArrayList<UnprovisionedMeshNode> = ArrayList()
-    private val provisionedMeshNodes: ArrayList<ProvisionedMeshNode> = ArrayList()
-    private val unprovisionedBluetoothDevices: ArrayList<ExtendedBluetoothDevice> = ArrayList()
-    private val provisionedBluetoothDevices: ArrayList<ExtendedBluetoothDevice> = ArrayList()
 
     var bleMeshManager: BleMeshManager = BleMeshManager(context)
     var meshManagerApi: MeshManagerApi = MeshManagerApi(context)
 
-    var currentProvisionedMeshNode: ProvisionedMeshNode? = null
     private val provisioningCapabilitiesMap = ConcurrentHashMap<UUID, CompletableDeferred<UnprovisionedMeshNode?>>()
     private val provisioningStatusMap = ConcurrentHashMap<String, CompletableDeferred<BleMeshDevice?>>()
     private val unprovisionStatusMap = ConcurrentHashMap<Int, CompletableDeferred<Boolean?>>()
@@ -75,39 +71,6 @@ class NrfMeshManager(private var context: Context) {
 
     fun disconnectBle() {
         bleMeshManager.disconnect().enqueue()
-    }
-
-    private fun connectToUnprovisionedDevice(uuid: String): Boolean {
-        val bluetoothDevice = scannerRepository.unprovisionedDevices.firstOrNull { device ->
-            device.scanResult?.let {
-                val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
-                val deviceUuid = meshManagerApi.getDeviceUuid(serviceData!!)
-                deviceUuid.toString() == uuid
-            } ?: false
-        } ?: return false
-
-        bleMeshManager.connect(bluetoothDevice.device!!).retry(3, 200).await()
-        return true
-    }
-
-    private fun connectToProvisionedDevice(unicastAddress: Int): Boolean {
-        val provisionedNode = meshManagerApi.meshNetwork?.getNode(unicastAddress)
-
-        if (provisionedNode == null) {
-            Log.e(tag, "Provisioned node not found")
-            return false
-        }
-
-        val bluetoothDevice = scannerRepository.unprovisionedDevices.firstOrNull { device ->
-            device.scanResult?.let {
-                val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
-                val deviceUuid = meshManagerApi.getDeviceUuid(serviceData!!)
-                deviceUuid.toString() == provisionedNode.uuid
-            } ?: false
-        } ?: return false
-
-        bleMeshManager.connect(bluetoothDevice.device!!).retry(3, 200).await()
-        return true
     }
 
     private suspend fun resetScanner() {
@@ -145,6 +108,27 @@ class NrfMeshManager(private var context: Context) {
         return null
     }
 
+    suspend fun searchUnprovisionedBluetoothDevice(uuid: String): BluetoothDevice? {
+        if (bleMeshManager.isConnected) {
+            val macAddress = bleMeshManager.bluetoothDevice!!.address
+            if (scannerRepository.unprovisionedDevices.any { device -> device.scanResult?.device?.address == macAddress }) {
+                return bleMeshManager.bluetoothDevice
+            }
+            bleMeshManager.disconnect().enqueue()
+        }
+
+        if (!scannerRepository.isScanning) {
+            resetScanner()
+        }
+
+        return scannerRepository.unprovisionedDevices.firstOrNull { device ->
+            device.scanResult?.let {
+                val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
+                val deviceUuid = meshManagerApi.getDeviceUuid(serviceData!!)
+                deviceUuid.toString() == uuid
+            } ?: false
+        }?.device
+    }
 
     suspend fun scanUnprovisionedDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
         scannerRepository.startScanDevices()
@@ -162,9 +146,7 @@ class NrfMeshManager(private var context: Context) {
         val deferred = CompletableDeferred<UnprovisionedMeshNode?>()
         provisioningCapabilitiesMap[uuid] = deferred
 
-        val result = connectToUnprovisionedDevice(uuid.toString())
-
-        if (!result) {
+        if (!bleMeshManager.isConnected) {
             Log.e(tag, "Failed to connect to unprovisioned device")
             deferred.cancel()
             return deferred
@@ -204,8 +186,7 @@ class NrfMeshManager(private var context: Context) {
         )
         meshManagerApi.meshNetwork?.assignUnicastAddress(unicastAddress!!)
 
-        val result = connectToUnprovisionedDevice(uuid.toString())
-        if (!result) {
+        if (!bleMeshManager.isConnected) {
             Log.e(tag, "Failed to connect to unprovisioned device")
             deferred.cancel()
             return deferred
@@ -222,23 +203,6 @@ class NrfMeshManager(private var context: Context) {
                 val uuid = bleMeshDevice.node.uuid
                 provisioningStatusMap[uuid]?.complete(bleMeshDevice)
                 provisioningStatusMap.remove(uuid)
-                unprovisionedMeshNodes.firstOrNull { node ->
-                    node.deviceUuid.toString() == uuid
-                }?.let {
-                    unprovisionedMeshNodes.remove(it)
-                    provisionedMeshNodes.add(bleMeshDevice.node)
-                }
-                unprovisionedBluetoothDevices.firstOrNull { device ->
-                    device.scanResult?.let {
-                        val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
-                        val deviceUuid = meshManagerApi.getDeviceUuid(serviceData!!)
-                        deviceUuid.toString() == uuid
-                    } ?: false
-                }?.let {
-                    unprovisionedBluetoothDevices.remove(it)
-                    provisionedBluetoothDevices.add(it)
-                }
-                currentProvisionedMeshNode = bleMeshDevice.node
             }
 
             is BleMeshDevice.Unprovisioned -> {
@@ -257,8 +221,7 @@ class NrfMeshManager(private var context: Context) {
         val differed = CompletableDeferred<Boolean?>()
         unprovisionStatusMap[unicastAddress] = differed
 
-        val result = connectToProvisionedDevice(unicastAddress)
-        if (!result) {
+        if (!bleMeshManager.isConnected) {
             Log.e(tag, "Failed to connect to provisioned device")
             differed.cancel()
             return differed
