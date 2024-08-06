@@ -1,5 +1,6 @@
 package com.lebrislo.bluetooth.mesh.utils
 
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
@@ -13,12 +14,12 @@ class Permissions {
         fun isLocationGranted(context: Context): Boolean {
             val fineLocationGranted = ContextCompat.checkSelfPermission(
                 context,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
+                Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
 
             val coarseLocationGranted = ContextCompat.checkSelfPermission(
                 context,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
+                Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
 
             return fineLocationGranted || coarseLocationGranted
@@ -28,6 +29,13 @@ class Permissions {
             val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             val adapter: BluetoothAdapter = btManager.adapter
             return adapter.isEnabled
+        }
+
+        fun isBluetoothConnected(context: Context): Boolean {
+            return ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
         }
     }
 }

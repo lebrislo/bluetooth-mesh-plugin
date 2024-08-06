@@ -6,13 +6,14 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
-import com.lebrislo.bluetooth.mesh.models.MeshDevice
+import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import com.lebrislo.bluetooth.mesh.utils.Permissions
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes
 import java.util.UUID
@@ -158,7 +159,7 @@ class NrfMeshPlugin : Plugin() {
                 }
 
                 when (meshDevice) {
-                    is MeshDevice.Provisioned -> {
+                    is BleMeshDevice.Provisioned -> {
                         val result = JSObject().apply {
                             put("provisioningComplete", true)
                             put("uuid", meshDevice.node.uuid)
@@ -167,7 +168,7 @@ class NrfMeshPlugin : Plugin() {
                         call.resolve(result)
                     }
 
-                    is MeshDevice.Unprovisioned -> {
+                    is BleMeshDevice.Unprovisioned -> {
                         val result = JSObject().apply {
                             put("provisioningComplete", false)
                             put("uuid", meshDevice.node.deviceUuid)
@@ -191,18 +192,27 @@ class NrfMeshPlugin : Plugin() {
             call.reject("unicastAddress is required")
         }
 
-        val deferred = implementation.unprovisionDevice(unicastAddress!!)
 
         CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val result = deferred.await()
-                if (result!!) {
-                    call.resolve(JSObject().put("success", true))
-                } else {
-                    call.reject("Failed to unprovision device")
-                }
-            } catch (e: Exception) {
-                call.reject("Error: ${e.message}")
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
+
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
+
+            val deferred = implementation.unprovisionDevice(unicastAddress!!)
+
+            val result = deferred.await()
+            if (result!!) {
+                call.resolve(JSObject().put("success", true))
+            } else {
+                call.reject("Failed to unprovision device")
             }
         }
     }
@@ -244,15 +254,27 @@ class NrfMeshPlugin : Plugin() {
             call.reject("appKeyIndex and unicastAddress are required")
         }
 
-        val result = implementation.addApplicationKeyToNode(unicastAddress!!, appKeyIndex!!)
+        CoroutineScope(Dispatchers.Main).launch {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
 
-        if (result) {
-            call.resolve()
-        } else {
-            call.reject("Failed to add application to node")
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
+
+            val result = implementation.addApplicationKeyToNode(unicastAddress!!, appKeyIndex!!)
+
+            if (result) {
+                call.resolve()
+            } else {
+                call.reject("Failed to add application to node")
+            }
         }
-
-//        implementation.disconnectBle()
     }
 
     @PluginMethod
@@ -265,15 +287,27 @@ class NrfMeshPlugin : Plugin() {
             call.reject("elementAddress, appKeyIndex and modelId are required")
         }
 
-        val result = implementation.bindApplicationKeyToModel(elementAddress!!, appKeyIndex!!, modelId!!)
+        CoroutineScope(Dispatchers.Main).launch {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
 
-        if (result) {
-            call.resolve()
-        } else {
-            call.reject("Failed to bind application key")
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
+
+            val result = implementation.bindApplicationKeyToModel(elementAddress!!, appKeyIndex!!, modelId!!)
+
+            if (result) {
+                call.resolve()
+            } else {
+                call.reject("Failed to bind application key")
+            }
         }
-
-//        implementation.disconnectBle()
     }
 
     @PluginMethod
@@ -284,19 +318,27 @@ class NrfMeshPlugin : Plugin() {
             call.reject("unicastAddress is required")
         }
 
-        val deferred = implementation.compositionDataGet(unicastAddress!!)
-
         CoroutineScope(Dispatchers.Main).launch {
-            try {
-                val result = deferred.await()
-                if (result!!) {
-                    val meshNetwork = implementation.exportMeshNetwork()
-                    call.resolve(JSObject().put("meshNetwork", meshNetwork))
-                } else {
-                    call.reject("Failed to get composition data")
-                }
-            } catch (e: Exception) {
-                call.reject("Error: ${e.message}")
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
+
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
+
+            val deferred = implementation.compositionDataGet(unicastAddress!!)
+
+            val result = deferred.await()
+            if (result!!) {
+                val meshNetwork = implementation.exportMeshNetwork()
+                call.resolve(JSObject().put("meshNetwork", meshNetwork))
+            } else {
+                call.reject("Failed to get composition data")
             }
         }
     }
@@ -312,18 +354,32 @@ class NrfMeshPlugin : Plugin() {
             return
         }
 
-        PluginCallManager.getInstance()
-            .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_SET, unicastAddress, call)
+        CoroutineScope(Dispatchers.Main).launch {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
 
-        val result = implementation.sendGenericOnOffSet(
-            unicastAddress,
-            onOff,
-            appKeyIndex,
-            0
-        )
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
 
-        if (!result) {
-            call.reject("Failed to send Generic OnOff Set")
+            PluginCallManager.getInstance()
+                .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_SET, unicastAddress, call)
+
+            val result = implementation.sendGenericOnOffSet(
+                unicastAddress,
+                onOff,
+                appKeyIndex,
+                0
+            )
+
+            if (!result) {
+                call.reject("Failed to send Generic OnOff Set")
+            }
         }
     }
 
@@ -338,18 +394,32 @@ class NrfMeshPlugin : Plugin() {
             return
         }
 
-        PluginCallManager.getInstance()
-            .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET, unicastAddress, call)
+        CoroutineScope(Dispatchers.Main).launch {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
 
-        val result = implementation.sendGenericPowerLevelSet(
-            unicastAddress,
-            powerLevel,
-            appKeyIndex,
-            0
-        )
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
 
-        if (!result) {
-            call.reject("Failed to send Generic Power Level Set")
+            PluginCallManager.getInstance()
+                .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET, unicastAddress, call)
+
+            val result = implementation.sendGenericPowerLevelSet(
+                unicastAddress,
+                powerLevel,
+                appKeyIndex,
+                0
+            )
+
+            if (!result) {
+                call.reject("Failed to send Generic Power Level Set")
+            }
         }
     }
 
@@ -366,20 +436,34 @@ class NrfMeshPlugin : Plugin() {
             return
         }
 
-        PluginCallManager.getInstance()
-            .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_SET, unicastAddress, call)
+        CoroutineScope(Dispatchers.Main).launch {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
 
-        val result = implementation.sendLightHslSet(
-            unicastAddress,
-            hue,
-            saturation,
-            lightness,
-            appKeyIndex,
-            0
-        )
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
 
-        if (!result) {
-            call.reject("Failed to send Light HSL Set")
+            PluginCallManager.getInstance()
+                .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_SET, unicastAddress, call)
+
+            val result = implementation.sendLightHslSet(
+                unicastAddress,
+                hue,
+                saturation,
+                lightness,
+                appKeyIndex,
+                0
+            )
+
+            if (!result) {
+                call.reject("Failed to send Light HSL Set")
+            }
         }
     }
 

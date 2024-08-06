@@ -1,7 +1,7 @@
 package com.lebrislo.bluetooth.mesh
 
 import android.util.Log
-import com.lebrislo.bluetooth.mesh.models.MeshDevice
+import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import no.nordicsemi.android.mesh.MeshProvisioningStatusCallbacks
 import no.nordicsemi.android.mesh.provisionerstates.ProvisioningState
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
@@ -33,7 +33,7 @@ class MeshProvisioningCallbacksManager(
     ) {
         Log.d(tag, "onProvisioningFailed" + meshNode?.toString())
         if (state == ProvisioningState.States.PROVISIONING_FAILED) {
-            nrfMeshManager.onProvisioningFinish(MeshDevice.Unprovisioned(meshNode!!))
+            nrfMeshManager.onProvisioningFinish(BleMeshDevice.Unprovisioned(meshNode!!))
         }
     }
 
@@ -44,7 +44,7 @@ class MeshProvisioningCallbacksManager(
     ) {
         Log.d(tag, "onProvisioningCompleted" + meshNode?.toString())
         if (state == ProvisioningState.States.PROVISIONING_COMPLETE) {
-            nrfMeshManager.onProvisioningFinish(MeshDevice.Provisioned(meshNode!!))
+            nrfMeshManager.onProvisioningFinish(BleMeshDevice.Provisioned(meshNode!!))
         }
     }
 }
