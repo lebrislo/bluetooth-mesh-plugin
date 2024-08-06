@@ -15,21 +15,18 @@ import kotlinx.coroutines.delay
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyAdd
-import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataGet
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
 import no.nordicsemi.android.mesh.transport.ConfigNodeReset
-import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.GenericOnOffSet
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSet
 import no.nordicsemi.android.mesh.transport.LightHslSet
 import no.nordicsemi.android.mesh.transport.MeshMessage
-import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-class NrfMeshManager(private var context: Context) {
+class NrfMeshManager(private val context: Context) {
     private val tag: String = NrfMeshManager::class.java.simpleName
 
     private val meshCallbacksManager: MeshCallbacksManager
@@ -40,12 +37,11 @@ class NrfMeshManager(private var context: Context) {
 
     private val unprovisionedMeshNodes: ArrayList<UnprovisionedMeshNode> = ArrayList()
 
-    var bleMeshManager: BleMeshManager = BleMeshManager(context)
+    private var bleMeshManager: BleMeshManager = BleMeshManager(context)
     var meshManagerApi: MeshManagerApi = MeshManagerApi(context)
 
     private val provisioningCapabilitiesMap = ConcurrentHashMap<UUID, CompletableDeferred<UnprovisionedMeshNode?>>()
     private val provisioningStatusMap = ConcurrentHashMap<String, CompletableDeferred<BleMeshDevice?>>()
-    private val unprovisionStatusMap = ConcurrentHashMap<Int, CompletableDeferred<Boolean?>>()
     private val compositionDataStatusMap = ConcurrentHashMap<Int, CompletableDeferred<Boolean?>>()
 
     init {
@@ -217,31 +213,15 @@ class NrfMeshManager(private var context: Context) {
         }
     }
 
-    fun unprovisionDevice(unicastAddress: Int): CompletableDeferred<Boolean?> {
-        val differed = CompletableDeferred<Boolean?>()
-        unprovisionStatusMap[unicastAddress] = differed
-
+    fun unprovisionDevice(unicastAddress: Int): Boolean {
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Failed to connect to provisioned device")
-            differed.cancel()
-            return differed
+            return false
         } else {
             val configNodeReset = ConfigNodeReset()
             meshManagerApi.createMeshPdu(unicastAddress, configNodeReset)
         }
-
-        return differed
-    }
-
-    fun onNodeResetStatusReceived(meshMessage: ConfigNodeResetStatus) {
-        val unicastAddress = meshMessage.src
-
-        val operarionSucceded = meshMessage.statusCode == 0
-
-        if (operarionSucceded) {
-            unprovisionStatusMap[unicastAddress]?.complete(true)
-            unprovisionStatusMap.remove(unicastAddress)
-        }
+        return true
     }
 
     fun createApplicationKey(): Boolean {
@@ -282,22 +262,6 @@ class NrfMeshManager(private var context: Context) {
         return true
     }
 
-    fun onAppKeyStatusReceived(meshMessage: ConfigAppKeyStatus) {
-        Log.d(tag, "onAppKeyStatusReceived")
-    }
-
-    fun handleNotifications(mtu: Int, pdu: ByteArray) {
-        meshManagerApi.handleNotifications(mtu, pdu)
-    }
-
-    fun handleWriteCallbacks(mtu: Int, pdu: ByteArray) {
-        meshManagerApi.handleWriteCallbacks(mtu, pdu)
-    }
-
-    fun importMeshNetworkJson(json: String) {
-        meshManagerApi.importMeshNetworkJson(json)
-    }
-
     fun exportMeshNetwork(): String? {
         return meshManagerApi.exportMeshNetwork()
     }
@@ -327,26 +291,6 @@ class NrfMeshManager(private var context: Context) {
             compositionDataStatusMap[unicastAddress]?.complete(true)
             compositionDataStatusMap.remove(unicastAddress)
         }
-    }
-
-    fun resetMeshNetwork() {
-        meshManagerApi.resetMeshNetwork()
-    }
-
-    fun getSequenceNumberForAddress(address: Int): Int {
-        val node = meshManagerApi.meshNetwork!!.getNode(address)
-        return node.sequenceNumber
-    }
-
-    fun setSequenceNumberForAddress(address: Int, sequenceNumber: Int) {
-        val currentMeshNetwork = meshManagerApi.meshNetwork!!
-        val node: ProvisionedMeshNode = currentMeshNetwork.getNode(address)
-        node.sequenceNumber = sequenceNumber
-    }
-
-    fun sendConfigModelAppBind(nodeId: Int, elementId: Int, modelId: Int, appKeyIndex: Int) {
-        val configModelAppBind = ConfigModelAppBind(elementId, modelId, appKeyIndex)
-        meshManagerApi.createMeshPdu(nodeId, configModelAppBind)
     }
 
     fun sendGenericOnOffSet(

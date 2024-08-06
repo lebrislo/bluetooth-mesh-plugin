@@ -1,6 +1,8 @@
 package com.lebrislo.bluetooth.mesh.plugin
 
 import com.getcapacitor.PluginCall
+import com.lebrislo.bluetooth.mesh.plugin.ConfigOperationPair.Companion.getConfigOperationPair
+import com.lebrislo.bluetooth.mesh.plugin.ConfigPluginCall.Companion.generateConfigPluginCallResponse
 import com.lebrislo.bluetooth.mesh.plugin.SigOperationPair.Companion.getSigOperationPair
 import com.lebrislo.bluetooth.mesh.plugin.SigPluginCall.Companion.generateSigPluginCallResponse
 import no.nordicsemi.android.mesh.transport.MeshMessage
@@ -34,6 +36,22 @@ class PluginCallManager private constructor() {
         pluginCall as SigPluginCall
 
         val callResponse = generateSigPluginCallResponse(meshMessage)
+        pluginCall.resolve(callResponse)
+        pluginCalls.remove(pluginCall)
+    }
+
+    fun addConfigPluginCall(meshOperation: Int, meshAddress: Int, call: PluginCall) {
+        val operationPair = getConfigOperationPair(meshOperation)
+        pluginCalls.add(ConfigPluginCall(operationPair, meshAddress, call))
+    }
+
+    fun resolveConfigPluginCall(meshMessage: MeshMessage) {
+        val pluginCall =
+            pluginCalls.find { it is ConfigPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
+
+        pluginCall as ConfigPluginCall
+
+        val callResponse = generateConfigPluginCallResponse(meshMessage)
         pluginCall.resolve(callResponse)
         pluginCalls.remove(pluginCall)
     }

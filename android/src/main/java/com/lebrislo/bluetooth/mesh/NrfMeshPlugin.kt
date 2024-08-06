@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes
+import no.nordicsemi.android.mesh.opcodes.ConfigMessageOpCodes
 import java.util.UUID
 
 @CapacitorPlugin(name = "NrfMesh")
@@ -205,8 +206,8 @@ class NrfMeshPlugin : Plugin() {
 
         if (unicastAddress == null) {
             call.reject("unicastAddress is required")
+            return
         }
-
 
         CoroutineScope(Dispatchers.Main).launch {
             val proxy = withContext(Dispatchers.IO) {
@@ -221,14 +222,10 @@ class NrfMeshPlugin : Plugin() {
                 implementation.connectBle(proxy)
             }
 
-            val deferred = implementation.unprovisionDevice(unicastAddress!!)
+            PluginCallManager.getInstance()
+                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_NODE_RESET, unicastAddress, call)
 
-            val result = deferred.await()
-            if (result!!) {
-                call.resolve(JSObject().put("success", true))
-            } else {
-                call.reject("Failed to unprovision device")
-            }
+            implementation.unprovisionDevice(unicastAddress)
         }
     }
 
@@ -267,6 +264,7 @@ class NrfMeshPlugin : Plugin() {
 
         if (appKeyIndex == null || unicastAddress == null) {
             call.reject("appKeyIndex and unicastAddress are required")
+            return
         }
 
         CoroutineScope(Dispatchers.Main).launch {
@@ -282,12 +280,13 @@ class NrfMeshPlugin : Plugin() {
                 implementation.connectBle(proxy)
             }
 
-            val result = implementation.addApplicationKeyToNode(unicastAddress!!, appKeyIndex!!)
+            PluginCallManager.getInstance()
+                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
 
-            if (result) {
-                call.resolve()
-            } else {
-                call.reject("Failed to add application to node")
+            val result = implementation.addApplicationKeyToNode(unicastAddress, appKeyIndex)
+
+            if (!result) {
+                call.reject("Failed to add application key to node")
             }
         }
     }
@@ -300,6 +299,7 @@ class NrfMeshPlugin : Plugin() {
 
         if (elementAddress == null || appKeyIndex == null || modelId == null) {
             call.reject("elementAddress, appKeyIndex and modelId are required")
+            return
         }
 
         CoroutineScope(Dispatchers.Main).launch {
@@ -315,11 +315,12 @@ class NrfMeshPlugin : Plugin() {
                 implementation.connectBle(proxy)
             }
 
-            val result = implementation.bindApplicationKeyToModel(elementAddress!!, appKeyIndex!!, modelId!!)
+            PluginCallManager.getInstance()
+                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_MODEL_APP_BIND, elementAddress, call)
 
-            if (result) {
-                call.resolve()
-            } else {
+            val result = implementation.bindApplicationKeyToModel(elementAddress, appKeyIndex, modelId)
+
+            if (!result) {
                 call.reject("Failed to bind application key")
             }
         }

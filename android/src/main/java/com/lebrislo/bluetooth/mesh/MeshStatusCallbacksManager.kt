@@ -5,6 +5,7 @@ import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import no.nordicsemi.android.mesh.MeshStatusCallbacks
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
+import no.nordicsemi.android.mesh.transport.ConfigModelAppStatus
 import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.ControlMessage
 import no.nordicsemi.android.mesh.transport.GenericOnOffStatus
@@ -38,9 +39,11 @@ class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatu
     override fun onMeshMessageReceived(src: Int, meshMessage: MeshMessage) {
         Log.d(tag, "onMeshMessageReceived")
         if (meshMessage is ConfigNodeResetStatus) {
-            nrfMeshManager.onNodeResetStatusReceived(meshMessage)
+            PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
+        } else if (meshMessage is ConfigModelAppStatus) {
+            PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
         } else if (meshMessage is ConfigAppKeyStatus) {
-            nrfMeshManager.onAppKeyStatusReceived(meshMessage)
+            PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
         } else if (meshMessage is ConfigCompositionDataStatus) {
             nrfMeshManager.onCompositionDataStatusReceived(meshMessage)
         } else if (meshMessage is GenericOnOffStatus) {
