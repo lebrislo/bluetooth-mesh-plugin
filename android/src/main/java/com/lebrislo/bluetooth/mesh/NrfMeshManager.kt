@@ -23,6 +23,7 @@ import no.nordicsemi.android.mesh.transport.GenericOnOffSet
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSet
 import no.nordicsemi.android.mesh.transport.LightHslSet
 import no.nordicsemi.android.mesh.transport.MeshMessage
+import no.nordicsemi.android.mesh.transport.VendorModelMessageAcked
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -375,6 +376,30 @@ class NrfMeshManager(private val context: Context) {
         )
         meshManagerApi.createMeshPdu(address, meshMessage)
 
+        return true
+    }
+
+    fun sendVendorModelMessage(
+        address: Int,
+        appKeyIndex: Int,
+        modelId: Int,
+        companyIdentifier: Int,
+        opCode: Int,
+        parameters: ByteArray? = byteArrayOf()
+    ): Boolean {
+        if (!bleMeshManager.isConnected) {
+            Log.e(tag, "Not connected to a mesh proxy")
+            return false
+        }
+
+        val meshMessage: MeshMessage = VendorModelMessageAcked(
+            meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+            modelId,
+            companyIdentifier,
+            opCode,
+            parameters
+        )
+        meshManagerApi.createMeshPdu(address, meshMessage)
         return true
     }
 }

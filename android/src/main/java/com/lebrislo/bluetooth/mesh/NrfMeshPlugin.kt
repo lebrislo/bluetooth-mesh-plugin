@@ -19,6 +19,7 @@ import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes
 import no.nordicsemi.android.mesh.opcodes.ConfigMessageOpCodes
 import java.util.UUID
 
+
 @CapacitorPlugin(name = "NrfMesh")
 class NrfMeshPlugin : Plugin() {
     private val tag: String = NrfMeshPlugin::class.java.simpleName
@@ -487,6 +488,53 @@ class NrfMeshPlugin : Plugin() {
 
             if (!result) {
                 call.reject("Failed to send Light HSL Set")
+            }
+        }
+    }
+
+    @PluginMethod
+    fun sendVendorModelMessage(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+        val modelId = call.getInt("modelId")
+        val companyIdentifier = call.getInt("companyIdentifier")
+        val opcode = call.getInt("opcode")
+        val parameters = call.getArray("parameters")
+
+        if (unicastAddress == null || appKeyIndex == null || modelId == null || companyIdentifier == null || opcode == null || parameters == null) {
+            call.reject("unicastAddress, appKeyIndex, modelId, companyIdentifier, opcode, and parameters are required")
+            return
+        }
+
+        val params = parameters.toList<Int>().map { it.toByte() }.toByteArray()
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
+
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
+
+            PluginCallManager.getInstance()
+                .addVendorPluginCall(modelId, companyIdentifier, opcode, unicastAddress, call)
+
+            val result = implementation.sendVendorModelMessage(
+                unicastAddress,
+                appKeyIndex,
+                modelId,
+                companyIdentifier,
+                opcode,
+                params,
+            )
+
+            if (!result) {
+                call.reject("Failed to send Vendor Model Message")
             }
         }
     }

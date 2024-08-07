@@ -70,4 +70,7 @@ class PluginCallManager private constructor() {
             pluginCalls.remove(pluginCall)
         }
     }
+
+    fun addVendorPluginCall(modelId: Int, companyIdentifier: Int, opCode: Int, meshAddress: Int, call: PluginCall) {
+    }
 }
