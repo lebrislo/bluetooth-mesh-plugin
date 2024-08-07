@@ -27,7 +27,9 @@ npx cap sync
 * [`sendGenericPowerLevelSet(...)`](#sendgenericpowerlevelset)
 * [`sendLightHslSet(...)`](#sendlighthslset)
 * [`exportMeshNetwork()`](#exportmeshnetwork)
+* [`addListener(string, ...)`](#addlistenerstring-)
 * [Interfaces](#interfaces)
+* [Type Aliases](#type-aliases)
 
 </docgen-index>
 
@@ -224,6 +226,22 @@ exportMeshNetwork() => Promise<object>
 --------------------
 
 
+### addListener(string, ...)
+
+```typescript
+addListener(eventName: string, listenerFunc: (event: ReadResult) => void) => Promise<PluginListenerHandle>
+```
+
+| Param              | Type                                                                  |
+| ------------------ | --------------------------------------------------------------------- |
+| **`eventName`**    | <code>string</code>                                                   |
+| **`listenerFunc`** | <code>(event: <a href="#readresult">ReadResult</a>) =&gt; void</code> |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
+
+--------------------
+
+
 ### Interfaces
 
 
@@ -274,5 +292,71 @@ exportMeshNetwork() => Promise<object>
 | ------------- | -------------------------------------------------------- |
 | **`message`** | <code>string</code>                                      |
 | **`data`**    | <code>{ [key: string]: any; methodName: string; }</code> |
+
+
+#### PluginListenerHandle
+
+| Prop         | Type                                      |
+| ------------ | ----------------------------------------- |
+| **`remove`** | <code>() =&gt; Promise&lt;void&gt;</code> |
+
+
+#### ReadResult
+
+| Prop        | Type                                  |
+| ----------- | ------------------------------------- |
+| **`value`** | <code><a href="#data">Data</a></code> |
+
+
+#### DataView
+
+| Prop             | Type                                                |
+| ---------------- | --------------------------------------------------- |
+| **`buffer`**     | <code><a href="#arraybuffer">ArrayBuffer</a></code> |
+| **`byteLength`** | <code>number</code>                                 |
+| **`byteOffset`** | <code>number</code>                                 |
+
+| Method         | Signature                                                                           | Description                                                                                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **getFloat32** | (byteOffset: number, littleEndian?: boolean \| undefined) =&gt; number              | Gets the Float32 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset. |
+| **getFloat64** | (byteOffset: number, littleEndian?: boolean \| undefined) =&gt; number              | Gets the Float64 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset. |
+| **getInt8**    | (byteOffset: number) =&gt; number                                                   | Gets the Int8 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.    |
+| **getInt16**   | (byteOffset: number, littleEndian?: boolean \| undefined) =&gt; number              | Gets the Int16 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.   |
+| **getInt32**   | (byteOffset: number, littleEndian?: boolean \| undefined) =&gt; number              | Gets the Int32 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.   |
+| **getUint8**   | (byteOffset: number) =&gt; number                                                   | Gets the Uint8 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.   |
+| **getUint16**  | (byteOffset: number, littleEndian?: boolean \| undefined) =&gt; number              | Gets the Uint16 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.  |
+| **getUint32**  | (byteOffset: number, littleEndian?: boolean \| undefined) =&gt; number              | Gets the Uint32 value at the specified byte offset from the start of the view. There is no alignment constraint; multi-byte values may be fetched from any offset.  |
+| **setFloat32** | (byteOffset: number, value: number, littleEndian?: boolean \| undefined) =&gt; void | Stores an Float32 value at the specified byte offset from the start of the view.                                                                                    |
+| **setFloat64** | (byteOffset: number, value: number, littleEndian?: boolean \| undefined) =&gt; void | Stores an Float64 value at the specified byte offset from the start of the view.                                                                                    |
+| **setInt8**    | (byteOffset: number, value: number) =&gt; void                                      | Stores an Int8 value at the specified byte offset from the start of the view.                                                                                       |
+| **setInt16**   | (byteOffset: number, value: number, littleEndian?: boolean \| undefined) =&gt; void | Stores an Int16 value at the specified byte offset from the start of the view.                                                                                      |
+| **setInt32**   | (byteOffset: number, value: number, littleEndian?: boolean \| undefined) =&gt; void | Stores an Int32 value at the specified byte offset from the start of the view.                                                                                      |
+| **setUint8**   | (byteOffset: number, value: number) =&gt; void                                      | Stores an Uint8 value at the specified byte offset from the start of the view.                                                                                      |
+| **setUint16**  | (byteOffset: number, value: number, littleEndian?: boolean \| undefined) =&gt; void | Stores an Uint16 value at the specified byte offset from the start of the view.                                                                                     |
+| **setUint32**  | (byteOffset: number, value: number, littleEndian?: boolean \| undefined) =&gt; void | Stores an Uint32 value at the specified byte offset from the start of the view.                                                                                     |
+
+
+#### ArrayBuffer
+
+Represents a raw buffer of binary data, which is used to store data for the
+different typed arrays. ArrayBuffers cannot be read from or written to directly,
+but can be passed to a typed array or <a href="#dataview">DataView</a> Object to interpret the raw
+buffer as needed.
+
+| Prop             | Type                | Description                                                                     |
+| ---------------- | ------------------- | ------------------------------------------------------------------------------- |
+| **`byteLength`** | <code>number</code> | Read-only. The length of the <a href="#arraybuffer">ArrayBuffer</a> (in bytes). |
+
+| Method    | Signature                                                                               | Description                                                     |
+| --------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **slice** | (begin: number, end?: number \| undefined) =&gt; <a href="#arraybuffer">ArrayBuffer</a> | Returns a section of an <a href="#arraybuffer">ArrayBuffer</a>. |
+
+
+### Type Aliases
+
+
+#### Data
+
+<code><a href="#dataview">DataView</a> | string</code>
 
 </docgen-api>

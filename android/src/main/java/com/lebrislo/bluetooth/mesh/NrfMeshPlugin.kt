@@ -27,6 +27,14 @@ class NrfMeshPlugin : Plugin() {
 
     override fun load() {
         this.implementation = NrfMeshManager(this.context)
+        PluginCallManager.getInstance().setPlugin(this)
+    }
+
+    fun sendNotification(eventName: String, data: JSObject) {
+        if (!hasListeners(eventName)) {
+            return
+        }
+        notifyListeners(eventName, data)
     }
 
     @PluginMethod

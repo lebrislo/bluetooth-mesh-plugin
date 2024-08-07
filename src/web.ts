@@ -64,4 +64,9 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('exportMeshNetwork');
     return {};
   }
+
+  async listenForMeshEvents(): Promise<object> {
+    console.log('listenForMeshEvents');
+    return {};
+  }
 }

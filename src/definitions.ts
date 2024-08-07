@@ -1,3 +1,5 @@
+import type { PluginListenerHandle } from '@capacitor/core';
+
 interface BleMeshDevice {
   name: string;
   uuid: string;
@@ -33,6 +35,12 @@ export interface PluginCallRejection {
     methodName: string;
     [key: string]: any;
   };
+}
+
+export type Data = DataView | string;
+
+export interface ReadResult {
+  value?: Data;
 }
 
 export interface NrfMeshPlugin {
@@ -77,4 +85,5 @@ export interface NrfMeshPlugin {
     lightness: number;
   }): Promise<void | PluginCallRejection>;
   exportMeshNetwork(): Promise<object>;
+  addListener(eventName: string, listenerFunc: (event: ReadResult) => void): Promise<PluginListenerHandle>;
 }

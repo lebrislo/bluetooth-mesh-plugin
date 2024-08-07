@@ -11,44 +11,42 @@ class ConfigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, cal
     companion object {
         @JvmStatic
         fun generateConfigPluginCallResponse(meshMessage: MeshMessage): JSObject {
-            return when (meshMessage) {
-                is ConfigAppKeyStatus -> configAppKeyStatusResponse(meshMessage)
-                is ConfigNodeResetStatus -> configNodeResetStatusResponse(meshMessage)
-                is ConfigModelAppStatus -> configModelAppStatusResponse(meshMessage)
-                else -> JSObject()
-            }
+            val result = JSObject()
+            result.put("src", meshMessage.src)
+            result.put("dst", meshMessage.dst)
+            result.put("opcode", meshMessage.opCode)
+            result.put(
+                "data", when (meshMessage) {
+                    is ConfigAppKeyStatus -> configAppKeyStatusResponse(meshMessage)
+                    is ConfigNodeResetStatus -> configNodeResetStatusResponse(meshMessage)
+                    is ConfigModelAppStatus -> configModelAppStatusResponse(meshMessage)
+                    else -> JSObject()
+                }
+            )
+            return result
         }
 
         private fun configAppKeyStatusResponse(meshMessage: ConfigAppKeyStatus): JSObject {
-            val result = JSObject()
-            result.put("src", meshMessage.src)
-            result.put("dst", meshMessage.dst)
-            result.put("opcode", meshMessage.opCode)
-            result.put("status", meshMessage.statusCode)
-            result.put("netKeyIndex", meshMessage.netKeyIndex)
-            result.put("appKeyIndex", meshMessage.appKeyIndex)
-            return result
+            val data = JSObject()
+            data.put("status", meshMessage.statusCode)
+            data.put("netKeyIndex", meshMessage.netKeyIndex)
+            data.put("appKeyIndex", meshMessage.appKeyIndex)
+            return data
         }
 
         private fun configNodeResetStatusResponse(meshMessage: ConfigNodeResetStatus): JSObject {
-            val result = JSObject()
-            result.put("src", meshMessage.src)
-            result.put("dst", meshMessage.dst)
-            result.put("opcode", meshMessage.opCode)
-            result.put("status", meshMessage.statusCode)
-            return result
+            val data = JSObject()
+            data.put("status", meshMessage.statusCode)
+            return data
         }
 
         private fun configModelAppStatusResponse(meshMessage: ConfigModelAppStatus): JSObject {
-            val result = JSObject()
-            result.put("src", meshMessage.src)
-            result.put("dst", meshMessage.dst)
-            result.put("opcode", meshMessage.opCode)
-            result.put("status", meshMessage.statusCode)
-            result.put("elementAddress", meshMessage.elementAddress)
-            result.put("modelId", meshMessage.modelIdentifier)
-            result.put("appKeyIndex", meshMessage.appKeyIndex)
-            return result
+            val data = JSObject()
+            data.put("status", meshMessage.statusCode)
+            data.put("elementAddress", meshMessage.elementAddress)
+            data.put("modelId", meshMessage.modelIdentifier)
+            data.put("appKeyIndex", meshMessage.appKeyIndex)
+            return data
         }
     }
 }

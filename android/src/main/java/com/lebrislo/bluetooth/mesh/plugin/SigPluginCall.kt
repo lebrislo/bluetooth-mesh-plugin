@@ -11,41 +11,39 @@ class SigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, call: 
     companion object {
         @JvmStatic
         fun generateSigPluginCallResponse(meshMessage: MeshMessage): JSObject {
-            return when (meshMessage) {
-                is GenericOnOffStatus -> genericOnOffStatusResponse(meshMessage)
-                is GenericPowerLevelStatus -> genericPowerLevelStatusResponse(meshMessage)
-                is LightHslStatus -> lightHslStatusResponse(meshMessage)
-                else -> JSObject()
-            }
+            val result = JSObject()
+            result.put("src", meshMessage.src)
+            result.put("dst", meshMessage.dst)
+            result.put("opcode", meshMessage.opCode)
+            result.put(
+                "data", when (meshMessage) {
+                    is GenericOnOffStatus -> genericOnOffStatusResponse(meshMessage)
+                    is GenericPowerLevelStatus -> genericPowerLevelStatusResponse(meshMessage)
+                    is LightHslStatus -> lightHslStatusResponse(meshMessage)
+                    else -> JSObject()
+                }
+            )
+            return result
         }
 
         private fun genericOnOffStatusResponse(meshMessage: GenericOnOffStatus): JSObject {
-            val result = JSObject()
-            result.put("src", meshMessage.src)
-            result.put("dst", meshMessage.dst)
-            result.put("opcode", meshMessage.opCode)
-            result.put("onOff", meshMessage.parameters[0].toInt() == 1)
-            return result
+            val data = JSObject()
+            data.put("onOff", meshMessage.parameters[0].toInt() == 1)
+            return data
         }
 
         private fun genericPowerLevelStatusResponse(meshMessage: GenericPowerLevelStatus): JSObject {
-            val result = JSObject()
-            result.put("src", meshMessage.src)
-            result.put("dst", meshMessage.dst)
-            result.put("opcode", meshMessage.opCode)
-            result.put("powerLevel", meshMessage.presentLevel.toUShort().toInt())
-            return result
+            val data = JSObject()
+            data.put("powerLevel", meshMessage.presentLevel.toUShort().toInt())
+            return data
         }
 
         private fun lightHslStatusResponse(meshMessage: LightHslStatus): JSObject {
-            val result = JSObject()
-            result.put("src", meshMessage.src)
-            result.put("dst", meshMessage.dst)
-            result.put("opcode", meshMessage.opCode)
-            result.put("hue", meshMessage.presentHue.toUShort().toInt())
-            result.put("saturation", meshMessage.presentSaturation.toUShort().toInt())
-            result.put("lightness", meshMessage.presentLightness.toUShort().toInt())
-            return result
+            val data = JSObject()
+            data.put("hue", meshMessage.presentHue.toUShort().toInt())
+            data.put("saturation", meshMessage.presentSaturation.toUShort().toInt())
+            data.put("lightness", meshMessage.presentLightness.toUShort().toInt())
+            return data
         }
     }
 }
