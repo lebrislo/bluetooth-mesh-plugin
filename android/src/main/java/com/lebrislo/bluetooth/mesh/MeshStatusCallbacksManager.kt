@@ -12,6 +12,7 @@ import no.nordicsemi.android.mesh.transport.GenericOnOffStatus
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelStatus
 import no.nordicsemi.android.mesh.transport.LightHslStatus
 import no.nordicsemi.android.mesh.transport.MeshMessage
+import no.nordicsemi.android.mesh.transport.VendorModelMessageStatus
 
 class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatusCallbacks {
     private val tag: String = MeshStatusCallbacksManager::class.java.simpleName
@@ -52,6 +53,8 @@ class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatu
             PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
         } else if (meshMessage is LightHslStatus) {
             PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
+        } else if (meshMessage is VendorModelMessageStatus) {
+            PluginCallManager.getInstance().resolveVendorPluginCall(meshMessage)
         }
     }
 

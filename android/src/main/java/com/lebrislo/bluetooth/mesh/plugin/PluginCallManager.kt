@@ -6,12 +6,13 @@ import com.lebrislo.bluetooth.mesh.plugin.ConfigOperationPair.Companion.getConfi
 import com.lebrislo.bluetooth.mesh.plugin.ConfigPluginCall.Companion.generateConfigPluginCallResponse
 import com.lebrislo.bluetooth.mesh.plugin.SigOperationPair.Companion.getSigOperationPair
 import com.lebrislo.bluetooth.mesh.plugin.SigPluginCall.Companion.generateSigPluginCallResponse
+import com.lebrislo.bluetooth.mesh.plugin.VendorPluginCall.Companion.generateVendorPluginCallResponse
 import no.nordicsemi.android.mesh.transport.MeshMessage
 
 
 class PluginCallManager private constructor() {
     private val tag: String = PluginCallManager::class.java.simpleName
-    private val meshEventString: String = "meshEvent"
+    private val MESH_EVENT_STRING: String = "meshEvent"
 
     private lateinit var plugin: NrfMeshPlugin
     private val pluginCalls: MutableList<BasePluginCall> = mutableListOf()
@@ -43,7 +44,7 @@ class PluginCallManager private constructor() {
             pluginCalls.find { it is SigPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
 
         if (pluginCall == null) {
-            plugin.sendNotification(meshEventString, callResponse)
+            plugin.sendNotification(MESH_EVENT_STRING, callResponse)
         } else {
             pluginCall as SigPluginCall
             pluginCall.resolve(callResponse)
@@ -63,7 +64,7 @@ class PluginCallManager private constructor() {
             pluginCalls.find { it is ConfigPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
 
         if (pluginCall == null) {
-            plugin.sendNotification(meshEventString, callResponse)
+            plugin.sendNotification(MESH_EVENT_STRING, callResponse)
         } else {
             pluginCall as ConfigPluginCall
             pluginCall.resolve(callResponse)
@@ -71,6 +72,22 @@ class PluginCallManager private constructor() {
         }
     }
 
-    fun addVendorPluginCall(modelId: Int, companyIdentifier: Int, opCode: Int, meshAddress: Int, call: PluginCall) {
+    fun addVendorPluginCall(modelId: Int, opCode: Int, opPairCode: Int, meshAddress: Int, call: PluginCall) {
+        pluginCalls.add(VendorPluginCall(modelId, opCode, opPairCode, meshAddress, call))
+    }
+
+    fun resolveVendorPluginCall(meshMessage: MeshMessage) {
+        val callResponse = generateVendorPluginCallResponse(meshMessage)
+
+        val pluginCall =
+            pluginCalls.find { it is VendorPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
+
+        if (pluginCall == null) {
+            plugin.sendNotification(MESH_EVENT_STRING, callResponse)
+        } else {
+            pluginCall as VendorPluginCall
+            pluginCall.resolve(callResponse)
+            pluginCalls.remove(pluginCall)
+        }
     }
 }

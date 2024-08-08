@@ -20,10 +20,14 @@ import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
 import no.nordicsemi.android.mesh.transport.ConfigNodeReset
 import no.nordicsemi.android.mesh.transport.GenericOnOffSet
+import no.nordicsemi.android.mesh.transport.GenericOnOffSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSet
+import no.nordicsemi.android.mesh.transport.GenericPowerLevelSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.LightHslSet
+import no.nordicsemi.android.mesh.transport.LightHslSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.VendorModelMessageAcked
+import no.nordicsemi.android.mesh.transport.VendorModelMessageUnacked
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -294,88 +298,142 @@ class NrfMeshManager(private val context: Context) {
         }
     }
 
+    /**
+     * Send a Generic OnOff Set message to a node
+     *
+     * @param address unicast address of the node
+     * @param appKeyIndex index of the application key
+     * @param onOffvalue on/off value to set
+     * @param tId transaction id
+     * @param transitionStep transition step
+     * @param transitionResolution transition resolution
+     * @param delay delay
+     * @param acknowledgement whether to send an acknowledgement
+     */
     fun sendGenericOnOffSet(
         address: Int,
-        value: Boolean,
-        keyIndex: Int,
+        appKeyIndex: Int,
+        onOffvalue: Boolean,
         tId: Int,
         transitionStep: Int? = 0,
         transitionResolution: Int? = 0,
-        delay: Int = 0
+        delay: Int = 0,
+        acknowledgement: Boolean = false
     ): Boolean {
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Not connected to a mesh proxy")
             return false
         }
 
-        val meshMessage: MeshMessage = GenericOnOffSet(
-            meshManagerApi.meshNetwork!!.getAppKey(keyIndex),
-            value,
-            tId,
-            transitionStep,
-            transitionResolution,
-            delay
-        )
-        meshManagerApi.createMeshPdu(address, meshMessage)
+        var meshMessage: MeshMessage? = null
 
+        if (acknowledgement) {
+            meshMessage = GenericOnOffSet(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                onOffvalue,
+                tId,
+                transitionStep,
+                transitionResolution,
+                delay
+            )
+        } else {
+            meshMessage = GenericOnOffSetUnacknowledged(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                onOffvalue,
+                tId,
+                transitionStep,
+                transitionResolution,
+                delay
+            )
+        }
+
+        meshManagerApi.createMeshPdu(address, meshMessage)
         return true
     }
 
     fun sendGenericPowerLevelSet(
         address: Int,
+        appKeyIndex: Int,
         powerLevel: Int,
-        keyIndex: Int,
         tId: Int,
         transitionStep: Int? = 0,
         transitionResolution: Int? = 0,
-        delay: Int = 0
+        delay: Int = 0,
+        acknowledgement: Boolean = false
     ): Boolean {
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Not connected to a mesh proxy")
             return false
         }
 
-        val meshMessage: MeshMessage = GenericPowerLevelSet(
-            meshManagerApi.meshNetwork!!.getAppKey(keyIndex),
-            tId,
-            transitionStep,
-            transitionResolution,
-            powerLevel,
-            delay
-        )
-        meshManagerApi.createMeshPdu(address, meshMessage)
+        var meshMessage: MeshMessage? = null
 
+        if (acknowledgement) {
+            meshMessage = GenericPowerLevelSet(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                tId,
+                transitionStep,
+                transitionResolution,
+                powerLevel,
+                delay
+            )
+        } else {
+            meshMessage = GenericPowerLevelSetUnacknowledged(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                tId,
+                transitionStep,
+                transitionResolution,
+                powerLevel,
+                delay
+            )
+        }
+        meshManagerApi.createMeshPdu(address, meshMessage)
         return true
     }
 
     fun sendLightHslSet(
         address: Int,
+        appKeyIndex: Int,
         hue: Int,
         saturation: Int,
         lightness: Int,
-        keyIndex: Int,
         tId: Int,
         transitionStep: Int? = 0,
         transitionResolution: Int? = 0,
-        delay: Int = 0
+        delay: Int = 0,
+        acknowledgement: Boolean = false
     ): Boolean {
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Not connected to a mesh proxy")
             return false
         }
 
-        val meshMessage: MeshMessage = LightHslSet(
-            meshManagerApi.meshNetwork!!.getAppKey(keyIndex),
-            transitionStep,
-            transitionResolution,
-            delay,
-            lightness,
-            hue,
-            saturation,
-            tId
-        )
-        meshManagerApi.createMeshPdu(address, meshMessage)
+        var meshMessage: MeshMessage? = null
 
+        if (acknowledgement) {
+            meshMessage = LightHslSet(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                transitionStep,
+                transitionResolution,
+                delay,
+                lightness,
+                hue,
+                saturation,
+                tId
+            )
+        } else {
+            meshMessage = LightHslSetUnacknowledged(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                transitionStep,
+                transitionResolution,
+                delay,
+                lightness,
+                hue,
+                saturation,
+                tId
+            )
+        }
+        meshManagerApi.createMeshPdu(address, meshMessage)
         return true
     }
 
@@ -385,20 +443,33 @@ class NrfMeshManager(private val context: Context) {
         modelId: Int,
         companyIdentifier: Int,
         opCode: Int,
-        parameters: ByteArray? = byteArrayOf()
+        parameters: ByteArray = byteArrayOf(),
+        acknowledgement: Boolean = false
     ): Boolean {
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Not connected to a mesh proxy")
             return false
         }
 
-        val meshMessage: MeshMessage = VendorModelMessageAcked(
-            meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
-            modelId,
-            companyIdentifier,
-            opCode,
-            parameters
-        )
+        var meshMessage: MeshMessage? = null
+
+        if (acknowledgement) {
+            meshMessage = VendorModelMessageAcked(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                modelId,
+                companyIdentifier,
+                opCode,
+                parameters
+            )
+        } else {
+            meshMessage = VendorModelMessageUnacked(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                modelId,
+                companyIdentifier,
+                opCode,
+                parameters
+            )
+        }
         meshManagerApi.createMeshPdu(address, meshMessage)
         return true
     }

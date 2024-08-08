@@ -373,6 +373,7 @@ class NrfMeshPlugin : Plugin() {
         val unicastAddress = call.getInt("unicastAddress")
         val appKeyIndex = call.getInt("appKeyIndex")
         val onOff = call.getBoolean("onOff")
+        val acknowledgement = call.getBoolean("acknowledgement", false)
 
         if (unicastAddress == null || appKeyIndex == null || onOff == null) {
             call.reject("unicastAddress, appKeyIndex, and onOff are required")
@@ -392,8 +393,10 @@ class NrfMeshPlugin : Plugin() {
                 implementation.connectBle(proxy)
             }
 
-            PluginCallManager.getInstance()
-                .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_SET, unicastAddress, call)
+            if (acknowledgement == true) {
+                PluginCallManager.getInstance()
+                    .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_SET, unicastAddress, call)
+            }
 
             val result = implementation.sendGenericOnOffSet(
                 unicastAddress,
@@ -404,6 +407,10 @@ class NrfMeshPlugin : Plugin() {
 
             if (!result) {
                 call.reject("Failed to send Generic OnOff Set")
+            } else {
+                if (acknowledgement == false) {
+                    call.resolve()
+                }
             }
         }
     }
@@ -413,6 +420,7 @@ class NrfMeshPlugin : Plugin() {
         val unicastAddress = call.getInt("unicastAddress")
         val appKeyIndex = call.getInt("appKeyIndex")
         val powerLevel = call.getInt("powerLevel")
+        val acknowledgement = call.getBoolean("acknowledgement", false)
 
         if (unicastAddress == null || appKeyIndex == null || powerLevel == null) {
             call.reject("unicastAddress, appKeyIndex, and powerLevel are required")
@@ -432,8 +440,10 @@ class NrfMeshPlugin : Plugin() {
                 implementation.connectBle(proxy)
             }
 
-            PluginCallManager.getInstance()
-                .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET, unicastAddress, call)
+            if (acknowledgement == true) {
+                PluginCallManager.getInstance()
+                    .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET, unicastAddress, call)
+            }
 
             val result = implementation.sendGenericPowerLevelSet(
                 unicastAddress,
@@ -444,6 +454,10 @@ class NrfMeshPlugin : Plugin() {
 
             if (!result) {
                 call.reject("Failed to send Generic Power Level Set")
+            } else {
+                if (acknowledgement == false) {
+                    call.resolve()
+                }
             }
         }
     }
@@ -455,6 +469,7 @@ class NrfMeshPlugin : Plugin() {
         val hue = call.getInt("hue")
         val saturation = call.getInt("saturation")
         val lightness = call.getInt("lightness")
+        val acknowledgement = call.getBoolean("acknowledgement", false)
 
         if (unicastAddress == null || appKeyIndex == null || hue == null || saturation == null || lightness == null) {
             call.reject("unicastAddress, appKeyIndex, hue, saturation, and lightness are required")
@@ -474,8 +489,10 @@ class NrfMeshPlugin : Plugin() {
                 implementation.connectBle(proxy)
             }
 
-            PluginCallManager.getInstance()
-                .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_SET, unicastAddress, call)
+            if (acknowledgement == true) {
+                PluginCallManager.getInstance()
+                    .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_SET, unicastAddress, call)
+            }
 
             val result = implementation.sendLightHslSet(
                 unicastAddress,
@@ -488,6 +505,10 @@ class NrfMeshPlugin : Plugin() {
 
             if (!result) {
                 call.reject("Failed to send Light HSL Set")
+            } else {
+                if (acknowledgement == false) {
+                    call.resolve()
+                }
             }
         }
     }
@@ -497,9 +518,11 @@ class NrfMeshPlugin : Plugin() {
         val unicastAddress = call.getInt("unicastAddress")
         val appKeyIndex = call.getInt("appKeyIndex")
         val modelId = call.getInt("modelId")
-        val companyIdentifier = call.getInt("companyIdentifier")
         val opcode = call.getInt("opcode")
         val parameters = call.getArray("parameters")
+        val acknowledgement = call.getBoolean("acknowledgement", false)
+        val opPairCode = call.getInt("opPairCode", null)
+        val companyIdentifier = modelId?.shr(16)
 
         if (unicastAddress == null || appKeyIndex == null || modelId == null || companyIdentifier == null || opcode == null || parameters == null) {
             call.reject("unicastAddress, appKeyIndex, modelId, companyIdentifier, opcode, and parameters are required")
@@ -521,8 +544,10 @@ class NrfMeshPlugin : Plugin() {
                 implementation.connectBle(proxy)
             }
 
-            PluginCallManager.getInstance()
-                .addVendorPluginCall(modelId, companyIdentifier, opcode, unicastAddress, call)
+            if (acknowledgement == true) {
+                PluginCallManager.getInstance()
+                    .addVendorPluginCall(modelId, opcode, opPairCode!!, unicastAddress, call)
+            }
 
             val result = implementation.sendVendorModelMessage(
                 unicastAddress,
@@ -535,6 +560,10 @@ class NrfMeshPlugin : Plugin() {
 
             if (!result) {
                 call.reject("Failed to send Vendor Model Message")
+            } else {
+                if (acknowledgement == false) {
+                    call.resolve()
+                }
             }
         }
     }

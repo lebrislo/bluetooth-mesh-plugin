@@ -43,6 +43,14 @@ export interface ReadResult {
   value?: Data;
 }
 
+export interface ModelMessageStatus {
+  src: number;
+  dst: number;
+  opcode: number;
+  vendorModelId?: number;
+  data: object;
+}
+
 export interface NrfMeshPlugin {
   scanUnprovisionedDevices(options: {
     timeout: number;
@@ -71,19 +79,28 @@ export interface NrfMeshPlugin {
     unicastAddress: number;
     appKeyIndex: number;
     onOff: boolean;
-  }): Promise<void | PluginCallRejection>;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
   sendGenericPowerLevelSet(options: {
     unicastAddress: number;
     appKeyIndex: number;
     powerLevel: number;
-  }): Promise<void | PluginCallRejection>;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
   sendLightHslSet(options: {
     unicastAddress: number;
     appKeyIndex: number;
     hue: number;
     saturation: number;
     lightness: number;
-  }): Promise<void | PluginCallRejection>;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
+  sendVendorModelMessage(options: {
+    unicastAddress: number;
+    appKeyIndex: number;
+    modelId: number;
+    companyIdentifier: number;
+    opcode: number;
+    parameters: number[];
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
   exportMeshNetwork(): Promise<object>;
   addListener(eventName: string, listenerFunc: (event: ReadResult) => void): Promise<PluginListenerHandle>;
+
 }

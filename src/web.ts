@@ -1,6 +1,6 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { NrfMeshPlugin, ProvisioningCapabilities, ProvisioningStatus, ScanDevicesResponse } from './definitions';
+import type { ModelMessageStatus, NrfMeshPlugin, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanDevicesResponse } from './definitions';
 
 export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
 
@@ -48,16 +48,17 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('compositionDataGet');
   }
 
-  async sendGenericOnOffSet(): Promise<void> {
+  async sendGenericOnOffSet(): Promise<ModelMessageStatus | PluginCallRejection> {
     console.log('sendGenericOnOffSet');
+    return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendGenericPowerLevelSet(): Promise<void> {
-    console.log('sendGenericPowerLevelSet');
+  async sendGenericPowerLevelSet(): Promise<ModelMessageStatus | PluginCallRejection> {
+    return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendLightHslSet(): Promise<void> {
-    console.log('SendLightHslSet');
+  async sendLightHslSet(): Promise<ModelMessageStatus | PluginCallRejection> {
+    return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
   async exportMeshNetwork(): Promise<object> {
@@ -68,5 +69,9 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
   async listenForMeshEvents(): Promise<object> {
     console.log('listenForMeshEvents');
     return {};
+  }
+
+  async sendVendorModelMessage(): Promise<ModelMessageStatus | PluginCallRejection> {
+    return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 }

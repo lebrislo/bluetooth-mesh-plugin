@@ -26,6 +26,7 @@ npx cap sync
 * [`sendGenericOnOffSet(...)`](#sendgenericonoffset)
 * [`sendGenericPowerLevelSet(...)`](#sendgenericpowerlevelset)
 * [`sendLightHslSet(...)`](#sendlighthslset)
+* [`sendVendorModelMessage(...)`](#sendvendormodelmessage)
 * [`exportMeshNetwork()`](#exportmeshnetwork)
 * [`addListener(string, ...)`](#addlistenerstring-)
 * [Interfaces](#interfaces)
@@ -173,14 +174,14 @@ compositionDataGet(options: { unicastAddress: number; }) => Promise<void>
 ### sendGenericOnOffSet(...)
 
 ```typescript
-sendGenericOnOffSet(options: { unicastAddress: number; appKeyIndex: number; onOff: boolean; }) => Promise<void | PluginCallRejection>
+sendGenericOnOffSet(options: { unicastAddress: number; appKeyIndex: number; onOff: boolean; }) => Promise<ModelMessageStatus | PluginCallRejection>
 ```
 
 | Param         | Type                                                                          |
 | ------------- | ----------------------------------------------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; onOff: boolean; }</code> |
 
-**Returns:** <code>Promise&lt;void | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
 
 --------------------
 
@@ -188,14 +189,14 @@ sendGenericOnOffSet(options: { unicastAddress: number; appKeyIndex: number; onOf
 ### sendGenericPowerLevelSet(...)
 
 ```typescript
-sendGenericPowerLevelSet(options: { unicastAddress: number; appKeyIndex: number; powerLevel: number; }) => Promise<void | PluginCallRejection>
+sendGenericPowerLevelSet(options: { unicastAddress: number; appKeyIndex: number; powerLevel: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
 ```
 
 | Param         | Type                                                                              |
 | ------------- | --------------------------------------------------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; powerLevel: number; }</code> |
 
-**Returns:** <code>Promise&lt;void | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
 
 --------------------
 
@@ -203,14 +204,29 @@ sendGenericPowerLevelSet(options: { unicastAddress: number; appKeyIndex: number;
 ### sendLightHslSet(...)
 
 ```typescript
-sendLightHslSet(options: { unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }) => Promise<void | PluginCallRejection>
+sendLightHslSet(options: { unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
 ```
 
 | Param         | Type                                                                                                              |
 | ------------- | ----------------------------------------------------------------------------------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }</code> |
 
-**Returns:** <code>Promise&lt;void | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+
+--------------------
+
+
+### sendVendorModelMessage(...)
+
+```typescript
+sendVendorModelMessage(options: { unicastAddress: number; appKeyIndex: number; modelId: number; companyIdentifier: number; opcode: number; parameters: number[]; }) => Promise<ModelMessageStatus | PluginCallRejection>
+```
+
+| Param         | Type                                                                                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; modelId: number; companyIdentifier: number; opcode: number; parameters: number[]; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
 
 --------------------
 
@@ -284,6 +300,17 @@ addListener(eventName: string, listenerFunc: (event: ReadResult) => void) => Pro
 | **`provisioningComplete`** | <code>boolean</code> |
 | **`uuid`**                 | <code>string</code>  |
 | **`unicastAddress`**       | <code>number</code>  |
+
+
+#### ModelMessageStatus
+
+| Prop                | Type                |
+| ------------------- | ------------------- |
+| **`src`**           | <code>number</code> |
+| **`dst`**           | <code>number</code> |
+| **`opcode`**        | <code>number</code> |
+| **`vendorModelId`** | <code>number</code> |
+| **`data`**          | <code>object</code> |
 
 
 #### PluginCallRejection
