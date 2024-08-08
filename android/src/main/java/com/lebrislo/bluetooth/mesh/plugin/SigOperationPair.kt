@@ -13,8 +13,16 @@ import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_HSL_SE
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_HSL_SET_UNACKNOWLEDGED
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_HSL_STATUS
 
+/**
+ * This class is used to get the SIG operation pair.
+ */
 class SigOperationPair {
     companion object {
+        /**
+         * Returns the status operation code for a given operation code.
+         *
+         * @param operationCode Operation code.
+         */
         fun getSigOperationPair(operationCode: Int): Int {
             return when (operationCode) {
                 GENERIC_ON_OFF_GET, GENERIC_ON_OFF_SET, GENERIC_ON_OFF_SET_UNACKNOWLEDGED -> GENERIC_ON_OFF_STATUS

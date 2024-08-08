@@ -7,8 +7,16 @@ import no.nordicsemi.android.mesh.transport.GenericPowerLevelStatus
 import no.nordicsemi.android.mesh.transport.LightHslStatus
 import no.nordicsemi.android.mesh.transport.MeshMessage
 
+/**
+ * This class is used to generate a response for a SIG plugin call.
+ */
 class SigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, call: PluginCall) : BasePluginCall(call) {
     companion object {
+        /**
+         * Generates a response for a SIG plugin call.
+         *
+         * @param meshMessage Mesh message.
+         */
         @JvmStatic
         fun generateSigPluginCallResponse(meshMessage: MeshMessage): JSObject {
             val result = JSObject()

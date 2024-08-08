@@ -7,8 +7,16 @@ import no.nordicsemi.android.mesh.transport.ConfigModelAppStatus
 import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.MeshMessage
 
+/**
+ * This class is used to generate a response for a Config plugin call.
+ */
 class ConfigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, call: PluginCall) : BasePluginCall(call) {
     companion object {
+        /**
+         * Generates a response for a Config plugin call.
+         *
+         * @param meshMessage Mesh message.
+         */
         @JvmStatic
         fun generateConfigPluginCallResponse(meshMessage: MeshMessage): JSObject {
             val result = JSObject()

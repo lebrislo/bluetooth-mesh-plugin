@@ -90,7 +90,10 @@ class ScannerRepository(
     }
 
     /**
-     * Start scanning for Bluetooth devices.
+     * Start scanning for bluetooth devices that are advertising with the Mesh Provisioning or Mesh Proxy service UUIDs.
+     *
+     * MESH_PROVISIONING_UUID: 00001827-0000-1000-8000-00805F9B34FB
+     * MESH_PROXY_UUID: 00001828-0000-1000-8000-00805F9B34FB
      */
     fun startScanDevices() {
         if (isScanning) {

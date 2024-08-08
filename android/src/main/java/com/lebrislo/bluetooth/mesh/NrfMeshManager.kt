@@ -65,11 +65,21 @@ class NrfMeshManager(private val context: Context) {
         meshManagerApi.loadMeshNetwork()
     }
 
+    /**
+     * Connect to a Bluetooth device
+     *
+     * @param bluetoothDevice BluetoothDevice to connect to
+     *
+     * @return Boolean whether the connection was successful
+     */
     fun connectBle(bluetoothDevice: BluetoothDevice): Boolean {
         bleMeshManager.connect(bluetoothDevice).retry(3, 200).await()
         return bleMeshManager.isConnected
     }
 
+    /**
+     * Disconnect from a Bluetooth device
+     */
     fun disconnectBle() {
         bleMeshManager.disconnect().enqueue()
     }
@@ -81,6 +91,11 @@ class NrfMeshManager(private val context: Context) {
         delay(3000)
     }
 
+    /**
+     * Search for a mesh proxy to connect to
+     *
+     * @return BluetoothDevice?
+     */
     @SuppressLint("MissingPermission")
     suspend fun searchProxyMesh(): BluetoothDevice? {
         if (bleMeshManager.isConnected) {
@@ -109,6 +124,13 @@ class NrfMeshManager(private val context: Context) {
         return null
     }
 
+    /**
+     * Search for an unprovisioned device to connect to
+     *
+     * @param uuid uuid of the device
+     *
+     * @return BluetoothDevice?
+     */
     suspend fun searchUnprovisionedBluetoothDevice(uuid: String): BluetoothDevice? {
         if (bleMeshManager.isConnected) {
             val macAddress = bleMeshManager.bluetoothDevice!!.address
@@ -131,18 +153,41 @@ class NrfMeshManager(private val context: Context) {
         }?.device
     }
 
+    /**
+     * Scan for unprovisioned devices
+     *
+     * @param scanDurationMs duration of the scan in milliseconds
+     *
+     * @return List<ExtendedBluetoothDevice>
+     */
     suspend fun scanUnprovisionedDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
         scannerRepository.startScanDevices()
         delay(scanDurationMs.toLong())
         return scannerRepository.unprovisionedDevices
     }
 
+    /**
+     * Scan for provisioned devices
+     *
+     * @param scanDurationMs duration of the scan in milliseconds
+     *
+     * @return List<ExtendedBluetoothDevice>
+     */
     suspend fun scanProvisionedDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
         scannerRepository.startScanDevices()
         delay(scanDurationMs.toLong())
         return scannerRepository.provisionedDevices
     }
 
+    /**
+     * Get the provisioning capabilities of a device
+     *
+     * Note: The application must be connected to the concerned device before sending messages
+     *
+     * @param uuid uuid of the device
+     *
+     * @return CompletableDeferred<UnprovisionedMeshNode?>
+     */
     fun getProvisioningCapabilities(uuid: UUID): CompletableDeferred<UnprovisionedMeshNode?> {
         val deferred = CompletableDeferred<UnprovisionedMeshNode?>()
         provisioningCapabilitiesMap[uuid] = deferred
@@ -166,6 +211,15 @@ class NrfMeshManager(private val context: Context) {
         }
     }
 
+    /**
+     * Provision a device
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param uuid uuid of the device
+     *
+     * @return CompletableDeferred<BleMeshDevice?>
+     */
     fun provisionDevice(uuid: UUID): CompletableDeferred<BleMeshDevice?> {
         val deferred = CompletableDeferred<BleMeshDevice?>()
         provisioningStatusMap[uuid.toString()] = deferred
@@ -218,6 +272,15 @@ class NrfMeshManager(private val context: Context) {
         }
     }
 
+    /**
+     * Reset a provisioned device
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param unicastAddress unicast address of the node
+     *
+     * @return Boolean whether the message was sent successfully
+     */
     fun unprovisionDevice(unicastAddress: Int): Boolean {
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Failed to connect to provisioned device")
@@ -229,17 +292,39 @@ class NrfMeshManager(private val context: Context) {
         return true
     }
 
+    /**
+     * Create an application key
+     *
+     * @return Boolean whether the application key was created successfully
+     */
     fun createApplicationKey(): Boolean {
         val applicationKey = meshManagerApi.meshNetwork?.createAppKey()
         return meshManagerApi.meshNetwork?.addAppKey(applicationKey!!) ?: false
     }
 
+    /**
+     * Remove an application key from the mesh network
+     *
+     * @param appKeyIndex index of the application key
+     *
+     * @return Boolean whether the application key was removed successfully
+     */
     fun removeApplicationKey(appKeyIndex: Int): Boolean {
         return meshManagerApi.meshNetwork?.getAppKey(appKeyIndex)?.let {
             meshManagerApi.meshNetwork?.removeAppKey(it)
         } ?: false
     }
 
+    /**
+     * Add an application key to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param elementAddress unicast address of the node's element
+     * @param appKeyIndex index of the application key
+     *
+     * @return Boolean whether the message was sent successfully
+     */
     fun addApplicationKeyToNode(elementAddress: Int, appKeyIndex: Int): Boolean {
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Not connected to a mesh proxy")
@@ -255,6 +340,17 @@ class NrfMeshManager(private val context: Context) {
         return true
     }
 
+    /**
+     * Bind an application key to a model
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param elementAddress unicast address of the node's element
+     * @param appKeyIndex index of the application key
+     * @param modelId model id
+     *
+     * @return Boolean whether the message was sent successfully
+     */
     fun bindApplicationKeyToModel(elementAddress: Int, appKeyIndex: Int, modelId: Int): Boolean {
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Not connected to a mesh proxy")
@@ -267,10 +363,23 @@ class NrfMeshManager(private val context: Context) {
         return true
     }
 
-    fun exportMeshNetwork(): String? {
+    /**
+     * Export the mesh network to a json string
+     *
+     * @return String
+     */
+    fun exportMeshNetwork(): String {
         return meshManagerApi.exportMeshNetwork()
     }
 
+    /**
+     * Retrieve the composition data of a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param unicastAddress unicast address of the node
+     * @return CompletableDeferred<Boolean?>
+     */
     fun compositionDataGet(unicastAddress: Int): CompletableDeferred<Boolean?> {
         val deferred = CompletableDeferred<Boolean?>()
         compositionDataStatusMap[unicastAddress] = deferred
@@ -301,14 +410,18 @@ class NrfMeshManager(private val context: Context) {
     /**
      * Send a Generic OnOff Set message to a node
      *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
      * @param address unicast address of the node
      * @param appKeyIndex index of the application key
      * @param onOffvalue on/off value to set
      * @param tId transaction id
      * @param transitionStep transition step
      * @param transitionResolution transition resolution
-     * @param delay delay
+     * @param delay delay before the message is sent
      * @param acknowledgement whether to send an acknowledgement
+     *
+     * @return Boolean whether the message was sent successfully
      */
     fun sendGenericOnOffSet(
         address: Int,
@@ -351,6 +464,22 @@ class NrfMeshManager(private val context: Context) {
         return true
     }
 
+    /**
+     * Send a Generic Power Level Set message to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param address unicast address of the node
+     * @param appKeyIndex index of the application key
+     * @param powerLevel power level to set
+     * @param tId transaction id
+     * @param transitionStep transition step
+     * @param transitionResolution transition resolution
+     * @param delay delay before the message is sent
+     * @param acknowledgement whether to send an acknowledgement
+     *
+     * @return Boolean whether the message was sent successfully
+     */
     fun sendGenericPowerLevelSet(
         address: Int,
         appKeyIndex: Int,
@@ -391,6 +520,24 @@ class NrfMeshManager(private val context: Context) {
         return true
     }
 
+    /**
+     * Send a Light HSL Set message to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param address unicast address of the node
+     * @param appKeyIndex index of the application key
+     * @param hue hue value to set
+     * @param saturation saturation value to set
+     * @param lightness lightness value to set
+     * @param tId transaction id
+     * @param transitionStep transition step
+     * @param transitionResolution transition resolution
+     * @param delay delay before the message is sent
+     * @param acknowledgement whether to send an acknowledgement
+     *
+     * @return Boolean whether the message was sent successfully
+     */
     fun sendLightHslSet(
         address: Int,
         appKeyIndex: Int,
@@ -437,6 +584,21 @@ class NrfMeshManager(private val context: Context) {
         return true
     }
 
+    /**
+     * Send a Vendor Model message to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param address unicast address of the node
+     * @param appKeyIndex index of the application key
+     * @param modelId model id
+     * @param companyIdentifier company identifier
+     * @param opCode operation code
+     * @param parameters parameters of the message
+     * @param acknowledgement whether to send an acknowledgement
+     *
+     * @return Boolean whether the message was sent successfully
+     */
     fun sendVendorModelMessage(
         address: Int,
         appKeyIndex: Int,

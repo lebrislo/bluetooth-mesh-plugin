@@ -400,8 +400,8 @@ class NrfMeshPlugin : Plugin() {
 
             val result = implementation.sendGenericOnOffSet(
                 unicastAddress,
-                onOff,
                 appKeyIndex,
+                onOff,
                 0
             )
 
@@ -447,8 +447,8 @@ class NrfMeshPlugin : Plugin() {
 
             val result = implementation.sendGenericPowerLevelSet(
                 unicastAddress,
-                powerLevel,
                 appKeyIndex,
+                powerLevel,
                 0
             )
 
@@ -496,10 +496,10 @@ class NrfMeshPlugin : Plugin() {
 
             val result = implementation.sendLightHslSet(
                 unicastAddress,
+                appKeyIndex,
                 hue,
                 saturation,
                 lightness,
-                appKeyIndex,
                 0
             )
 
@@ -512,6 +512,7 @@ class NrfMeshPlugin : Plugin() {
             }
         }
     }
+
 
     @PluginMethod
     fun sendVendorModelMessage(call: PluginCall) {

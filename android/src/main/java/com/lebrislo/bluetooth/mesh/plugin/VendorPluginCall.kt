@@ -6,6 +6,9 @@ import com.getcapacitor.PluginCall
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.VendorModelMessageStatus
 
+/**
+ * This class is used to generate a response for a Vendor plugin call.
+ */
 class VendorPluginCall(
     val modelId: Int,
     val meshOperation: Int,
@@ -15,6 +18,11 @@ class VendorPluginCall(
 ) :
     BasePluginCall(call) {
     companion object {
+        /**
+         * Generates a response for a Vendor plugin call.
+         *
+         * @param meshMessage Mesh message.
+         */
         @JvmStatic
         fun generateVendorPluginCallResponse(meshMessage: MeshMessage): JSObject {
             meshMessage as VendorModelMessageStatus

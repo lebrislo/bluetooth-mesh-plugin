@@ -9,7 +9,9 @@ import com.lebrislo.bluetooth.mesh.plugin.SigPluginCall.Companion.generateSigPlu
 import com.lebrislo.bluetooth.mesh.plugin.VendorPluginCall.Companion.generateVendorPluginCallResponse
 import no.nordicsemi.android.mesh.transport.MeshMessage
 
-
+/**
+ * This class is used to manage plugin calls.
+ */
 class PluginCallManager private constructor() {
     private val tag: String = PluginCallManager::class.java.simpleName
     private val MESH_EVENT_STRING: String = "meshEvent"
@@ -28,15 +30,33 @@ class PluginCallManager private constructor() {
             }
     }
 
+    /**
+     * Set the plugin, must be called before any other method.
+     *
+     * @param plugin Plugin.
+     */
     fun setPlugin(plugin: NrfMeshPlugin) {
         this.plugin = plugin
     }
 
+    /**
+     * Add a SIG plugin call to the list of plugin calls to watch for a response.
+     *
+     * @param meshOperation Mesh operation.
+     * @param meshAddress Mesh address.
+     * @param call Plugin call.
+     */
     fun addSigPluginCall(meshOperation: Int, meshAddress: Int, call: PluginCall) {
         val operationPair = getSigOperationPair(meshOperation)
         pluginCalls.add(SigPluginCall(operationPair, meshAddress, call))
     }
 
+    /**
+     * Resolve a SIG plugin call.
+     * If the call is not found in the list of plugin calls, a notification is sent to the listeners.
+     *
+     * @param meshMessage Mesh message.
+     */
     fun resolveSigPluginCall(meshMessage: MeshMessage) {
         val callResponse = generateSigPluginCallResponse(meshMessage)
 
@@ -52,11 +72,24 @@ class PluginCallManager private constructor() {
         }
     }
 
+    /**
+     * Add a Config plugin call to the list of plugin calls to watch for a response.
+     *
+     * @param meshOperation Mesh operation.
+     * @param meshAddress Mesh address.
+     * @param call Plugin call.
+     */
     fun addConfigPluginCall(meshOperation: Int, meshAddress: Int, call: PluginCall) {
         val operationPair = getConfigOperationPair(meshOperation)
         pluginCalls.add(ConfigPluginCall(operationPair, meshAddress, call))
     }
 
+    /**
+     * Resolve a Config plugin call.
+     * If the call is not found in the list of plugin calls, a notification is sent to the listeners.
+     *
+     * @param meshMessage Mesh message.
+     */
     fun resolveConfigPluginCall(meshMessage: MeshMessage) {
         val callResponse = generateConfigPluginCallResponse(meshMessage)
 
@@ -72,10 +105,25 @@ class PluginCallManager private constructor() {
         }
     }
 
+    /**
+     * Add a Vendor plugin call to the list of plugin calls to watch for a response.
+     *
+     * @param modelId Model ID.
+     * @param opCode Operation code sent.
+     * @param opPairCode Operation code to watch for.
+     * @param meshAddress Mesh address.
+     * @param call Plugin call.
+     */
     fun addVendorPluginCall(modelId: Int, opCode: Int, opPairCode: Int, meshAddress: Int, call: PluginCall) {
         pluginCalls.add(VendorPluginCall(modelId, opCode, opPairCode, meshAddress, call))
     }
 
+    /**
+     * Resolve a Vendor plugin call.
+     * If the call is not found in the list of plugin calls, a notification is sent to the listeners.
+     *
+     * @param meshMessage Mesh message.
+     */
     fun resolveVendorPluginCall(meshMessage: MeshMessage) {
         val callResponse = generateVendorPluginCallResponse(meshMessage)
 
