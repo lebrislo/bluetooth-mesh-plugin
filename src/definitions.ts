@@ -92,6 +92,13 @@ export interface NrfMeshPlugin {
     saturation: number;
     lightness: number;
   }): Promise<ModelMessageStatus | PluginCallRejection>;
+  sendLightCtlSet(options: {
+    unicastAddress: number;
+    appKeyIndex: number;
+    lightness: number;
+    temperature: number;
+    deltaUv: number;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
   sendVendorModelMessage(options: {
     unicastAddress: number;
     appKeyIndex: number;

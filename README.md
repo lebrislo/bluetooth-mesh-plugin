@@ -26,6 +26,7 @@ npx cap sync
 * [`sendGenericOnOffSet(...)`](#sendgenericonoffset)
 * [`sendGenericPowerLevelSet(...)`](#sendgenericpowerlevelset)
 * [`sendLightHslSet(...)`](#sendlighthslset)
+* [`sendLightCtlSet(...)`](#sendlightctlset)
 * [`sendVendorModelMessage(...)`](#sendvendormodelmessage)
 * [`exportMeshNetwork()`](#exportmeshnetwork)
 * [`addListener(string, ...)`](#addlistenerstring-)
@@ -210,6 +211,21 @@ sendLightHslSet(options: { unicastAddress: number; appKeyIndex: number; hue: num
 | Param         | Type                                                                                                              |
 | ------------- | ----------------------------------------------------------------------------------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+
+--------------------
+
+
+### sendLightCtlSet(...)
+
+```typescript
+sendLightCtlSet(options: { unicastAddress: number; appKeyIndex: number; lightness: number; temperature: number; deltaUv: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+```
+
+| Param         | Type                                                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; lightness: number; temperature: number; deltaUv: number; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
 

@@ -19,10 +19,14 @@ import no.nordicsemi.android.mesh.transport.ConfigCompositionDataGet
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
 import no.nordicsemi.android.mesh.transport.ConfigNodeReset
+import no.nordicsemi.android.mesh.transport.GenericLevelSet
+import no.nordicsemi.android.mesh.transport.GenericLevelSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.GenericOnOffSet
 import no.nordicsemi.android.mesh.transport.GenericOnOffSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSet
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSetUnacknowledged
+import no.nordicsemi.android.mesh.transport.LightCtlSet
+import no.nordicsemi.android.mesh.transport.LightCtlSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.LightHslSet
 import no.nordicsemi.android.mesh.transport.LightHslSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.MeshMessage
@@ -368,7 +372,7 @@ class NrfMeshManager(private val context: Context) {
      *
      * @return String
      */
-    fun exportMeshNetwork(): String {
+    fun exportMeshNetwork(): String? {
         return meshManagerApi.exportMeshNetwork()
     }
 
@@ -457,6 +461,63 @@ class NrfMeshManager(private val context: Context) {
                 transitionStep,
                 transitionResolution,
                 delay
+            )
+        }
+
+        meshManagerApi.createMeshPdu(address, meshMessage)
+        return true
+    }
+
+    /**
+     * Send a Generic Level Set message to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param address unicast address of the node
+     * @param appKeyIndex index of the application key
+     * @param level level to set
+     * @param tId transaction id
+     * @param transitionStep transition step
+     * @param transitionResolution transition resolution
+     * @param delay delay before the message is sent
+     * @param acknowledgement whether to send an acknowledgement
+     *
+     * @return Boolean whether the message was sent successfully
+     */
+    fun sendGenericLevelSet(
+        address: Int,
+        appKeyIndex: Int,
+        level: Int,
+        tId: Int,
+        transitionStep: Int? = 0,
+        transitionResolution: Int? = 0,
+        delay: Int = 0,
+        acknowledgement: Boolean = false
+    ): Boolean {
+        if (!bleMeshManager.isConnected) {
+            Log.e(tag, "Not connected to a mesh proxy")
+            return false
+        }
+
+        var meshMessage: MeshMessage? = null
+
+        if (acknowledgement) {
+            meshMessage = GenericLevelSet(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                transitionStep,
+                transitionResolution,
+                delay,
+                level,
+                tId,
+            )
+        } else {
+            meshMessage = GenericLevelSetUnacknowledged(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                transitionStep,
+                transitionResolution,
+                delay,
+                level,
+                tId,
             )
         }
 
@@ -577,6 +638,70 @@ class NrfMeshManager(private val context: Context) {
                 lightness,
                 hue,
                 saturation,
+                tId
+            )
+        }
+        meshManagerApi.createMeshPdu(address, meshMessage)
+        return true
+    }
+
+    /**
+     * Send a Light CTL Set message to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param address unicast address of the node
+     * @param appKeyIndex index of the application key
+     * @param lightness lightness value to set
+     * @param temperature temperature value to set
+     * @param deltaUv delta uv value to set
+     * @param tId transaction id
+     * @param transitionStep transition step
+     * @param transitionResolution transition resolution
+     * @param delay delay before the message is sent
+     * @param acknowledgement whether to send an acknowledgement
+     *
+     * @return Boolean whether the message was sent successfully
+     */
+    fun sendLightCtlSet(
+        address: Int,
+        appKeyIndex: Int,
+        lightness: Int,
+        temperature: Int,
+        deltaUv: Int,
+        tId: Int,
+        transitionStep: Int? = 0,
+        transitionResolution: Int? = 0,
+        delay: Int = 0,
+        acknowledgement: Boolean = false
+    ): Boolean {
+        if (!bleMeshManager.isConnected) {
+            Log.e(tag, "Not connected to a mesh proxy")
+            return false
+        }
+
+        var meshMessage: MeshMessage? = null
+
+        if (acknowledgement) {
+            meshMessage = LightCtlSet(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                transitionStep,
+                transitionResolution,
+                delay,
+                lightness,
+                temperature,
+                deltaUv,
+                tId
+            )
+        } else {
+            meshMessage = LightCtlSetUnacknowledged(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                transitionStep,
+                transitionResolution,
+                delay,
+                lightness,
+                temperature,
+                deltaUv,
                 tId
             )
         }

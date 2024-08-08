@@ -513,6 +513,56 @@ class NrfMeshPlugin : Plugin() {
         }
     }
 
+    @PluginMethod
+    fun sendLightCtlSet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+        val lightness = call.getInt("lightness")
+        val temperature = call.getInt("temperature")
+        val deltaUv = call.getInt("deltaUv")
+        val acknowledgement = call.getBoolean("acknowledgement", false)
+
+        if (unicastAddress == null || appKeyIndex == null || lightness == null || temperature == null || deltaUv == null) {
+            call.reject("unicastAddress, appKeyIndex, lightness, temperature, and deltaUv are required")
+            return
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
+
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
+
+            if (acknowledgement == true) {
+                PluginCallManager.getInstance()
+                    .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_SET, unicastAddress, call)
+            }
+
+            val result = implementation.sendLightCtlSet(
+                unicastAddress,
+                appKeyIndex,
+                lightness,
+                temperature,
+                deltaUv,
+                0
+            )
+
+            if (!result) {
+                call.reject("Failed to send Light CTL Set")
+            } else {
+                if (acknowledgement == false) {
+                    call.resolve()
+                }
+            }
+        }
+    }
 
     @PluginMethod
     fun sendVendorModelMessage(call: PluginCall) {
