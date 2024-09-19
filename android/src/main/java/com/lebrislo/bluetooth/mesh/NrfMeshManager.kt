@@ -165,6 +165,7 @@ class NrfMeshManager(private val context: Context) {
      * @return List<ExtendedBluetoothDevice>
      */
     suspend fun scanUnprovisionedDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
+        scannerRepository.unprovisionedDevices.clear()
         scannerRepository.startScanDevices()
         delay(scanDurationMs.toLong())
         return scannerRepository.unprovisionedDevices
@@ -178,9 +179,18 @@ class NrfMeshManager(private val context: Context) {
      * @return List<ExtendedBluetoothDevice>
      */
     suspend fun scanProvisionedDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
+        scannerRepository.provisionedDevices.clear()
         scannerRepository.startScanDevices()
         delay(scanDurationMs.toLong())
         return scannerRepository.provisionedDevices
+    }
+
+    suspend fun scanMeshDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
+        scannerRepository.unprovisionedDevices.clear()
+        scannerRepository.provisionedDevices.clear()
+        scannerRepository.startScanDevices()
+        delay(scanDurationMs.toLong())
+        return scannerRepository.unprovisionedDevices + scannerRepository.provisionedDevices
     }
 
     /**

@@ -109,6 +109,66 @@ class NrfMeshPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun scanMeshDevices(call: PluginCall) {
+        val scanDuration = call.getInt("timeout", 5000)
+
+        if (!Permissions.isBleEnabled(context)) {
+            call.reject("Bluetooth is disabled")
+        }
+
+        if (!Permissions.isLocationGranted(context)) {
+            call.reject("Location permission is required")
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val devices = implementation.scanMeshDevices(scanDuration!!)
+
+            // return a dict of devices, unprovisioned and provisioned
+            val result = JSObject().apply {
+                put("unprovisioned", JSArray().apply {
+                    devices.forEach {
+                        val serviceData = Utils.getServiceData(
+                            it.scanResult!!,
+                            MeshManagerApi.MESH_PROVISIONING_UUID
+                        )
+
+                        if (serviceData == null) return@forEach
+
+                        val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData)
+
+                        put(JSObject().apply {
+                            put("uuid", uuid.toString())
+                            put("macAddress", it.scanResult.device.address)
+                            put("rssi", it.rssi)
+                            put("name", it.name)
+                        })
+                    }
+                })
+                put("provisioned", JSArray().apply {
+                    devices.forEach {
+                        val serviceData = Utils.getServiceData(
+                            it.scanResult!!,
+                            MeshManagerApi.MESH_PROXY_UUID
+                        )
+
+                        if (serviceData == null) return@forEach
+
+                        val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData)
+
+                        put(JSObject().apply {
+                            put("uuid", uuid.toString())
+                            put("macAddress", it.scanResult.device.address)
+                            put("rssi", it.rssi)
+                            put("name", it.name)
+                        })
+                    }
+                })
+            }
+            call.resolve(result)
+        }
+    }
+
+    @PluginMethod
     fun getProvisioningCapabilities(call: PluginCall) {
         val uuidString = call.getString("uuid")
         if (uuidString == null) {

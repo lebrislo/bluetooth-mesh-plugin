@@ -1,6 +1,6 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { ModelMessageStatus, NrfMeshPlugin, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanDevicesResponse } from './definitions';
+import type { ModelMessageStatus, NrfMeshPlugin, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanDevicesResponse, ScanMeshDevices } from './definitions';
 
 export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
 
@@ -12,6 +12,11 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
   async scanProvisionedDevices(): Promise<ScanDevicesResponse> {
     console.log('scanProvisionedDevices');
     return {};
+  }
+
+  async scanMeshDevices(): Promise<ScanMeshDevices> {
+    console.log('scanMeshDevices');
+    return { unprovisioned: [], provisioned: [] };
   }
 
   async getProvisioningCapabilities(): Promise<ProvisioningCapabilities | void> {
@@ -73,5 +78,9 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
 
   async sendVendorModelMessage(): Promise<ModelMessageStatus | PluginCallRejection> {
     return { src: 1, dst: 2, opcode: 3, data: {} };
+  }
+
+  sendLightCtlSet(): Promise<ModelMessageStatus | PluginCallRejection> {
+    throw new Error('Method not implemented.');
   }
 }

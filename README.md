@@ -15,6 +15,7 @@ npx cap sync
 
 * [`scanUnprovisionedDevices(...)`](#scanunprovisioneddevices)
 * [`scanProvisionedDevices(...)`](#scanprovisioneddevices)
+* [`scanMeshDevices(...)`](#scanmeshdevices)
 * [`getProvisioningCapabilities(...)`](#getprovisioningcapabilities)
 * [`provisionDevice(...)`](#provisiondevice)
 * [`unprovisionDevice(...)`](#unprovisiondevice)
@@ -64,6 +65,21 @@ scanProvisionedDevices(options: { timeout: number; }) => Promise<ScanDevicesResp
 | **`options`** | <code>{ timeout: number; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#scandevicesresponse">ScanDevicesResponse</a>&gt;</code>
+
+--------------------
+
+
+### scanMeshDevices(...)
+
+```typescript
+scanMeshDevices(options: { timeout: number; }) => Promise<ScanMeshDevices>
+```
+
+| Param         | Type                              |
+| ------------- | --------------------------------- |
+| **`options`** | <code>{ timeout: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#scanmeshdevices">ScanMeshDevices</a>&gt;</code>
 
 --------------------
 
@@ -292,6 +308,14 @@ addListener(eventName: string, listenerFunc: (event: ReadResult) => void) => Pro
 | **`uuid`**       | <code>string</code> |
 | **`rssi`**       | <code>number</code> |
 | **`macAddress`** | <code>string</code> |
+
+
+#### ScanMeshDevices
+
+| Prop                | Type                         |
+| ------------------- | ---------------------------- |
+| **`unprovisioned`** | <code>BleMeshDevice[]</code> |
+| **`provisioned`**   | <code>BleMeshDevice[]</code> |
 
 
 #### ProvisioningCapabilities

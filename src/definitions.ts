@@ -1,6 +1,6 @@
 import type { PluginListenerHandle } from '@capacitor/core';
 
-interface BleMeshDevice {
+export interface BleMeshDevice {
   name: string;
   uuid: string;
   rssi: number;
@@ -9,6 +9,11 @@ interface BleMeshDevice {
 
 export interface ScanDevicesResponse {
   devices?: BleMeshDevice[];
+}
+
+export interface ScanMeshDevices {
+  unprovisioned: BleMeshDevice[];
+  provisioned: BleMeshDevice[];
 }
 
 export interface ProvisioningCapabilities {
@@ -58,6 +63,9 @@ export interface NrfMeshPlugin {
   scanProvisionedDevices(options: {
     timeout: number;
   }): Promise<ScanDevicesResponse>;
+  scanMeshDevices(options: {
+    timeout: number;
+  }): Promise<ScanMeshDevices>;
   getProvisioningCapabilities(options: {
     uuid: string;
   }): Promise<ProvisioningCapabilities | void>;
