@@ -27,12 +27,15 @@ npx cap sync
 * [`sendGenericOnOffSet(...)`](#sendgenericonoffset)
 * [`sendGenericOnOffGet(...)`](#sendgenericonoffget)
 * [`sendGenericPowerLevelSet(...)`](#sendgenericpowerlevelset)
+* [`sendGenericPowerLevelGet(...)`](#sendgenericpowerlevelget)
 * [`sendLightHslSet(...)`](#sendlighthslset)
+* [`sendLightHslGet(...)`](#sendlighthslget)
 * [`sendLightCtlSet(...)`](#sendlightctlset)
 * [`sendVendorModelMessage(...)`](#sendvendormodelmessage)
 * [`initMeshNetwork(...)`](#initmeshnetwork)
 * [`exportMeshNetwork()`](#exportmeshnetwork)
 * [`addListener(string, ...)`](#addlistenerstring-)
+* [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
 
 </docgen-index>
@@ -236,6 +239,21 @@ sendGenericPowerLevelSet(options: { unicastAddress: number; appKeyIndex: number;
 --------------------
 
 
+### sendGenericPowerLevelGet(...)
+
+```typescript
+sendGenericPowerLevelGet(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+```
+
+| Param         | Type                                                          |
+| ------------- | ------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+
+--------------------
+
+
 ### sendLightHslSet(...)
 
 ```typescript
@@ -245,6 +263,21 @@ sendLightHslSet(options: { unicastAddress: number; appKeyIndex: number; hue: num
 | Param         | Type                                                                                                              |
 | ------------- | ----------------------------------------------------------------------------------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+
+--------------------
+
+
+### sendLightHslGet(...)
+
+```typescript
+sendLightHslGet(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+```
+
+| Param         | Type                                                          |
+| ------------- | ------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
 
@@ -319,6 +352,15 @@ addListener(eventName: string, listenerFunc: (event: ModelMessageStatus) => void
 | **`listenerFunc`** | <code>(event: <a href="#modelmessagestatus">ModelMessageStatus</a>) =&gt; void</code> |
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
+
+--------------------
+
+
+### removeAllListeners()
+
+```typescript
+removeAllListeners() => Promise<void>
+```
 
 --------------------
 

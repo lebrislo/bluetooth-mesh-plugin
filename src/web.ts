@@ -67,7 +67,15 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
+  async sendGenericPowerLevelGet(): Promise<ModelMessageStatus | PluginCallRejection> {
+    return { src: 1, dst: 2, opcode: 3, data: {} };
+  }
+
   async sendLightHslSet(): Promise<ModelMessageStatus | PluginCallRejection> {
+    return { src: 1, dst: 2, opcode: 3, data: {} };
+  }
+
+  async sendLightHslGet(): Promise<ModelMessageStatus | PluginCallRejection> {
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 

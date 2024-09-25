@@ -478,7 +478,6 @@ class NrfMeshPlugin : Plugin() {
     fun sendGenericOnOffGet(call: PluginCall) {
         val unicastAddress = call.getInt("unicastAddress")
         val appKeyIndex = call.getInt("appKeyIndex")
-        val acknowledgement = call.getBoolean("acknowledgement", false)
 
         if (unicastAddress == null || appKeyIndex == null) {
             call.reject("unicastAddress and appKeyIndex are required")
@@ -498,10 +497,8 @@ class NrfMeshPlugin : Plugin() {
                 implementation.connectBle(proxy)
             }
 
-            if (acknowledgement == true) {
-                PluginCallManager.getInstance()
-                    .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_GET, unicastAddress, call)
-            }
+            PluginCallManager.getInstance()
+                .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_GET, unicastAddress, call)
 
             val result = implementation.sendGenericOnOffGet(
                 unicastAddress,
@@ -511,9 +508,7 @@ class NrfMeshPlugin : Plugin() {
             if (!result) {
                 call.reject("Failed to send Generic OnOff Get")
             } else {
-                if (acknowledgement == false) {
-                    call.resolve()
-                }
+                call.resolve()
             }
         }
     }
@@ -566,6 +561,45 @@ class NrfMeshPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun sendGenericPowerLevelGet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+
+        if (unicastAddress == null || appKeyIndex == null) {
+            call.reject("unicastAddress and appKeyIndex are required")
+            return
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
+
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
+
+            PluginCallManager.getInstance()
+                .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_GET, unicastAddress, call)
+
+            val result = implementation.sendGenericPowerLevelGet(
+                unicastAddress,
+                appKeyIndex,
+            )
+
+            if (!result) {
+                call.reject("Failed to send Generic Power Level Get")
+            } else {
+                call.resolve()
+            }
+        }
+    }
+
+    @PluginMethod
     fun sendLightHslSet(call: PluginCall) {
         val unicastAddress = call.getInt("unicastAddress")
         val appKeyIndex = call.getInt("appKeyIndex")
@@ -612,6 +646,45 @@ class NrfMeshPlugin : Plugin() {
                 if (acknowledgement == false) {
                     call.resolve()
                 }
+            }
+        }
+    }
+
+    @PluginMethod
+    fun sendLightHslGet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+
+        if (unicastAddress == null || appKeyIndex == null) {
+            call.reject("unicastAddress and appKeyIndex are required")
+            return
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
+
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
+
+            PluginCallManager.getInstance()
+                .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_GET, unicastAddress, call)
+
+            val result = implementation.sendLightHslGet(
+                unicastAddress,
+                appKeyIndex,
+            )
+
+            if (!result) {
+                call.reject("Failed to send Light HSL Get")
+            } else {
+                call.resolve()
             }
         }
     }
