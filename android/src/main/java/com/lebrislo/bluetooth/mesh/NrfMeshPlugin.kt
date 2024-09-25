@@ -341,7 +341,7 @@ class NrfMeshPlugin : Plugin() {
                 implementation.searchProxyMesh()
             }
             if (proxy == null) {
-                call.reject("Failed to find proxy node")
+                call.resolve(JSObject().put("success", false))
                 return@launch
             }
 
@@ -349,14 +349,13 @@ class NrfMeshPlugin : Plugin() {
                 implementation.connectBle(proxy)
             }
 
-            PluginCallManager.getInstance()
-                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
+//            PluginCallManager.getInstance()
+//                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
 
-            val result = implementation.addApplicationKeyToNode(unicastAddress, appKeyIndex)
+            val deferred = implementation.addApplicationKeyToNode(unicastAddress, appKeyIndex)
+            val result = deferred.await()
 
-            if (!result) {
-                call.reject("Failed to add application key to node")
-            }
+            call.resolve(JSObject().put("success", result))
         }
     }
 
@@ -467,6 +466,50 @@ class NrfMeshPlugin : Plugin() {
 
             if (!result) {
                 call.reject("Failed to send Generic OnOff Set")
+            } else {
+                if (acknowledgement == false) {
+                    call.resolve()
+                }
+            }
+        }
+    }
+
+    @PluginMethod
+    fun sendGenericOnOffGet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+        val acknowledgement = call.getBoolean("acknowledgement", false)
+
+        if (unicastAddress == null || appKeyIndex == null) {
+            call.reject("unicastAddress and appKeyIndex are required")
+            return
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                call.reject("Failed to find proxy node")
+                return@launch
+            }
+
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
+
+            if (acknowledgement == true) {
+                PluginCallManager.getInstance()
+                    .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_GET, unicastAddress, call)
+            }
+
+            val result = implementation.sendGenericOnOffGet(
+                unicastAddress,
+                appKeyIndex,
+            )
+
+            if (!result) {
+                call.reject("Failed to send Generic OnOff Get")
             } else {
                 if (acknowledgement == false) {
                     call.resolve()
@@ -687,6 +730,26 @@ class NrfMeshPlugin : Plugin() {
             call.resolve(JSObject().put("meshNetwork", result))
         } else {
             call.reject("Failed to export mesh network")
+        }
+    }
+
+    @PluginMethod
+    fun initMeshNetwork(call: PluginCall) {
+        val networkName = call.getString("networkName")
+
+        if (networkName == null) {
+            call.reject("networkName is required")
+            return
+        }
+
+        implementation.initMeshNetwork(networkName)
+
+        val network = implementation.exportMeshNetwork()
+
+        if (network != null) {
+            call.resolve(JSObject().put("meshNetwork", network))
+        } else {
+            call.reject("Failed to initialize mesh network")
         }
     }
 }

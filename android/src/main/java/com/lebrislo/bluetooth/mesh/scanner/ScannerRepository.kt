@@ -12,6 +12,7 @@ import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanFilter
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import no.nordicsemi.android.support.v18.scanner.ScanSettings
+import java.util.UUID
 
 
 /**
@@ -39,11 +40,15 @@ class ScannerRepository(
             } else if (serviceUuid == MeshManagerApi.MESH_PROXY_UUID) {
                 val serviceData: ByteArray? = Utils.getServiceData(result, MeshManagerApi.MESH_PROXY_UUID)
                 if (meshManagerApi.isAdvertisingWithNetworkIdentity(serviceData)) {
+                    Log.d(tag, "Proxy advertising with network identity")
                     if (meshManagerApi.networkIdMatches(serviceData)) {
+                        Log.d(tag, "Proxy network id matches")
                         provDeviceDiscovered(result)
                     }
                 } else if (meshManagerApi.isAdvertisedWithNodeIdentity(serviceData)) {
+                    Log.d(tag, "Proxy advertising with node identity")
                     if (checkIfNodeIdentityMatches(serviceData!!)) {
+                        Log.d(tag, "Proxy node identity matches")
                         provDeviceDiscovered(result)
                     }
                 }
@@ -69,6 +74,21 @@ class ScannerRepository(
                 if (!unprovisionedDevices.contains(device)) {
                     Log.d(tag, "Unprovisioned device discovered: ${result.device.address} ")
                     unprovisionedDevices.add(device)
+
+                    // Delete the node from the mesh network if it was previously provisioned
+                    val serviceData = Utils.getServiceData(
+                        device.scanResult!!,
+                        MeshManagerApi.MESH_PROVISIONING_UUID
+                    )
+
+                    if (serviceData == null) return
+
+                    val deviceUuid: UUID = meshManagerApi.getDeviceUuid(serviceData)
+                    meshManagerApi.meshNetwork?.nodes?.forEach { node ->
+                        if (node.uuid == deviceUuid.toString()) {
+                            meshManagerApi.meshNetwork?.deleteNode(node)
+                        }
+                    }
                 }
             }
         }

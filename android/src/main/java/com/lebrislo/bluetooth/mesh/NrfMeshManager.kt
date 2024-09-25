@@ -15,12 +15,14 @@ import kotlinx.coroutines.delay
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyAdd
+import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataGet
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
 import no.nordicsemi.android.mesh.transport.ConfigNodeReset
 import no.nordicsemi.android.mesh.transport.GenericLevelSet
 import no.nordicsemi.android.mesh.transport.GenericLevelSetUnacknowledged
+import no.nordicsemi.android.mesh.transport.GenericOnOffGet
 import no.nordicsemi.android.mesh.transport.GenericOnOffSet
 import no.nordicsemi.android.mesh.transport.GenericOnOffSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSet
@@ -52,6 +54,7 @@ class NrfMeshManager(private val context: Context) {
     private val provisioningCapabilitiesMap = ConcurrentHashMap<UUID, CompletableDeferred<UnprovisionedMeshNode?>>()
     private val provisioningStatusMap = ConcurrentHashMap<String, CompletableDeferred<BleMeshDevice?>>()
     private val compositionDataStatusMap = ConcurrentHashMap<Int, CompletableDeferred<Boolean?>>()
+    private val addAppKeyStatusMap = ConcurrentHashMap<Int, CompletableDeferred<Boolean>>()
 
     init {
         meshCallbacksManager = MeshCallbacksManager(bleMeshManager)
@@ -103,11 +106,14 @@ class NrfMeshManager(private val context: Context) {
     @SuppressLint("MissingPermission")
     suspend fun searchProxyMesh(): BluetoothDevice? {
         if (bleMeshManager.isConnected) {
+            Log.i(tag, "Connected to a mesh proxy")
             val serviceUuids = bleMeshManager.bluetoothDevice?.uuids
 
             val isMeshProxy = serviceUuids?.any { uuid ->
                 uuid.uuid == MeshManagerApi.MESH_PROXY_UUID
             } == true
+
+            Log.i(tag, "Is mesh proxy: $isMeshProxy")
 
             if (isMeshProxy) {
                 return bleMeshManager.bluetoothDevice
@@ -120,9 +126,12 @@ class NrfMeshManager(private val context: Context) {
             Log.i(tag, "After delay")
         }
 
+        Log.i(tag, "Provisioned devices: ${scannerRepository.provisionedDevices.size}")
+
         if (scannerRepository.provisionedDevices.isNotEmpty()) {
             scannerRepository.provisionedDevices.sortBy { device -> device.scanResult?.rssi }
             val device = scannerRepository.provisionedDevices.first().device
+            Log.i(tag, "Found a mesh proxy ${device!!.address}")
             return device
         }
         return null
@@ -339,10 +348,14 @@ class NrfMeshManager(private val context: Context) {
      *
      * @return Boolean whether the message was sent successfully
      */
-    fun addApplicationKeyToNode(elementAddress: Int, appKeyIndex: Int): Boolean {
+    fun addApplicationKeyToNode(elementAddress: Int, appKeyIndex: Int): CompletableDeferred<Boolean> {
+        val deferred = CompletableDeferred<Boolean>()
+        addAppKeyStatusMap[appKeyIndex] = deferred
+
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Not connected to a mesh proxy")
-            return false
+            deferred.cancel()
+            return deferred
         }
 
         val netKey = meshManagerApi.meshNetwork?.primaryNetworkKey
@@ -351,7 +364,15 @@ class NrfMeshManager(private val context: Context) {
         val configModelAppBind = ConfigAppKeyAdd(netKey!!, appKey!!)
         meshManagerApi.createMeshPdu(elementAddress, configModelAppBind)
 
-        return true
+        return deferred
+    }
+
+    fun onAppKeyAddStatusReceived(meshMessage: ConfigAppKeyStatus) {
+        val appKeyIndex = meshMessage.appKeyIndex
+        val operationSucceeded = meshMessage.statusCode == 0
+
+        addAppKeyStatusMap[appKeyIndex]?.complete(operationSucceeded)
+        addAppKeyStatusMap.remove(appKeyIndex)
     }
 
     /**
@@ -384,6 +405,18 @@ class NrfMeshManager(private val context: Context) {
      */
     fun exportMeshNetwork(): String? {
         return meshManagerApi.exportMeshNetwork()
+    }
+
+    /**
+     * Create a new mesh network
+     *
+     * @param networkName name of the mesh network
+     *
+     * @return Unit
+     */
+    fun initMeshNetwork(networkName: String) {
+        meshManagerApi.resetMeshNetwork()
+        meshManagerApi.meshNetwork!!.meshName = networkName
     }
 
     /**
@@ -473,6 +506,33 @@ class NrfMeshManager(private val context: Context) {
                 delay
             )
         }
+
+        meshManagerApi.createMeshPdu(address, meshMessage)
+        return true
+    }
+
+    /**
+     * Send Generic OnOff Get message to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param address unicast address of the node
+     * @param appKeyIndex index of the application key
+     *
+     * @return Boolean whether the message was sent successfully
+     */
+    fun sendGenericOnOffGet(
+        address: Int,
+        appKeyIndex: Int
+    ): Boolean {
+        if (!bleMeshManager.isConnected) {
+            Log.e(tag, "Not connected to a mesh proxy")
+            return false
+        }
+
+        val meshMessage = GenericOnOffGet(
+            meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+        )
 
         meshManagerApi.createMeshPdu(address, meshMessage)
         return true

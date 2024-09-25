@@ -45,6 +45,7 @@ class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatu
         } else if (meshMessage is ConfigModelAppStatus) {
             PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
         } else if (meshMessage is ConfigAppKeyStatus) {
+            nrfMeshManager.onAppKeyAddStatusReceived(meshMessage)
             PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
         } else if (meshMessage is ConfigCompositionDataStatus) {
             nrfMeshManager.onCompositionDataStatusReceived(meshMessage)

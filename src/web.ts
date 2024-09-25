@@ -1,9 +1,8 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { ModelMessageStatus, NrfMeshPlugin, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanDevicesResponse, ScanMeshDevices } from './definitions';
+import type { AddAppKeyStatus, MeshNetworkObject, ModelMessageStatus, NrfMeshPlugin, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanDevicesResponse, ScanMeshDevices } from './definitions';
 
 export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
-
   async scanUnprovisionedDevices(): Promise<ScanDevicesResponse> {
     console.log('scanUnprovisionedDevices');
     return {};
@@ -41,8 +40,9 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('removeApplicationKey');
   }
 
-  async addApplicationKeyToNode(): Promise<void> {
+  async addApplicationKeyToNode(): Promise<AddAppKeyStatus> {
     console.log('addApplicationKeyToNode');
+    return { success: true };
   }
 
   async bindApplicationKeyToModel(): Promise<void> {
@@ -58,6 +58,11 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
+  async sendGenericOnOffGet(): Promise<ModelMessageStatus | PluginCallRejection> {
+    console.log('sendGenericOnOffSet');
+    return { src: 1, dst: 2, opcode: 3, data: {} };
+  }
+
   async sendGenericPowerLevelSet(): Promise<ModelMessageStatus | PluginCallRejection> {
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
@@ -66,14 +71,13 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async exportMeshNetwork(): Promise<object> {
-    console.log('exportMeshNetwork');
-    return {};
+  initMeshNetwork(): Promise<MeshNetworkObject> {
+    return Promise.resolve({ meshNetwork: 'meshNetwork' });
   }
 
-  async listenForMeshEvents(): Promise<object> {
-    console.log('listenForMeshEvents');
-    return {};
+  async exportMeshNetwork(): Promise<MeshNetworkObject> {
+    console.log('exportMeshNetwork');
+    return { meshNetwork: 'meshNetwork' };
   }
 
   async sendVendorModelMessage(): Promise<ModelMessageStatus | PluginCallRejection> {

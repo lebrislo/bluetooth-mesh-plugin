@@ -53,7 +53,15 @@ export interface ModelMessageStatus {
   dst: number;
   opcode: number;
   vendorModelId?: number;
-  data: object;
+  data: any;
+}
+
+export interface AddAppKeyStatus {
+  success: boolean;
+}
+
+export interface MeshNetworkObject {
+  meshNetwork: string;
 }
 
 export interface NrfMeshPlugin {
@@ -76,7 +84,7 @@ export interface NrfMeshPlugin {
   addApplicationKeyToNode(options: {
     unicastAddress: number;
     appKeyIndex: number;
-  }): Promise<void>;
+  }): Promise<AddAppKeyStatus>;
   bindApplicationKeyToModel(options: {
     elementAddress: number;
     appKeyIndex: number;
@@ -88,10 +96,18 @@ export interface NrfMeshPlugin {
     appKeyIndex: number;
     onOff: boolean;
   }): Promise<ModelMessageStatus | PluginCallRejection>;
+  sendGenericOnOffGet(options: {
+    unicastAddress: number;
+    appKeyIndex: number;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
   sendGenericPowerLevelSet(options: {
     unicastAddress: number;
     appKeyIndex: number;
     powerLevel: number;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
+  sendGenericPowerLevelGet(options: {
+    unicastAddress: number;
+    appKeyIndex: number;
   }): Promise<ModelMessageStatus | PluginCallRejection>;
   sendLightHslSet(options: {
     unicastAddress: number;
@@ -99,6 +115,10 @@ export interface NrfMeshPlugin {
     hue: number;
     saturation: number;
     lightness: number;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
+  sendLightHslGet(options: {
+    unicastAddress: number;
+    appKeyIndex: number;
   }): Promise<ModelMessageStatus | PluginCallRejection>;
   sendLightCtlSet(options: {
     unicastAddress: number;
@@ -115,7 +135,7 @@ export interface NrfMeshPlugin {
     opcode: number;
     parameters: number[];
   }): Promise<ModelMessageStatus | PluginCallRejection>;
-  exportMeshNetwork(): Promise<object>;
-  addListener(eventName: string, listenerFunc: (event: ReadResult) => void): Promise<PluginListenerHandle>;
-
+  initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject>;
+  exportMeshNetwork(): Promise<MeshNetworkObject>;
+  addListener(eventName: string, listenerFunc: (event: ModelMessageStatus) => void): Promise<PluginListenerHandle>;
 }
