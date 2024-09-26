@@ -18,6 +18,8 @@ class MeshCallbacksManager(val bleMeshManager: BleMeshManager) : MeshManagerCall
             return
         }
 
+        Log.d(tag, "Mesh network UUID Loaded : " + meshNetwork.meshUUID)
+
         this.meshNetwork = meshNetwork
 
         if (!this.meshNetwork!!.isProvisionerSelected()) {

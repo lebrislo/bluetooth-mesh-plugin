@@ -410,6 +410,15 @@ class NrfMeshManager(private val context: Context) {
     }
 
     /**
+     * Import a mesh network from a json string
+     *
+     * @param json json string of the mesh network
+     */
+    fun importMeshNetwork(json: String) {
+        meshManagerApi.importMeshNetworkJson(json)
+    }
+
+    /**
      * Create a new mesh network
      *
      * @param networkName name of the mesh network

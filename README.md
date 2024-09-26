@@ -34,6 +34,7 @@ npx cap sync
 * [`sendVendorModelMessage(...)`](#sendvendormodelmessage)
 * [`initMeshNetwork(...)`](#initmeshnetwork)
 * [`exportMeshNetwork()`](#exportmeshnetwork)
+* [`importMeshNetwork(...)`](#importmeshnetwork)
 * [`addListener(string, ...)`](#addlistenerstring-)
 * [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
@@ -336,6 +337,19 @@ exportMeshNetwork() => Promise<MeshNetworkObject>
 ```
 
 **Returns:** <code>Promise&lt;<a href="#meshnetworkobject">MeshNetworkObject</a>&gt;</code>
+
+--------------------
+
+
+### importMeshNetwork(...)
+
+```typescript
+importMeshNetwork(options: { meshNetwork: string; }) => Promise<void>
+```
+
+| Param         | Type                                  |
+| ------------- | ------------------------------------- |
+| **`options`** | <code>{ meshNetwork: string; }</code> |
 
 --------------------
 

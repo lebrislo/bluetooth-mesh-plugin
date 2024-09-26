@@ -88,6 +88,10 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     return { meshNetwork: 'meshNetwork' };
   }
 
+  async importMeshNetwork(): Promise<void> {
+    console.log('importMeshNetwork');
+  }
+
   async sendVendorModelMessage(): Promise<ModelMessageStatus | PluginCallRejection> {
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }

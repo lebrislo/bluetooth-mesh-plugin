@@ -137,6 +137,7 @@ export interface NrfMeshPlugin {
   }): Promise<ModelMessageStatus | PluginCallRejection>;
   initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject>;
   exportMeshNetwork(): Promise<MeshNetworkObject>;
+  importMeshNetwork(options: { meshNetwork: string }): Promise<void>;
   addListener(eventName: string, listenerFunc: (event: ModelMessageStatus) => void): Promise<PluginListenerHandle>;
   removeAllListeners(): Promise<void>;
 }

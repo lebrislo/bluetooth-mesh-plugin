@@ -807,6 +807,20 @@ class NrfMeshPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun importMeshNetwork(call: PluginCall) {
+        val meshNetwork = call.getString("meshNetwork")
+
+        if (meshNetwork == null) {
+            call.reject("meshNetwork is required")
+            return
+        }
+
+        val result = implementation.importMeshNetwork(meshNetwork)
+
+        call.resolve()
+    }
+
+    @PluginMethod
     fun initMeshNetwork(call: PluginCall) {
         val networkName = call.getString("networkName")
 
