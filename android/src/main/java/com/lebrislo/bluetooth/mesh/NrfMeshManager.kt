@@ -90,7 +90,7 @@ class NrfMeshManager(private val context: Context) {
      * Disconnect from a Bluetooth device
      */
     fun disconnectBle() {
-        bleMeshManager.disconnect().enqueue()
+        bleMeshManager.disconnect().await()
     }
 
     private suspend fun resetScanner() {
@@ -131,7 +131,9 @@ class NrfMeshManager(private val context: Context) {
         Log.i(tag, "Provisioned devices: ${scannerRepository.provisionedDevices.size}")
 
         if (scannerRepository.provisionedDevices.isNotEmpty()) {
-            scannerRepository.provisionedDevices.sortBy { device -> device.scanResult?.rssi }
+            synchronized(scannerRepository.provisionedDevices) {
+                scannerRepository.provisionedDevices.sortBy { device -> device.scanResult?.rssi }
+            }
             val device = scannerRepository.provisionedDevices.first().device
             Log.i(tag, "Found a mesh proxy ${device!!.address}")
             return device

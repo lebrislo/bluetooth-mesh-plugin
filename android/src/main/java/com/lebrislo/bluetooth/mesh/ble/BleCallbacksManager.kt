@@ -63,18 +63,18 @@ class BleCallbacksManager(val meshManagerApi: MeshManagerApi) : BleCallbacks {
     }
 
     override fun onBonded(device: BluetoothDevice) {
-        TODO("Not yet implemented")
+
     }
 
     override fun onBondingFailed(device: BluetoothDevice) {
-        TODO("Not yet implemented")
+
     }
 
     override fun onError(device: BluetoothDevice, message: String, errorCode: Int) {
-        TODO("Not yet implemented")
+
     }
 
     override fun onDeviceNotSupported(device: BluetoothDevice) {
-        TODO("Not yet implemented")
+
     }
 }

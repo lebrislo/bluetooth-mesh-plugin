@@ -77,7 +77,7 @@ class ScannerRepository(
                         MeshManagerApi.MESH_PROVISIONING_UUID
                     )
 
-                    if (serviceData == null) return
+                    if (serviceData == null || serviceData.size < 18) return
 
                     val deviceUuid: UUID = meshManagerApi.getDeviceUuid(serviceData)
                     meshManagerApi.meshNetwork?.nodes?.forEach { node ->

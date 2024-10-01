@@ -59,7 +59,10 @@ class NrfMeshPlugin : Plugin() {
                         it.scanResult!!,
                         MeshManagerApi.MESH_PROVISIONING_UUID
                     )
-                    val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData!!)
+
+                    if (serviceData == null || serviceData.size < 18) return@forEach
+
+                    val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData)
 
                     put(JSObject().apply {
                         put("uuid", uuid.toString())
@@ -94,7 +97,10 @@ class NrfMeshPlugin : Plugin() {
                         it.scanResult!!,
                         MeshManagerApi.MESH_PROXY_UUID
                     )
-                    val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData!!)
+
+                    if (serviceData == null || serviceData.size < 18) return@forEach
+
+                    val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData)
 
                     put(JSObject().apply {
                         put("uuid", uuid.toString())
@@ -132,7 +138,7 @@ class NrfMeshPlugin : Plugin() {
                             MeshManagerApi.MESH_PROVISIONING_UUID
                         )
 
-                        if (serviceData == null) return@forEach
+                        if (serviceData == null || serviceData.size < 18) return@forEach
 
                         val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData)
 
@@ -151,7 +157,7 @@ class NrfMeshPlugin : Plugin() {
                             MeshManagerApi.MESH_PROXY_UUID
                         )
 
-                        if (serviceData == null) return@forEach
+                        if (serviceData == null || serviceData.size < 18) return@forEach
 
                         val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData)
 
@@ -226,7 +232,7 @@ class NrfMeshPlugin : Plugin() {
             call.reject("UUID is required")
         }
 
-        CoroutineScope(Dispatchers.Main).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             val bluetoothDevice = withContext(Dispatchers.IO) {
                 implementation.searchUnprovisionedBluetoothDevice(uuid!!)
             }
