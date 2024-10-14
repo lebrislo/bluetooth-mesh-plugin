@@ -11,7 +11,9 @@ import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyAdd
@@ -93,6 +95,21 @@ class NrfMeshManager(private val context: Context) {
         bleMeshManager.disconnect().await()
     }
 
+    fun isBleConnected(): Boolean {
+        return bleMeshManager.isConnected
+    }
+
+    fun connectedDevice(): BluetoothDevice? {
+        return bleMeshManager.bluetoothDevice
+    }
+
+    @SuppressLint("MissingPermission")
+    fun isConnectedToProxy(): Boolean {
+        return bleMeshManager.isConnected && bleMeshManager.bluetoothDevice?.uuids?.any { uuid ->
+            uuid.uuid == MeshManagerApi.MESH_PROXY_UUID
+        } == true
+    }
+
     private suspend fun resetScanner() {
         scannerRepository.provisionedDevices.clear()
         scannerRepository.unprovisionedDevices.clear()
@@ -108,34 +125,37 @@ class NrfMeshManager(private val context: Context) {
     @SuppressLint("MissingPermission")
     suspend fun searchProxyMesh(): BluetoothDevice? {
         if (bleMeshManager.isConnected) {
-            Log.i(tag, "Connected to a mesh proxy")
+            Log.d(tag, "searchProxyMesh : Connected to a bluetooth device")
             val serviceUuids = bleMeshManager.bluetoothDevice?.uuids
 
             val isMeshProxy = serviceUuids?.any { uuid ->
                 uuid.uuid == MeshManagerApi.MESH_PROXY_UUID
             } == true
 
-            Log.i(tag, "Is mesh proxy: $isMeshProxy")
+            Log.d(tag, "searchProxyMesh : Is mesh proxy: $isMeshProxy")
 
             if (isMeshProxy) {
+                Log.i(tag, "searchProxyMesh : Connected to a mesh proxy ${bleMeshManager.bluetoothDevice?.address}")
                 return bleMeshManager.bluetoothDevice
+            } else {
+                withContext(Dispatchers.IO) {
+                    disconnectBle()
+                }
             }
         }
 
         if (!scannerRepository.isScanning) {
-            Log.i(tag, "Before delay")
             resetScanner()
-            Log.i(tag, "After delay")
         }
 
-        Log.i(tag, "Provisioned devices: ${scannerRepository.provisionedDevices.size}")
+        Log.d(tag, "searchProxyMesh : Provisioned devices: ${scannerRepository.provisionedDevices.size}")
 
         if (scannerRepository.provisionedDevices.isNotEmpty()) {
             synchronized(scannerRepository.provisionedDevices) {
                 scannerRepository.provisionedDevices.sortBy { device -> device.scanResult?.rssi }
             }
             val device = scannerRepository.provisionedDevices.first().device
-            Log.i(tag, "Found a mesh proxy ${device!!.address}")
+            Log.i(tag, "searchProxyMesh : Found a mesh proxy ${device!!.address}")
             return device
         }
         return null
@@ -846,7 +866,7 @@ class NrfMeshManager(private val context: Context) {
      * @param modelId model id
      * @param companyIdentifier company identifier
      * @param opCode operation code
-     * @param parameters parameters of the message
+     * @param payload parameters of the message
      * @param acknowledgement whether to send an acknowledgement
      *
      * @return Boolean whether the message was sent successfully
@@ -857,7 +877,7 @@ class NrfMeshManager(private val context: Context) {
         modelId: Int,
         companyIdentifier: Int,
         opCode: Int,
-        parameters: ByteArray = byteArrayOf(),
+        payload: ByteArray = byteArrayOf(),
         acknowledgement: Boolean = false
     ): Boolean {
         if (!bleMeshManager.isConnected) {
@@ -873,7 +893,7 @@ class NrfMeshManager(private val context: Context) {
                 modelId,
                 companyIdentifier,
                 opCode,
-                parameters
+                payload
             )
         } else {
             meshMessage = VendorModelMessageUnacked(
@@ -881,7 +901,7 @@ class NrfMeshManager(private val context: Context) {
                 modelId,
                 companyIdentifier,
                 opCode,
-                parameters
+                payload
             )
         }
         meshManagerApi.createMeshPdu(address, meshMessage)

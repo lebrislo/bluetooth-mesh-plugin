@@ -131,9 +131,10 @@ export interface NrfMeshPlugin {
     unicastAddress: number;
     appKeyIndex: number;
     modelId: number;
-    companyIdentifier: number;
     opcode: number;
-    parameters: number[];
+    payload: Uint8Array;
+    acknowledgement?: boolean;
+    opPairCode?: number
   }): Promise<ModelMessageStatus | PluginCallRejection>;
   initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject>;
   exportMeshNetwork(): Promise<MeshNetworkObject>;

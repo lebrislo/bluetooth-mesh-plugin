@@ -92,7 +92,15 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('importMeshNetwork');
   }
 
-  async sendVendorModelMessage(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendVendorModelMessage(options: {
+    unicastAddress: number;
+    appKeyIndex: number;
+    modelId: number;
+    companyIdentifier: number;
+    opcode: number;
+    payload: Uint8Array;
+  }): Promise<ModelMessageStatus | PluginCallRejection> {
+    console.log('sendVendorModelMessage', options);
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 

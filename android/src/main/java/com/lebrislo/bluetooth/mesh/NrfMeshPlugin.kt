@@ -1,5 +1,6 @@
 package com.lebrislo.bluetooth.mesh
 
+import android.util.Log
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
@@ -126,7 +127,7 @@ class NrfMeshPlugin : Plugin() {
             call.reject("Location permission is required")
         }
 
-        CoroutineScope(Dispatchers.Main).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             val devices = implementation.scanMeshDevices(scanDuration!!)
 
             // return a dict of devices, unprovisioned and provisioned
@@ -174,26 +175,85 @@ class NrfMeshPlugin : Plugin() {
         }
     }
 
+    private fun connectedToUnprovisionedDestinations(destinationMacAddress: String): Boolean {
+        return implementation.isBleConnected() && implementation.connectedDevice()?.address != destinationMacAddress
+    }
+
+    private suspend fun handleBleConnection(
+        proxyMeshConnection: Boolean,
+        destinationMacAddress: String,
+        uuidString: String
+    ): Boolean {
+        return withContext(Dispatchers.Main) {
+            if (proxyMeshConnection) {
+                if (!implementation.isConnectedToProxy()) {
+                    val proxy = withContext(Dispatchers.IO) {
+                        implementation.searchProxyMesh()
+                    }
+                    if (proxy == null) {
+                        Log.d(tag, "Failed to find proxy node")
+                        return@withContext false
+                    }
+
+                    withContext(Dispatchers.IO) {
+                        implementation.connectBle(proxy)
+                    }
+                }
+            } else {
+                if (!connectedToUnprovisionedDestinations(destinationMacAddress)) {
+                    if (implementation.isBleConnected()) {
+                        withContext(Dispatchers.IO) {
+                            implementation.disconnectBle()
+                        }
+                    }
+
+                    val bluetoothDevice = withContext(Dispatchers.IO) {
+                        implementation.searchUnprovisionedBluetoothDevice(uuidString)
+                    }
+
+                    if (bluetoothDevice == null) {
+                        Log.d(tag, "Failed to find unprovisioned device")
+                        return@withContext false
+                    }
+
+                    withContext(Dispatchers.IO) {
+                        implementation.connectBle(bluetoothDevice)
+                    }
+                } else {
+                    return@withContext true
+                }
+            }
+            false // return false by default
+        }
+    }
+
+
     @PluginMethod
     fun getProvisioningCapabilities(call: PluginCall) {
+        val macAddress = call.getString("macAddress")
         val uuidString = call.getString("uuid")
-        if (uuidString == null) {
-            call.reject("UUID is required")
+        if (macAddress == null || uuidString == null) {
+            call.reject("macAddress and UUID are required")
             return
         }
         val uuid = UUID.fromString(uuidString)
 
         CoroutineScope(Dispatchers.Main).launch {
-            val bluetoothDevice = withContext(Dispatchers.IO) {
-                implementation.searchUnprovisionedBluetoothDevice(uuidString)
-            }
-            if (bluetoothDevice == null) {
-                call.reject("Failed to find unprovisioned device")
-                return@launch
-            }
+            if (!connectedToUnprovisionedDestinations(macAddress)) {
+                withContext(Dispatchers.IO) {
+                    implementation.disconnectBle()
+                }
+                val bluetoothDevice = withContext(Dispatchers.IO) {
+                    implementation.searchUnprovisionedBluetoothDevice(uuidString)
+                }
 
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(bluetoothDevice)
+                if (bluetoothDevice == null) {
+                    call.reject("Failed to find unprovisioned device")
+                    return@launch
+                }
+                withContext(Dispatchers.IO) {
+                    implementation.connectBle(bluetoothDevice)
+                }
             }
 
             val deferred = implementation.getProvisioningCapabilities(uuid)
@@ -232,7 +292,7 @@ class NrfMeshPlugin : Plugin() {
             call.reject("UUID is required")
         }
 
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(Dispatchers.Main).launch {
             val bluetoothDevice = withContext(Dispatchers.IO) {
                 implementation.searchUnprovisionedBluetoothDevice(uuid!!)
             }
@@ -446,16 +506,18 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
-                return@launch
-            }
+            if (!implementation.isConnectedToProxy()) {
+                val proxy = withContext(Dispatchers.IO) {
+                    implementation.searchProxyMesh()
+                }
+                if (proxy == null) {
+                    call.reject("Failed to find proxy node")
+                    return@launch
+                }
 
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
+                withContext(Dispatchers.IO) {
+                    implementation.connectBle(proxy)
+                }
             }
 
             if (acknowledgement == true) {
@@ -752,17 +814,23 @@ class NrfMeshPlugin : Plugin() {
         val appKeyIndex = call.getInt("appKeyIndex")
         val modelId = call.getInt("modelId")
         val opcode = call.getInt("opcode")
-        val parameters = call.getArray("parameters")
+        val payload = call.getObject("payload")
         val acknowledgement = call.getBoolean("acknowledgement", false)
         val opPairCode = call.getInt("opPairCode", null)
         val companyIdentifier = modelId?.shr(16)
 
-        if (unicastAddress == null || appKeyIndex == null || modelId == null || companyIdentifier == null || opcode == null || parameters == null) {
-            call.reject("unicastAddress, appKeyIndex, modelId, companyIdentifier, opcode, and parameters are required")
+        if (unicastAddress == null || appKeyIndex == null || modelId == null || companyIdentifier == null || opcode == null || payload == null) {
+            call.reject("unicastAddress, appKeyIndex, modelId, companyIdentifier, opcode, and payload are required")
             return
         }
 
-        val params = parameters.toList<Int>().map { it.toByte() }.toByteArray()
+        // Convert the payload object into a ByteArray
+        val payloadData = payload.keys()
+            .asSequence()
+            .mapNotNull { key -> payload.getInt(key) } // Convert each value to an Int, ignoring nulls
+            .map { it.toByte() } // Convert each Int to a Byte
+            .toList()
+            .toByteArray()
 
         CoroutineScope(Dispatchers.Main).launch {
             val proxy = withContext(Dispatchers.IO) {
@@ -788,7 +856,7 @@ class NrfMeshPlugin : Plugin() {
                 modelId,
                 companyIdentifier,
                 opcode,
-                params,
+                payloadData,
             )
 
             if (!result) {
