@@ -7,10 +7,6 @@ export interface BleMeshDevice {
   macAddress: string;
 }
 
-export interface ScanDevicesResponse {
-  devices?: BleMeshDevice[];
-}
-
 export interface ScanMeshDevices {
   unprovisioned: BleMeshDevice[];
   provisioned: BleMeshDevice[];
@@ -65,12 +61,6 @@ export interface MeshNetworkObject {
 }
 
 export interface NrfMeshPlugin {
-  scanUnprovisionedDevices(options: {
-    timeout: number;
-  }): Promise<ScanDevicesResponse>;
-  scanProvisionedDevices(options: {
-    timeout: number;
-  }): Promise<ScanDevicesResponse>;
   scanMeshDevices(options: {
     timeout: number;
   }): Promise<ScanMeshDevices>;

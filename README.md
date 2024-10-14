@@ -13,8 +13,6 @@ npx cap sync
 
 <docgen-index>
 
-* [`scanUnprovisionedDevices(...)`](#scanunprovisioneddevices)
-* [`scanProvisionedDevices(...)`](#scanprovisioneddevices)
 * [`scanMeshDevices(...)`](#scanmeshdevices)
 * [`getProvisioningCapabilities(...)`](#getprovisioningcapabilities)
 * [`provisionDevice(...)`](#provisiondevice)
@@ -44,36 +42,6 @@ npx cap sync
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
-
-### scanUnprovisionedDevices(...)
-
-```typescript
-scanUnprovisionedDevices(options: { timeout: number; }) => Promise<ScanDevicesResponse>
-```
-
-| Param         | Type                              |
-| ------------- | --------------------------------- |
-| **`options`** | <code>{ timeout: number; }</code> |
-
-**Returns:** <code>Promise&lt;<a href="#scandevicesresponse">ScanDevicesResponse</a>&gt;</code>
-
---------------------
-
-
-### scanProvisionedDevices(...)
-
-```typescript
-scanProvisionedDevices(options: { timeout: number; }) => Promise<ScanDevicesResponse>
-```
-
-| Param         | Type                              |
-| ------------- | --------------------------------- |
-| **`options`** | <code>{ timeout: number; }</code> |
-
-**Returns:** <code>Promise&lt;<a href="#scandevicesresponse">ScanDevicesResponse</a>&gt;</code>
-
---------------------
-
 
 ### scanMeshDevices(...)
 
@@ -383,11 +351,12 @@ removeAllListeners() => Promise<void>
 ### Interfaces
 
 
-#### ScanDevicesResponse
+#### ScanMeshDevices
 
-| Prop          | Type                         |
-| ------------- | ---------------------------- |
-| **`devices`** | <code>BleMeshDevice[]</code> |
+| Prop                | Type                         |
+| ------------------- | ---------------------------- |
+| **`unprovisioned`** | <code>BleMeshDevice[]</code> |
+| **`provisioned`**   | <code>BleMeshDevice[]</code> |
 
 
 #### BleMeshDevice
@@ -398,14 +367,6 @@ removeAllListeners() => Promise<void>
 | **`uuid`**       | <code>string</code> |
 | **`rssi`**       | <code>number</code> |
 | **`macAddress`** | <code>string</code> |
-
-
-#### ScanMeshDevices
-
-| Prop                | Type                         |
-| ------------------- | ---------------------------- |
-| **`unprovisioned`** | <code>BleMeshDevice[]</code> |
-| **`provisioned`**   | <code>BleMeshDevice[]</code> |
 
 
 #### ProvisioningCapabilities

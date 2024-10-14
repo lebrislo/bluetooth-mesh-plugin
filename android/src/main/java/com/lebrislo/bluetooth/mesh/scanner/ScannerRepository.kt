@@ -68,22 +68,24 @@ class ScannerRepository(
         if (scanRecord != null) {
             if (scanRecord.bytes != null && scanRecord.serviceUuids != null) {
                 device = ExtendedBluetoothDevice(result)
-                if (!unprovisionedDevices.contains(device)) {
-                    Log.d(tag, "Unprovisioned device discovered: ${result.device.address} ")
-                    unprovisionedDevices.add(device)
+                synchronized(unprovisionedDevices) {
+                    if (!unprovisionedDevices.contains(device)) {
+                        Log.d(tag, "Unprovisioned device discovered: ${result.device.address} ")
+                        unprovisionedDevices.add(device)
 
-                    // Delete the node from the mesh network if it was previously provisioned
-                    val serviceData = Utils.getServiceData(
-                        device.scanResult!!,
-                        MeshManagerApi.MESH_PROVISIONING_UUID
-                    )
+                        // Delete the node from the mesh network if it was previously provisioned
+                        val serviceData = Utils.getServiceData(
+                            device.scanResult!!,
+                            MeshManagerApi.MESH_PROVISIONING_UUID
+                        )
 
-                    if (serviceData == null || serviceData.size < 18) return
+                        if (serviceData == null || serviceData.size < 18) return
 
-                    val deviceUuid: UUID = meshManagerApi.getDeviceUuid(serviceData)
-                    meshManagerApi.meshNetwork?.nodes?.forEach { node ->
-                        if (node.uuid == deviceUuid.toString()) {
-                            meshManagerApi.meshNetwork?.deleteNode(node)
+                        val deviceUuid: UUID = meshManagerApi.getDeviceUuid(serviceData)
+                        meshManagerApi.meshNetwork?.nodes?.forEach { node ->
+                            if (node.uuid == deviceUuid.toString()) {
+                                meshManagerApi.meshNetwork?.deleteNode(node)
+                            }
                         }
                     }
                 }
@@ -100,7 +102,9 @@ class ScannerRepository(
                 device = ExtendedBluetoothDevice(result)
                 if (!provisionedDevices.contains(device)) {
                     Log.d(tag, "Provisioned device discovered: ${result.device.address} ")
-                    provisionedDevices.add(device)
+                    synchronized(provisionedDevices) {
+                        provisionedDevices.add(device)
+                    }
                 }
             }
         }

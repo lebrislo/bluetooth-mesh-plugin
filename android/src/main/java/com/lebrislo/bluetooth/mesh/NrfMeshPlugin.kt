@@ -1,5 +1,6 @@
 package com.lebrislo.bluetooth.mesh
 
+import android.bluetooth.BluetoothDevice
 import android.util.Log
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
@@ -37,82 +38,6 @@ class NrfMeshPlugin : Plugin() {
             return
         }
         notifyListeners(eventName, data)
-    }
-
-    @PluginMethod
-    fun scanUnprovisionedDevices(call: PluginCall) {
-        val scanDuration = call.getInt("timeout", 5000)
-
-        if (!Permissions.isBleEnabled(context)) {
-            call.reject("Bluetooth is disabled")
-        }
-
-        if (!Permissions.isLocationGranted(context)) {
-            call.reject("Location permission is required")
-        }
-
-        CoroutineScope(Dispatchers.Main).launch {
-            val devices = implementation.scanUnprovisionedDevices(scanDuration!!)
-
-            val result = JSArray().apply {
-                devices.forEach {
-                    val serviceData = Utils.getServiceData(
-                        it.scanResult!!,
-                        MeshManagerApi.MESH_PROVISIONING_UUID
-                    )
-
-                    if (serviceData == null || serviceData.size < 18) return@forEach
-
-                    val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData)
-
-                    put(JSObject().apply {
-                        put("uuid", uuid.toString())
-                        put("macAddress", it.scanResult.device.address)
-                        put("rssi", it.rssi)
-                        put("name", it.name)
-                    })
-                }
-            }
-            call.resolve(JSObject().put("devices", result))
-        }
-    }
-
-    @PluginMethod
-    fun scanProvisionedDevices(call: PluginCall) {
-        val scanDuration = call.getInt("timeout", 5000)
-
-        if (!Permissions.isBleEnabled(context)) {
-            call.reject("Bluetooth is disabled")
-        }
-
-        if (!Permissions.isLocationGranted(context)) {
-            call.reject("Location permission is required")
-        }
-
-        CoroutineScope(Dispatchers.Main).launch {
-            val devices = implementation.scanProvisionedDevices(scanDuration!!)
-
-            val result = JSArray().apply {
-                devices.forEach {
-                    val serviceData = Utils.getServiceData(
-                        it.scanResult!!,
-                        MeshManagerApi.MESH_PROXY_UUID
-                    )
-
-                    if (serviceData == null || serviceData.size < 18) return@forEach
-
-                    val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData)
-
-                    put(JSObject().apply {
-                        put("uuid", uuid.toString())
-                        put("macAddress", it.scanResult.device.address)
-                        put("rssi", it.rssi)
-                        put("name", it.name)
-                    })
-                }
-            }
-            call.resolve(JSObject().put("devices", result))
-        }
     }
 
     @PluginMethod
@@ -184,6 +109,10 @@ class NrfMeshPlugin : Plugin() {
         destinationUuid: String
     ): Boolean {
         return withContext(Dispatchers.IO) {
+            var bluetoothDevice: BluetoothDevice? = null
+            var attempts = 0
+            val maxAttempts = 3
+
             if (!connectedToUnprovisionedDestinations(destinationMacAddress)) {
                 if (implementation.isBleConnected()) {
                     withContext(Dispatchers.IO) {
@@ -191,11 +120,16 @@ class NrfMeshPlugin : Plugin() {
                     }
                 }
 
-                val bluetoothDevice = withContext(Dispatchers.IO) {
-                    implementation.searchUnprovisionedBluetoothDevice(destinationUuid)
+                while (bluetoothDevice == null && attempts < maxAttempts) {
+                    bluetoothDevice = withContext(Dispatchers.IO) {
+                        implementation.searchUnprovisionedBluetoothDevice(destinationUuid)
+                    }
+                    attempts++
+                    Log.d(tag, "connectionToUnprovisionedDevice : search for device attempts n° $attempts")
                 }
+
                 if (bluetoothDevice == null) {
-                    Log.d(tag, "handleBleConnection :Failed to find unprovisioned device")
+                    Log.d(tag, "connectionToUnprovisionedDevice : Failed to find unprovisioned device")
                     return@withContext false
                 }
 
@@ -210,11 +144,20 @@ class NrfMeshPlugin : Plugin() {
     private suspend fun connectionToProvisionedDevice(
     ): Boolean {
         return withContext(Dispatchers.IO) {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
+            var proxy: BluetoothDevice? = null
+            var attempts = 0
+            val maxAttempts = 3
+
+            while (proxy == null && attempts < maxAttempts) {
+                proxy = withContext(Dispatchers.IO) {
+                    implementation.searchProxyMesh()
+                }
+                attempts++
+                Log.d(tag, "connectionToProvisionedDevice : search for proxy attempts n° $attempts")
             }
+
             if (proxy == null) {
-                Log.d(tag, "handleBleConnection : Failed to find proxy node")
+                Log.d(tag, "connectionToProvisionedDevice : Failed to find proxy node")
                 return@withContext false
             }
 
