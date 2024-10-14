@@ -1,5 +1,6 @@
 package com.lebrislo.bluetooth.mesh.ble
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -31,8 +32,10 @@ class BleCallbacksManager(val meshManagerApi: MeshManagerApi) : BleCallbacks {
         Log.d(tag, "onDeviceConnecting")
     }
 
+    @SuppressLint("MissingPermission")
     override fun onDeviceConnected(device: BluetoothDevice) {
         Log.d(tag, "onDeviceConnected")
+        device.fetchUuidsWithSdp()
         isConnected.postValue(true)
     }
 

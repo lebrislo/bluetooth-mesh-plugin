@@ -29,33 +29,32 @@ class MeshCallbacksManager(val bleMeshManager: BleMeshManager) : MeshManagerCall
     }
 
     override fun onNetworkUpdated(meshNetwork: MeshNetwork?) {
-        Log.d(tag, "onNetworkUpdated")
+
     }
 
     override fun onNetworkLoadFailed(error: String?) {
-        Log.d(tag, "onNetworkLoadFailed")
+
     }
 
     override fun onNetworkImported(meshNetwork: MeshNetwork?) {
-        Log.d(tag, "onNetworkImported")
+
     }
 
     override fun onNetworkImportFailed(error: String?) {
-        Log.d(tag, "onNetworkImportFailed")
+
     }
 
     override fun sendProvisioningPdu(meshNode: UnprovisionedMeshNode?, pdu: ByteArray?) {
-        Log.d(tag, "sendProvisioningPdu")
+
         bleMeshManager.sendPdu(pdu)
     }
 
     override fun onMeshPduCreated(pdu: ByteArray?) {
-        Log.d(tag, "onMeshPduCreated")
+
         bleMeshManager.sendPdu(pdu)
     }
 
     override fun getMtu(): Int {
-        Log.d(tag, "getMtu")
         return bleMeshManager.maximumPacketSize
     }
 }

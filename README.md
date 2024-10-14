@@ -93,12 +93,12 @@ scanMeshDevices(options: { timeout: number; }) => Promise<ScanMeshDevices>
 ### getProvisioningCapabilities(...)
 
 ```typescript
-getProvisioningCapabilities(options: { uuid: string; }) => Promise<ProvisioningCapabilities | void>
+getProvisioningCapabilities(options: { macAddress: string; uuid: string; }) => Promise<ProvisioningCapabilities | void>
 ```
 
-| Param         | Type                           |
-| ------------- | ------------------------------ |
-| **`options`** | <code>{ uuid: string; }</code> |
+| Param         | Type                                               |
+| ------------- | -------------------------------------------------- |
+| **`options`** | <code>{ macAddress: string; uuid: string; }</code> |
 
 **Returns:** <code>Promise&lt;void | <a href="#provisioningcapabilities">ProvisioningCapabilities</a>&gt;</code>
 
@@ -108,12 +108,12 @@ getProvisioningCapabilities(options: { uuid: string; }) => Promise<ProvisioningC
 ### provisionDevice(...)
 
 ```typescript
-provisionDevice(options: { uuid: string; }) => Promise<ProvisioningStatus>
+provisionDevice(options: { macAddress: string; uuid: string; }) => Promise<ProvisioningStatus>
 ```
 
-| Param         | Type                           |
-| ------------- | ------------------------------ |
-| **`options`** | <code>{ uuid: string; }</code> |
+| Param         | Type                                               |
+| ------------- | -------------------------------------------------- |
+| **`options`** | <code>{ macAddress: string; uuid: string; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#provisioningstatus">ProvisioningStatus</a>&gt;</code>
 

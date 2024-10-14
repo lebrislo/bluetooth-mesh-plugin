@@ -75,9 +75,10 @@ export interface NrfMeshPlugin {
     timeout: number;
   }): Promise<ScanMeshDevices>;
   getProvisioningCapabilities(options: {
+    macAddress: string;
     uuid: string;
   }): Promise<ProvisioningCapabilities | void>;
-  provisionDevice(options: { uuid: string }): Promise<ProvisioningStatus>;
+  provisionDevice(options: { macAddress: string; uuid: string }): Promise<ProvisioningStatus>;
   unprovisionDevice(options: { unicastAddress: number }): Promise<void>;
   createApplicationKey(): Promise<void>;
   removeApplicationKey(options: { appKeyIndex: number }): Promise<void>;

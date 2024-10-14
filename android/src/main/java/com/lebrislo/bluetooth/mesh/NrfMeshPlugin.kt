@@ -176,54 +176,52 @@ class NrfMeshPlugin : Plugin() {
     }
 
     private fun connectedToUnprovisionedDestinations(destinationMacAddress: String): Boolean {
-        return implementation.isBleConnected() && implementation.connectedDevice()?.address != destinationMacAddress
+        return implementation.isBleConnected() && implementation.connectedDevice()?.address == destinationMacAddress
     }
 
-    private suspend fun handleBleConnection(
-        proxyMeshConnection: Boolean,
+    private suspend fun connectionToUnprovisionedDevice(
         destinationMacAddress: String,
-        uuidString: String
+        destinationUuid: String
     ): Boolean {
-        return withContext(Dispatchers.Main) {
-            if (proxyMeshConnection) {
-                if (!implementation.isConnectedToProxy()) {
-                    val proxy = withContext(Dispatchers.IO) {
-                        implementation.searchProxyMesh()
-                    }
-                    if (proxy == null) {
-                        Log.d(tag, "Failed to find proxy node")
-                        return@withContext false
-                    }
-
+        return withContext(Dispatchers.IO) {
+            if (!connectedToUnprovisionedDestinations(destinationMacAddress)) {
+                if (implementation.isBleConnected()) {
                     withContext(Dispatchers.IO) {
-                        implementation.connectBle(proxy)
+                        implementation.disconnectBle()
                     }
                 }
-            } else {
-                if (!connectedToUnprovisionedDestinations(destinationMacAddress)) {
-                    if (implementation.isBleConnected()) {
-                        withContext(Dispatchers.IO) {
-                            implementation.disconnectBle()
-                        }
-                    }
 
-                    val bluetoothDevice = withContext(Dispatchers.IO) {
-                        implementation.searchUnprovisionedBluetoothDevice(uuidString)
-                    }
+                val bluetoothDevice = withContext(Dispatchers.IO) {
+                    implementation.searchUnprovisionedBluetoothDevice(destinationUuid)
+                }
+                if (bluetoothDevice == null) {
+                    Log.d(tag, "handleBleConnection :Failed to find unprovisioned device")
+                    return@withContext false
+                }
 
-                    if (bluetoothDevice == null) {
-                        Log.d(tag, "Failed to find unprovisioned device")
-                        return@withContext false
-                    }
-
-                    withContext(Dispatchers.IO) {
-                        implementation.connectBle(bluetoothDevice)
-                    }
-                } else {
-                    return@withContext true
+                withContext(Dispatchers.IO) {
+                    implementation.connectBle(bluetoothDevice)
                 }
             }
-            false // return false by default
+            return@withContext true
+        }
+    }
+
+    private suspend fun connectionToProvisionedDevice(
+    ): Boolean {
+        return withContext(Dispatchers.IO) {
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
+            }
+            if (proxy == null) {
+                Log.d(tag, "handleBleConnection : Failed to find proxy node")
+                return@withContext false
+            }
+
+            withContext(Dispatchers.IO) {
+                implementation.connectBle(proxy)
+            }
+            return@withContext true
         }
     }
 
@@ -231,32 +229,20 @@ class NrfMeshPlugin : Plugin() {
     @PluginMethod
     fun getProvisioningCapabilities(call: PluginCall) {
         val macAddress = call.getString("macAddress")
-        val uuidString = call.getString("uuid")
-        if (macAddress == null || uuidString == null) {
-            call.reject("macAddress and UUID are required")
+        val uuid = call.getString("uuid")
+        if (macAddress == null || uuid == null) {
+            call.reject("macAddress and uuid are required")
             return
         }
-        val uuid = UUID.fromString(uuidString)
 
         CoroutineScope(Dispatchers.Main).launch {
-            if (!connectedToUnprovisionedDestinations(macAddress)) {
-                withContext(Dispatchers.IO) {
-                    implementation.disconnectBle()
-                }
-                val bluetoothDevice = withContext(Dispatchers.IO) {
-                    implementation.searchUnprovisionedBluetoothDevice(uuidString)
-                }
-
-                if (bluetoothDevice == null) {
-                    call.reject("Failed to find unprovisioned device")
-                    return@launch
-                }
-                withContext(Dispatchers.IO) {
-                    implementation.connectBle(bluetoothDevice)
-                }
+            val connected = connectionToUnprovisionedDevice(macAddress, uuid)
+            if (!connected) {
+                call.reject("Failed to connect to device : $macAddress $uuid")
+                return@launch
             }
 
-            val deferred = implementation.getProvisioningCapabilities(uuid)
+            val deferred = implementation.getProvisioningCapabilities(UUID.fromString(uuid))
 
             val unprovisionedDevice = deferred.await()
             if (unprovisionedDevice != null) {
@@ -286,23 +272,18 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun provisionDevice(call: PluginCall) {
+        val macAddress = call.getString("macAddress")
         val uuid = call.getString("uuid")
-
-        if (uuid == null) {
-            call.reject("UUID is required")
+        if (macAddress == null || uuid == null) {
+            call.reject("macAddress and uuid are required")
+            return
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val bluetoothDevice = withContext(Dispatchers.IO) {
-                implementation.searchUnprovisionedBluetoothDevice(uuid!!)
-            }
-            if (bluetoothDevice == null) {
-                call.reject("Failed to find unprovisioned device")
+            val connected = connectionToUnprovisionedDevice(macAddress, uuid)
+            if (!connected) {
+                call.reject("Failed to connect to device : $macAddress $uuid")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(bluetoothDevice)
             }
 
             val deferred = implementation.provisionDevice(UUID.fromString(uuid))
@@ -331,7 +312,6 @@ class NrfMeshPlugin : Plugin() {
                     call.resolve(result)
                 }
             }
-            implementation.disconnectBle()
         }
     }
 
@@ -345,16 +325,10 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
             }
 
             PluginCallManager.getInstance()
@@ -403,16 +377,10 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.resolve(JSObject().put("success", false))
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
             }
 
 //            PluginCallManager.getInstance()
@@ -437,16 +405,10 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
             }
 
             PluginCallManager.getInstance()
@@ -466,22 +428,17 @@ class NrfMeshPlugin : Plugin() {
 
         if (unicastAddress == null) {
             call.reject("unicastAddress is required")
+            return
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
             }
 
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
-            }
-
-            val deferred = implementation.compositionDataGet(unicastAddress!!)
+            val deferred = implementation.compositionDataGet(unicastAddress)
 
             val result = deferred.await()
             if (result!!) {
@@ -506,18 +463,10 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            if (!implementation.isConnectedToProxy()) {
-                val proxy = withContext(Dispatchers.IO) {
-                    implementation.searchProxyMesh()
-                }
-                if (proxy == null) {
-                    call.reject("Failed to find proxy node")
-                    return@launch
-                }
-
-                withContext(Dispatchers.IO) {
-                    implementation.connectBle(proxy)
-                }
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
+                return@launch
             }
 
             if (acknowledgement == true) {
@@ -553,16 +502,10 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
             }
 
             PluginCallManager.getInstance()
@@ -594,16 +537,10 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
             }
 
             if (acknowledgement == true) {
@@ -639,16 +576,10 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
             }
 
             PluginCallManager.getInstance()
@@ -682,16 +613,10 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
             }
 
             if (acknowledgement == true) {
@@ -729,16 +654,10 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
             }
 
             PluginCallManager.getInstance()
@@ -772,16 +691,10 @@ class NrfMeshPlugin : Plugin() {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
             }
 
             if (acknowledgement == true) {
@@ -833,16 +746,10 @@ class NrfMeshPlugin : Plugin() {
             .toByteArray()
 
         CoroutineScope(Dispatchers.Main).launch {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
-            }
-            if (proxy == null) {
-                call.reject("Failed to find proxy node")
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
             }
 
             if (acknowledgement == true) {

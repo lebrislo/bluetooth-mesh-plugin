@@ -103,13 +103,6 @@ class NrfMeshManager(private val context: Context) {
         return bleMeshManager.bluetoothDevice
     }
 
-    @SuppressLint("MissingPermission")
-    fun isConnectedToProxy(): Boolean {
-        return bleMeshManager.isConnected && bleMeshManager.bluetoothDevice?.uuids?.any { uuid ->
-            uuid.uuid == MeshManagerApi.MESH_PROXY_UUID
-        } == true
-    }
-
     private suspend fun resetScanner() {
         scannerRepository.provisionedDevices.clear()
         scannerRepository.unprovisionedDevices.clear()
@@ -126,11 +119,10 @@ class NrfMeshManager(private val context: Context) {
     suspend fun searchProxyMesh(): BluetoothDevice? {
         if (bleMeshManager.isConnected) {
             Log.d(tag, "searchProxyMesh : Connected to a bluetooth device")
-            val serviceUuids = bleMeshManager.bluetoothDevice?.uuids
 
-            val isMeshProxy = serviceUuids?.any { uuid ->
-                uuid.uuid == MeshManagerApi.MESH_PROXY_UUID
-            } == true
+            val isMeshProxy = scannerRepository.provisionedDevices.any() { device ->
+                device.scanResult?.device?.address == bleMeshManager.bluetoothDevice?.address
+            }
 
             Log.d(tag, "searchProxyMesh : Is mesh proxy: $isMeshProxy")
 
@@ -144,9 +136,7 @@ class NrfMeshManager(private val context: Context) {
             }
         }
 
-        if (!scannerRepository.isScanning) {
-            resetScanner()
-        }
+        resetScanner()
 
         Log.d(tag, "searchProxyMesh : Provisioned devices: ${scannerRepository.provisionedDevices.size}")
 
@@ -173,13 +163,14 @@ class NrfMeshManager(private val context: Context) {
             val macAddress = bleMeshManager.bluetoothDevice!!.address
             if (scannerRepository.unprovisionedDevices.any { device -> device.scanResult?.device?.address == macAddress }) {
                 return bleMeshManager.bluetoothDevice
+            } else {
+                withContext(Dispatchers.IO) {
+                    disconnectBle()
+                }
             }
-            bleMeshManager.disconnect().enqueue()
         }
 
-        if (!scannerRepository.isScanning) {
-            resetScanner()
-        }
+        resetScanner()
 
         return scannerRepository.unprovisionedDevices.firstOrNull { device ->
             device.scanResult?.let {

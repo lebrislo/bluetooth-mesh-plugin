@@ -19,7 +19,7 @@ class MeshProvisioningCallbacksManager(
         state: ProvisioningState.States?,
         data: ByteArray?
     ) {
-        Log.d(tag, "onProvisioningStateChanged" + meshNode?.toString())
+        Log.d(tag, "onProvisioningStateChanged" + meshNode?.deviceUuid)
         if (state == ProvisioningState.States.PROVISIONING_CAPABILITIES) {
             unprovisionedMeshNodes.add(meshNode!!)
             nrfMeshManager.onProvisioningCapabilitiesReceived(meshNode)
@@ -31,7 +31,7 @@ class MeshProvisioningCallbacksManager(
         state: ProvisioningState.States?,
         data: ByteArray?
     ) {
-        Log.d(tag, "onProvisioningFailed" + meshNode?.toString())
+        Log.d(tag, "onProvisioningFailed" + meshNode?.deviceUuid)
         if (state == ProvisioningState.States.PROVISIONING_FAILED) {
             nrfMeshManager.onProvisioningFinish(BleMeshDevice.Unprovisioned(meshNode!!))
         }
@@ -42,7 +42,7 @@ class MeshProvisioningCallbacksManager(
         state: ProvisioningState.States?,
         data: ByteArray?
     ) {
-        Log.d(tag, "onProvisioningCompleted" + meshNode?.toString())
+        Log.d(tag, "onProvisioningCompleted" + meshNode?.uuid)
         if (state == ProvisioningState.States.PROVISIONING_COMPLETE) {
             nrfMeshManager.onProvisioningFinish(BleMeshDevice.Provisioned(meshNode!!))
         }

@@ -19,19 +19,19 @@ class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatu
     private val tag: String = MeshStatusCallbacksManager::class.java.simpleName
 
     override fun onTransactionFailed(dst: Int, hasIncompleteTimerExpired: Boolean) {
-        Log.d(tag, "onTransactionFailed")
+
     }
 
     override fun onUnknownPduReceived(src: Int, accessPayload: ByteArray?) {
-        Log.d(tag, "onUnknownPduReceived")
+
     }
 
     override fun onBlockAcknowledgementProcessed(dst: Int, message: ControlMessage) {
-        Log.d(tag, "onBlockAcknowledgementProcessed")
+
     }
 
     override fun onBlockAcknowledgementReceived(src: Int, message: ControlMessage) {
-        Log.d(tag, "onBlockAcknowledgementReceived")
+
     }
 
     override fun onMeshMessageProcessed(dst: Int, meshMessage: MeshMessage) {
@@ -63,6 +63,6 @@ class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatu
     }
 
     override fun onMessageDecryptionFailed(meshLayer: String?, errorMessage: String?) {
-        Log.d(tag, "onMessageDecryptionFailed")
+
     }
 }
