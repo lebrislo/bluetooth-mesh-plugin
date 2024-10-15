@@ -1,5 +1,6 @@
 package com.lebrislo.bluetooth.mesh.plugin
 
+import android.util.Log
 import com.getcapacitor.PluginCall
 import com.lebrislo.bluetooth.mesh.NrfMeshPlugin
 import com.lebrislo.bluetooth.mesh.plugin.ConfigOperationPair.Companion.getConfigOperationPair
@@ -124,6 +125,7 @@ class PluginCallManager private constructor() {
      * @param meshMessage Mesh message.
      */
     fun resolveVendorPluginCall(meshMessage: MeshMessage) {
+        Log.d(tag, "resolveVendorPluginCall ${meshMessage.opCode} from ${meshMessage.src}")
         val callResponse = generateVendorPluginCallResponse(meshMessage)
 
         val pluginCall =

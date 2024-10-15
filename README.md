@@ -272,12 +272,12 @@ sendLightCtlSet(options: { unicastAddress: number; appKeyIndex: number; lightnes
 ### sendVendorModelMessage(...)
 
 ```typescript
-sendVendorModelMessage(options: { unicastAddress: number; appKeyIndex: number; modelId: number; opcode: number; payload: Uint8Array; acknowledgement?: boolean; opPairCode?: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendVendorModelMessage(options: { unicastAddress: number; appKeyIndex: number; modelId: number; opcode: number; payload?: Uint8Array; opPairCode?: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
 ```
 
-| Param         | Type                                                                                                                                                                                          |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; modelId: number; opcode: number; payload: <a href="#uint8array">Uint8Array</a>; acknowledgement?: boolean; opPairCode?: number; }</code> |
+| Param         | Type                                                                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; modelId: number; opcode: number; payload?: <a href="#uint8array">Uint8Array</a>; opPairCode?: number; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
 

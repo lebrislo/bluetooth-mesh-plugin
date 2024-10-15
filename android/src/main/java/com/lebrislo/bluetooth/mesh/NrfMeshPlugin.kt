@@ -671,33 +671,34 @@ class NrfMeshPlugin : Plugin() {
         val modelId = call.getInt("modelId")
         val opcode = call.getInt("opcode")
         val payload = call.getObject("payload")
-        val acknowledgement = call.getBoolean("acknowledgement", false)
         val opPairCode = call.getInt("opPairCode", null)
         val companyIdentifier = modelId?.shr(16)
 
-        if (unicastAddress == null || appKeyIndex == null || modelId == null || companyIdentifier == null || opcode == null || payload == null) {
-            call.reject("unicastAddress, appKeyIndex, modelId, companyIdentifier, opcode, and payload are required")
+        if (unicastAddress == null || appKeyIndex == null || modelId == null || companyIdentifier == null || opcode == null) {
+            call.reject("unicastAddress, appKeyIndex, modelId, companyIdentifier and opcode are required")
             return
         }
 
-        // Convert the payload object into a ByteArray
-        val payloadData = payload.keys()
-            .asSequence()
-            .mapNotNull { key -> payload.getInt(key) } // Convert each value to an Int, ignoring nulls
-            .map { it.toByte() } // Convert each Int to a Byte
-            .toList()
-            .toByteArray()
+        var payloadData = byteArrayOf()
+        if (payload != null) { // Convert the payload object into a ByteArray
+            payloadData = payload.keys()
+                .asSequence()
+                .mapNotNull { key -> payload.getInt(key) } // Convert each value to an Int, ignoring nulls
+                .map { it.toByte() } // Convert each Int to a Byte
+                .toList()
+                .toByteArray()
+        }
+
+        if (opPairCode != null) {
+            PluginCallManager.getInstance()
+                .addVendorPluginCall(modelId, opcode, opPairCode, unicastAddress, call)
+        }
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 call.reject("Failed to connect to Mesh proxy")
                 return@launch
-            }
-
-            if (acknowledgement == true) {
-                PluginCallManager.getInstance()
-                    .addVendorPluginCall(modelId, opcode, opPairCode!!, unicastAddress, call)
             }
 
             val result = implementation.sendVendorModelMessage(
@@ -711,10 +712,6 @@ class NrfMeshPlugin : Plugin() {
 
             if (!result) {
                 call.reject("Failed to send Vendor Model Message")
-            } else {
-                if (acknowledgement == false) {
-                    call.resolve()
-                }
             }
         }
     }

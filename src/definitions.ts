@@ -123,8 +123,7 @@ export interface NrfMeshPlugin {
     appKeyIndex: number;
     modelId: number;
     opcode: number;
-    payload: Uint8Array;
-    acknowledgement?: boolean;
+    payload?: Uint8Array;
     opPairCode?: number
   }): Promise<ModelMessageStatus | PluginCallRejection>;
   initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject>;

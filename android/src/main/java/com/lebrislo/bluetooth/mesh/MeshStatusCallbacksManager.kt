@@ -39,7 +39,7 @@ class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatu
     }
 
     override fun onMeshMessageReceived(src: Int, meshMessage: MeshMessage) {
-        Log.d(tag, "onMeshMessageReceived")
+        Log.d(tag, "onMeshMessageReceived ${meshMessage.javaClass.simpleName}")
         if (meshMessage is ConfigNodeResetStatus) {
             PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
         } else if (meshMessage is ConfigModelAppStatus) {

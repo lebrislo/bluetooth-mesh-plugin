@@ -33,7 +33,7 @@ class VendorPluginCall(
             result.put("vendorModelId", meshMessage.modelIdentifier)
             val data = JSArray()
             meshMessage.parameters.forEach {
-                data.put(it.toInt())
+                data.put(it.toUByte().toInt())
             }
             result.put("data", data)
             return result
