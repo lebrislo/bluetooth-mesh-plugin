@@ -3,6 +3,7 @@ package com.lebrislo.bluetooth.mesh.plugin
 import android.util.Log
 import com.getcapacitor.PluginCall
 import com.lebrislo.bluetooth.mesh.NrfMeshPlugin
+import com.lebrislo.bluetooth.mesh.NrfMeshPlugin.Companion.MESH_EVENT_STRING
 import com.lebrislo.bluetooth.mesh.plugin.ConfigOperationPair.Companion.getConfigOperationPair
 import com.lebrislo.bluetooth.mesh.plugin.ConfigPluginCall.Companion.generateConfigPluginCallResponse
 import com.lebrislo.bluetooth.mesh.plugin.SigOperationPair.Companion.getSigOperationPair
@@ -15,7 +16,6 @@ import no.nordicsemi.android.mesh.transport.MeshMessage
  */
 class PluginCallManager private constructor() {
     private val tag: String = PluginCallManager::class.java.simpleName
-    private val MESH_EVENT_STRING: String = "meshEvent"
 
     private lateinit var plugin: NrfMeshPlugin
     private val pluginCalls: MutableList<BasePluginCall> = mutableListOf()

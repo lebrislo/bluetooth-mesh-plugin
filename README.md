@@ -13,6 +13,8 @@ npx cap sync
 
 <docgen-index>
 
+* [`checkPermissions()`](#checkpermissions)
+* [`requestPermissions()`](#requestpermissions)
 * [`scanMeshDevices(...)`](#scanmeshdevices)
 * [`getProvisioningCapabilities(...)`](#getprovisioningcapabilities)
 * [`provisionDevice(...)`](#provisiondevice)
@@ -42,6 +44,28 @@ npx cap sync
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
+
+### checkPermissions()
+
+```typescript
+checkPermissions() => Promise<Permissions>
+```
+
+**Returns:** <code>Promise&lt;<a href="#permissions">Permissions</a>&gt;</code>
+
+--------------------
+
+
+### requestPermissions()
+
+```typescript
+requestPermissions() => Promise<any>
+```
+
+**Returns:** <code>Promise&lt;any&gt;</code>
+
+--------------------
+
 
 ### scanMeshDevices(...)
 
@@ -349,6 +373,9 @@ removeAllListeners() => Promise<void>
 
 
 ### Interfaces
+
+
+#### Permissions
 
 
 #### ScanMeshDevices

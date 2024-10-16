@@ -1,5 +1,9 @@
 import type { PluginListenerHandle } from '@capacitor/core';
 
+export interface Permissions {
+  [key: string]: string;
+}
+
 export interface BleMeshDevice {
   name: string;
   uuid: string;
@@ -61,6 +65,8 @@ export interface MeshNetworkObject {
 }
 
 export interface NrfMeshPlugin {
+  checkPermissions(): Promise<Permissions>
+  requestPermissions(): Promise<any>
   scanMeshDevices(options: {
     timeout: number;
   }): Promise<ScanMeshDevices>;

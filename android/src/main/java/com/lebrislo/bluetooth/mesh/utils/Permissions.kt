@@ -30,12 +30,5 @@ class Permissions {
             val adapter: BluetoothAdapter = btManager.adapter
             return adapter.isEnabled
         }
-
-        fun isBluetoothConnected(context: Context): Boolean {
-            return ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) != PackageManager.PERMISSION_GRANTED
-        }
     }
 }

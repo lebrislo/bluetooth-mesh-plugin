@@ -1,6 +1,12 @@
 package com.lebrislo.bluetooth.mesh
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.IntentFilter
 import android.util.Log
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
@@ -8,8 +14,10 @@ import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
+import com.getcapacitor.annotation.Permission
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
+import com.lebrislo.bluetooth.mesh.utils.BluetoothStateReceiver
 import com.lebrislo.bluetooth.mesh.utils.Permissions
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
@@ -22,15 +30,76 @@ import no.nordicsemi.android.mesh.opcodes.ConfigMessageOpCodes
 import java.util.UUID
 
 
-@CapacitorPlugin(name = "NrfMesh")
+@CapacitorPlugin(
+    name = "NrfMesh",
+    permissions = [
+        Permission(
+            strings = [
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            ],
+            alias = "LOCATION"
+        ),
+        Permission(
+            strings = [
+                android.Manifest.permission.BLUETOOTH,
+                android.Manifest.permission.BLUETOOTH_ADMIN,
+            ],
+            alias = "BLUETOOTH"
+        )
+    ]
+)
 class NrfMeshPlugin : Plugin() {
     private val tag: String = NrfMeshPlugin::class.java.simpleName
 
-    private lateinit var implementation: NrfMeshManager
+    companion object {
+        val MESH_EVENT_STRING: String = "meshEvent"
+        val BLUETOOTH_ADAPTER_EVENT_STRING: String = "bluetoothAdapterEvent"
+    }
 
+    private lateinit var implementation: NrfMeshManager
+    private lateinit var bluetoothAdapter: BluetoothAdapter
+    private lateinit var bluetoothStateReceiver: BroadcastReceiver
+
+    @SuppressLint("ServiceCast")
     override fun load() {
         this.implementation = NrfMeshManager(this.context)
         PluginCallManager.getInstance().setPlugin(this)
+
+        Log.i(tag, "Permissions : ${this.permissionStates.keys}")
+        Log.i(tag, "Permissions : ${this.permissionStates.values}")
+
+        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = bluetoothManager.adapter
+    }
+
+    override fun handleOnStart() {
+        Log.d(tag, "handleOnStart")
+        super.handleOnStart()
+        // Register for Bluetooth state changes
+        val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        bluetoothStateReceiver = BluetoothStateReceiver(this)
+        context.registerReceiver(bluetoothStateReceiver, filter)
+    }
+
+    override fun handleOnStop() {
+        Log.d(tag, "handleOnStop")
+        super.handleOnStop()
+        try {
+            context.unregisterReceiver(bluetoothStateReceiver)
+        } catch (e: IllegalArgumentException) {
+            Log.e(tag, "handleOnStop : Receiver not registered")
+        }
+    }
+
+    override fun handleOnDestroy() {
+        Log.d(tag, "handleOnDestroy")
+        super.handleOnDestroy()
+        try {
+            context.unregisterReceiver(bluetoothStateReceiver)
+        } catch (e: IllegalArgumentException) {
+            Log.e(tag, "handleOnDestroy : Receiver not registered")
+        }
     }
 
     fun sendNotification(eventName: String, data: JSObject) {
