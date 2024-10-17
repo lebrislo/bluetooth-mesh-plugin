@@ -1,8 +1,19 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { AddAppKeyStatus, MeshNetworkObject, ModelMessageStatus, NrfMeshPlugin, Permissions, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices } from './definitions';
+import type { AddAppKeyStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NrfMeshPlugin, Permissions, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices } from './definitions';
 
 export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
+
+  async isBluetoothEnabled(): Promise<BluetoothState> {
+    console.log('isBluetoothEnabled');
+    return { enabled: true };
+  }
+
+  async requestBluetoothEnable(): Promise<BluetoothState> {
+    console.log('requestBluetoothEnabled');
+    return { enabled: true };
+  }
+
   async checkPermissions(): Promise<Permissions> {
     console.log('checkPermissions');
     return { 'LOCATION': 'granted', 'BLUETOOTH': 'granted' };

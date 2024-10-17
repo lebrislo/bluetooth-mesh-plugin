@@ -13,6 +13,8 @@ npx cap sync
 
 <docgen-index>
 
+* [`isBluetoothEnabled()`](#isbluetoothenabled)
+* [`requestBluetoothEnable()`](#requestbluetoothenable)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`scanMeshDevices(...)`](#scanmeshdevices)
@@ -44,6 +46,28 @@ npx cap sync
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
+
+### isBluetoothEnabled()
+
+```typescript
+isBluetoothEnabled() => Promise<BluetoothState>
+```
+
+**Returns:** <code>Promise&lt;<a href="#bluetoothstate">BluetoothState</a>&gt;</code>
+
+--------------------
+
+
+### requestBluetoothEnable()
+
+```typescript
+requestBluetoothEnable() => Promise<BluetoothState>
+```
+
+**Returns:** <code>Promise&lt;<a href="#bluetoothstate">BluetoothState</a>&gt;</code>
+
+--------------------
+
 
 ### checkPermissions()
 
@@ -350,13 +374,13 @@ importMeshNetwork(options: { meshNetwork: string; }) => Promise<void>
 ### addListener(string, ...)
 
 ```typescript
-addListener(eventName: string, listenerFunc: (event: ModelMessageStatus) => void) => Promise<PluginListenerHandle>
+addListener(eventName: string, listenerFunc: (event: any) => void) => Promise<PluginListenerHandle>
 ```
 
-| Param              | Type                                                                                  |
-| ------------------ | ------------------------------------------------------------------------------------- |
-| **`eventName`**    | <code>string</code>                                                                   |
-| **`listenerFunc`** | <code>(event: <a href="#modelmessagestatus">ModelMessageStatus</a>) =&gt; void</code> |
+| Param              | Type                                 |
+| ------------------ | ------------------------------------ |
+| **`eventName`**    | <code>string</code>                  |
+| **`listenerFunc`** | <code>(event: any) =&gt; void</code> |
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
 
@@ -373,6 +397,13 @@ removeAllListeners() => Promise<void>
 
 
 ### Interfaces
+
+
+#### BluetoothState
+
+| Prop          | Type                 |
+| ------------- | -------------------- |
+| **`enabled`** | <code>boolean</code> |
 
 
 #### Permissions

@@ -14,11 +14,11 @@ class BluetoothStateReceiver(private val plugin: NrfMeshPlugin) : BroadcastRecei
         val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
         when (state) {
             BluetoothAdapter.STATE_ON -> {
-                plugin.sendNotification(BLUETOOTH_ADAPTER_EVENT_STRING, JSObject().put("bluetoothEnabled", true))
+                plugin.sendNotification(BLUETOOTH_ADAPTER_EVENT_STRING, JSObject().put("enabled", true))
             }
 
             BluetoothAdapter.STATE_OFF -> {
-                plugin.sendNotification(BLUETOOTH_ADAPTER_EVENT_STRING, JSObject().put("bluetoothEnabled", false))
+                plugin.sendNotification(BLUETOOTH_ADAPTER_EVENT_STRING, JSObject().put("enabled", false))
             }
         }
     }
