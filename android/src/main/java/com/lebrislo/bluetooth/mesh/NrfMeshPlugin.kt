@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -85,6 +84,7 @@ class NrfMeshPlugin : Plugin() {
         val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
         bluetoothStateReceiver = BluetoothStateReceiver(this)
         context.registerReceiver(bluetoothStateReceiver, filter)
+        implementation.startScan()
     }
 
     override fun handleOnStop() {
@@ -95,6 +95,13 @@ class NrfMeshPlugin : Plugin() {
         } catch (e: IllegalArgumentException) {
             Log.e(tag, "handleOnStop : Receiver not registered")
         }
+
+        if (implementation.isBleConnected()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                implementation.disconnectBle()
+            }
+        }
+        implementation.stopScan()
     }
 
     override fun handleOnDestroy() {
@@ -105,6 +112,13 @@ class NrfMeshPlugin : Plugin() {
         } catch (e: IllegalArgumentException) {
             Log.e(tag, "handleOnDestroy : Receiver not registered")
         }
+
+        if (implementation.isBleConnected()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                implementation.disconnectBle()
+            }
+        }
+        implementation.stopScan()
     }
 
     private fun assertBluetoothAdapter(call: PluginCall): Boolean? {
@@ -205,9 +219,6 @@ class NrfMeshPlugin : Plugin() {
         destinationUuid: String
     ): Boolean {
         return withContext(Dispatchers.IO) {
-            var bluetoothDevice: BluetoothDevice? = null
-            var attempts = 0
-            val maxAttempts = 3
 
             if (!connectedToUnprovisionedDestinations(destinationMacAddress)) {
                 if (implementation.isBleConnected()) {
@@ -216,12 +227,8 @@ class NrfMeshPlugin : Plugin() {
                     }
                 }
 
-                while (bluetoothDevice == null && attempts < maxAttempts) {
-                    bluetoothDevice = withContext(Dispatchers.IO) {
-                        implementation.searchUnprovisionedBluetoothDevice(destinationUuid)
-                    }
-                    attempts++
-                    Log.d(tag, "connectionToUnprovisionedDevice : search for device attempts n° $attempts")
+                val bluetoothDevice = withContext(Dispatchers.IO) {
+                    implementation.searchUnprovisionedBluetoothDevice(destinationUuid)
                 }
 
                 if (bluetoothDevice == null) {
@@ -240,16 +247,8 @@ class NrfMeshPlugin : Plugin() {
     private suspend fun connectionToProvisionedDevice(
     ): Boolean {
         return withContext(Dispatchers.IO) {
-            var proxy: BluetoothDevice? = null
-            var attempts = 0
-            val maxAttempts = 3
-
-            while (proxy == null && attempts < maxAttempts) {
-                proxy = withContext(Dispatchers.IO) {
-                    implementation.searchProxyMesh()
-                }
-                attempts++
-                Log.d(tag, "connectionToProvisionedDevice : search for proxy attempts n° $attempts")
+            val proxy = withContext(Dispatchers.IO) {
+                implementation.searchProxyMesh()
             }
 
             if (proxy == null) {

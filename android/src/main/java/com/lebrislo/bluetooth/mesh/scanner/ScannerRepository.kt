@@ -57,7 +57,7 @@ class ScannerRepository(
         }
 
         override fun onScanFailed(errorCode: Int) {
-            stopScan()
+            stopScanDevices()
         }
     }
 
@@ -117,12 +117,6 @@ class ScannerRepository(
      * MESH_PROXY_UUID: 00001828-0000-1000-8000-00805F9B34FB
      */
     fun startScanDevices() {
-        if (isScanning) {
-            return
-        }
-
-        isScanning = true
-
         //Scanning settings
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY) // Refresh the devices list every second
@@ -147,16 +141,31 @@ class ScannerRepository(
             ).build()
         )
 
-        val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
-        scanner.startScan(filters, settings, scanCallback)
+        synchronized(this) {
+            Log.v(tag, "startScanDevices isScanning: $isScanning")
+            if (isScanning) {
+                return
+            }
+            isScanning = true
+            val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
+            scanner.startScan(filters, settings, scanCallback)
+        }
     }
 
     /**
      * stop scanning for bluetooth devices.
      */
-    fun stopScan() {
-        val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
-        scanner.stopScan(scanCallback)
+    fun stopScanDevices() {
+        synchronized(this) {
+            Log.v(tag, "stopScan isScanning: $isScanning")
+            if (!isScanning) {
+                return
+            }
+            isScanning = false
+
+            val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
+            scanner.stopScan(scanCallback)
+        }
     }
 
     /**

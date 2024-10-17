@@ -103,11 +103,12 @@ class NrfMeshManager(private val context: Context) {
         return bleMeshManager.bluetoothDevice
     }
 
-    private suspend fun resetScanner() {
-        scannerRepository.provisionedDevices.clear()
-        scannerRepository.unprovisionedDevices.clear()
+    fun startScan() {
         scannerRepository.startScanDevices()
-        delay(3000)
+    }
+
+    fun stopScan() {
+        scannerRepository.stopScanDevices()
     }
 
     /**
@@ -135,8 +136,6 @@ class NrfMeshManager(private val context: Context) {
                 }
             }
         }
-
-        resetScanner()
 
         Log.d(tag, "searchProxyMesh : Provisioned devices: ${scannerRepository.provisionedDevices.size}")
 
@@ -170,8 +169,6 @@ class NrfMeshManager(private val context: Context) {
             }
         }
 
-        resetScanner()
-
         return scannerRepository.unprovisionedDevices.firstOrNull { device ->
             device.scanResult?.let {
                 val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
@@ -191,6 +188,7 @@ class NrfMeshManager(private val context: Context) {
     suspend fun scanMeshDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
         scannerRepository.unprovisionedDevices.clear()
         scannerRepository.provisionedDevices.clear()
+        scannerRepository.stopScanDevices()
         scannerRepository.startScanDevices()
         delay(scanDurationMs.toLong())
         return scannerRepository.unprovisionedDevices + scannerRepository.provisionedDevices
