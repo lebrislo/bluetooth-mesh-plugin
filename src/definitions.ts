@@ -130,6 +130,10 @@ export interface NrfMeshPlugin {
     temperature: number;
     deltaUv: number;
   }): Promise<ModelMessageStatus | PluginCallRejection>;
+  sendLightCtlGet(options: {
+    unicastAddress: number;
+    appKeyIndex: number;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
   sendVendorModelMessage(options: {
     unicastAddress: number;
     appKeyIndex: number;

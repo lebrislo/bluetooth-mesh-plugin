@@ -119,7 +119,13 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  sendLightCtlSet(): Promise<ModelMessageStatus | PluginCallRejection> {
-    throw new Error('Method not implemented.');
+  async sendLightCtlSet(): Promise<ModelMessageStatus | PluginCallRejection> {
+    console.log('sendLightCtlSet');
+    return { src: 1, dst: 2, opcode: 3, data: {} };
+  }
+
+  async sendLightCtlGet(): Promise<ModelMessageStatus | PluginCallRejection> {
+    console.log('sendLightCtlGet');
+    return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 }

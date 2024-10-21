@@ -30,6 +30,7 @@ import no.nordicsemi.android.mesh.transport.GenericOnOffSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelGet
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSet
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSetUnacknowledged
+import no.nordicsemi.android.mesh.transport.LightCtlGet
 import no.nordicsemi.android.mesh.transport.LightCtlSet
 import no.nordicsemi.android.mesh.transport.LightCtlSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.LightHslGet
@@ -820,6 +821,33 @@ class NrfMeshManager(private val context: Context) {
                 tId
             )
         }
+        meshManagerApi.createMeshPdu(address, meshMessage)
+        return true
+    }
+
+    /**
+     * Send a Light CTL Get message to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param address unicast address of the node
+     * @param appKeyIndex index of the application key
+     *
+     * @return Boolean whether the message was sent successfully
+     */
+    fun sendLightCtlGet(
+        address: Int,
+        appKeyIndex: Int
+    ): Boolean {
+        if (!bleMeshManager.isConnected) {
+            Log.e(tag, "Not connected to a mesh proxy")
+            return false
+        }
+
+        val meshMessage = LightCtlGet(
+            meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+        )
+
         meshManagerApi.createMeshPdu(address, meshMessage)
         return true
     }

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -26,6 +27,7 @@ import com.lebrislo.bluetooth.mesh.utils.Permissions
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import no.nordicsemi.android.mesh.MeshManagerApi
@@ -247,8 +249,23 @@ class NrfMeshPlugin : Plugin() {
     private suspend fun connectionToProvisionedDevice(
     ): Boolean {
         return withContext(Dispatchers.IO) {
-            val proxy = withContext(Dispatchers.IO) {
-                implementation.searchProxyMesh()
+            var proxy: BluetoothDevice? = null
+            val timeoutMillis = 5000L // 5 seconds timeout
+            val startTime = System.currentTimeMillis()
+
+            while (System.currentTimeMillis() - startTime < timeoutMillis) {
+                // Attempt to find the proxy
+                proxy = withContext(Dispatchers.IO) {
+                    implementation.searchProxyMesh()
+                }
+
+                // If proxy is found, break out of the loop
+                if (proxy != null) {
+                    break
+                }
+
+                // Wait for 1 second before retrying
+                delay(1000L)
             }
 
             if (proxy == null) {
@@ -755,6 +772,39 @@ class NrfMeshPlugin : Plugin() {
                 if (acknowledgement == false) {
                     call.resolve()
                 }
+            }
+        }
+    }
+
+    @PluginMethod
+    fun sendLightCtlGet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+
+        if (unicastAddress == null || appKeyIndex == null) {
+            call.reject("unicastAddress and appKeyIndex are required")
+            return
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
+                return@launch
+            }
+
+            PluginCallManager.getInstance()
+                .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_GET, unicastAddress, call)
+
+            val result = implementation.sendLightCtlGet(
+                unicastAddress,
+                appKeyIndex,
+            )
+
+            if (!result) {
+                call.reject("Failed to send Light CTL Get")
+            } else {
+                call.resolve()
             }
         }
     }
