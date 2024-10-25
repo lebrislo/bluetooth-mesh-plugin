@@ -134,6 +134,17 @@ export interface NrfMeshPlugin {
     unicastAddress: number;
     appKeyIndex: number;
   }): Promise<ModelMessageStatus | PluginCallRejection>;
+  sendLightCtlTemperatureRangeSet(options: {
+    unicastAddress: number;
+    appKeyIndex: number;
+    rangeMin: number;
+    rangeMax: number;
+    acknowledgement: boolean;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
+  sendLightCtlTemperatureRangeGet(options: {
+    unicastAddress: number;
+    appKeyIndex: number;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
   sendVendorModelMessage(options: {
     unicastAddress: number;
     appKeyIndex: number;

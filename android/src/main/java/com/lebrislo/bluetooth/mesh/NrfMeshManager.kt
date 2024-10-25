@@ -33,6 +33,9 @@ import no.nordicsemi.android.mesh.transport.GenericPowerLevelSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.LightCtlGet
 import no.nordicsemi.android.mesh.transport.LightCtlSet
 import no.nordicsemi.android.mesh.transport.LightCtlSetUnacknowledged
+import no.nordicsemi.android.mesh.transport.LightCtlTemperatureRangeGet
+import no.nordicsemi.android.mesh.transport.LightCtlTemperatureRangeSet
+import no.nordicsemi.android.mesh.transport.LightCtlTemperatureRangeSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.LightHslGet
 import no.nordicsemi.android.mesh.transport.LightHslSet
 import no.nordicsemi.android.mesh.transport.LightHslSetUnacknowledged
@@ -845,6 +848,73 @@ class NrfMeshManager(private val context: Context) {
         }
 
         val meshMessage = LightCtlGet(
+            meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+        )
+
+        meshManagerApi.createMeshPdu(address, meshMessage)
+        return true
+    }
+
+    /**
+     * Send a Light CTL Temperature Range Set message to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param address unicast address of the node
+     * @param appKeyIndex index of the application key
+     * @param rangeMin minimum temperature value
+     * @param rangeMax maximum temperature value
+     *
+     * @return Boolean whether the message was sent successfully
+     */
+    fun sendLightCtlTemperatureRangeSet(
+        address: Int,
+        appKeyIndex: Int,
+        rangeMin: Int,
+        rangeMax: Int,
+        acknowledgement: Boolean = false
+    ): Boolean {
+        if (!bleMeshManager.isConnected) {
+            Log.e(tag, "Not connected to a mesh proxy")
+            return false
+        }
+
+        var meshMessage: MeshMessage? = null
+
+        if (acknowledgement) {
+            meshMessage = LightCtlTemperatureRangeSet(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                rangeMin,
+                rangeMax
+            )
+        } else {
+            meshMessage = LightCtlTemperatureRangeSetUnacknowledged(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                rangeMin,
+                rangeMax
+            )
+        }
+        meshManagerApi.createMeshPdu(address, meshMessage)
+        return true
+    }
+
+    /**
+     * Send a Light CTL Temperature Range Get message to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param address unicast address of the node
+     * @param appKeyIndex index of the application key
+     *
+     * @return Boolean whether the message was sent successfully
+     */
+    fun sendLightCtlTemperatureRangeGet(address: Int, appKeyIndex: Int): Boolean {
+        if (!bleMeshManager.isConnected) {
+            Log.e(tag, "Not connected to a mesh proxy")
+            return false
+        }
+
+        val meshMessage = LightCtlTemperatureRangeGet(
             meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
         )
 

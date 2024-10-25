@@ -11,6 +11,7 @@ import no.nordicsemi.android.mesh.transport.ControlMessage
 import no.nordicsemi.android.mesh.transport.GenericOnOffStatus
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelStatus
 import no.nordicsemi.android.mesh.transport.LightCtlStatus
+import no.nordicsemi.android.mesh.transport.LightCtlTemperatureRangeStatus
 import no.nordicsemi.android.mesh.transport.LightHslStatus
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.VendorModelMessageStatus
@@ -35,30 +36,32 @@ class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatu
     }
 
     override fun onMeshMessageProcessed(dst: Int, meshMessage: MeshMessage) {
-        Log.d(tag, "onMeshMessageProcessed")
+        Log.d(tag, "onMeshMessageProcessed ${meshMessage.javaClass.simpleName}")
     }
 
     override fun onMeshMessageReceived(src: Int, meshMessage: MeshMessage) {
         Log.d(tag, "onMeshMessageReceived ${meshMessage.javaClass.simpleName}")
-        if (meshMessage is ConfigNodeResetStatus) {
-            PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
-        } else if (meshMessage is ConfigModelAppStatus) {
-            PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
-        } else if (meshMessage is ConfigAppKeyStatus) {
-            nrfMeshManager.onAppKeyAddStatusReceived(meshMessage)
-            PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
-        } else if (meshMessage is ConfigCompositionDataStatus) {
-            nrfMeshManager.onCompositionDataStatusReceived(meshMessage)
-        } else if (meshMessage is GenericOnOffStatus) {
-            PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
-        } else if (meshMessage is GenericPowerLevelStatus) {
-            PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
-        } else if (meshMessage is LightHslStatus) {
-            PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
-        } else if (meshMessage is LightCtlStatus) {
-            PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
-        } else if (meshMessage is VendorModelMessageStatus) {
-            PluginCallManager.getInstance().resolveVendorPluginCall(meshMessage)
+        when (meshMessage) {
+            is ConfigNodeResetStatus, is ConfigModelAppStatus -> {
+                PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
+            }
+
+            is ConfigAppKeyStatus -> {
+                nrfMeshManager.onAppKeyAddStatusReceived(meshMessage)
+                PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
+            }
+
+            is ConfigCompositionDataStatus -> {
+                nrfMeshManager.onCompositionDataStatusReceived(meshMessage)
+            }
+
+            is GenericOnOffStatus, is GenericPowerLevelStatus, is LightHslStatus, is LightCtlStatus, is LightCtlTemperatureRangeStatus -> {
+                PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
+            }
+
+            is VendorModelMessageStatus -> {
+                PluginCallManager.getInstance().resolveVendorPluginCall(meshMessage)
+            }
         }
     }
 

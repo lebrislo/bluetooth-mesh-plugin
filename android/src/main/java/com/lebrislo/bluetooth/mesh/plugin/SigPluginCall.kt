@@ -1,11 +1,13 @@
 package com.lebrislo.bluetooth.mesh.plugin
 
+import android.util.Log
 import com.getcapacitor.JSObject
 import com.getcapacitor.PluginCall
 import no.nordicsemi.android.mesh.transport.GenericLevelStatus
 import no.nordicsemi.android.mesh.transport.GenericOnOffStatus
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelStatus
 import no.nordicsemi.android.mesh.transport.LightCtlStatus
+import no.nordicsemi.android.mesh.transport.LightCtlTemperatureRangeStatus
 import no.nordicsemi.android.mesh.transport.LightHslStatus
 import no.nordicsemi.android.mesh.transport.MeshMessage
 
@@ -14,6 +16,8 @@ import no.nordicsemi.android.mesh.transport.MeshMessage
  */
 class SigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, call: PluginCall) : BasePluginCall(call) {
     companion object {
+        private val tag: String = SigPluginCall::class.java.simpleName
+
         /**
          * Generates a response for a SIG plugin call.
          *
@@ -32,9 +36,11 @@ class SigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, call: 
                     is GenericPowerLevelStatus -> genericPowerLevelStatusResponse(meshMessage)
                     is LightHslStatus -> lightHslStatusResponse(meshMessage)
                     is LightCtlStatus -> lightCtlStatusResponse(meshMessage)
+                    is LightCtlTemperatureRangeStatus -> lightCtlTemperatureRangeStatusResponse(meshMessage)
                     else -> JSObject()
                 }
             )
+            Log.d(tag, "generateSigPluginCallResponse: $result")
             return result
         }
 
@@ -68,6 +74,14 @@ class SigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, call: 
             val data = JSObject()
             data.put("lightness", meshMessage.presentLightness.toUShort().toInt())
             data.put("temperature", meshMessage.presentTemperature.toUShort().toInt())
+            return data
+        }
+
+        private fun lightCtlTemperatureRangeStatusResponse(meshMessage: LightCtlTemperatureRangeStatus): JSObject {
+            val data = JSObject()
+            data.put("status", meshMessage.statusCode.toUShort().toInt())
+            data.put("min", meshMessage.rangeMin.toUShort().toInt())
+            data.put("max", meshMessage.rangeMax.toUShort().toInt())
             return data
         }
     }

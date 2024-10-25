@@ -15,6 +15,10 @@ import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_CTL_GE
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_CTL_SET
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_CTL_SET_UNACKNOWLEDGED
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_CTL_STATUS
+import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_GET
+import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_SET
+import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_SET_UNACKNOWLEDGED
+import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_STATUS
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_HSL_GET
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_HSL_SET
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_HSL_SET_UNACKNOWLEDGED
@@ -37,6 +41,7 @@ class SigOperationPair {
                 GENERIC_POWER_LEVEL_GET, GENERIC_POWER_LEVEL_SET, GENERIC_POWER_LEVEL_SET_UNACKNOWLEDGED -> GENERIC_POWER_LEVEL_STATUS
                 LIGHT_HSL_GET, LIGHT_HSL_SET, LIGHT_HSL_SET_UNACKNOWLEDGED -> LIGHT_HSL_STATUS
                 LIGHT_CTL_GET, LIGHT_CTL_SET, LIGHT_CTL_SET_UNACKNOWLEDGED -> LIGHT_CTL_STATUS
+                LIGHT_CTL_TEMPERATURE_RANGE_GET, LIGHT_CTL_TEMPERATURE_RANGE_SET, LIGHT_CTL_TEMPERATURE_RANGE_SET_UNACKNOWLEDGED -> LIGHT_CTL_TEMPERATURE_RANGE_STATUS
                 else -> 0
             }
         }

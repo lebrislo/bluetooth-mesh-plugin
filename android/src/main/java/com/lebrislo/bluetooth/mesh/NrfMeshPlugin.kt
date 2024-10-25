@@ -810,6 +810,75 @@ class NrfMeshPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun sendLightCtlTemperatureRangeSet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+        val rangeMin = call.getInt("rangeMin")
+        val rangeMax = call.getInt("rangeMax")
+        val acknowledgement = call.getBoolean("acknowledgement", false)
+
+        if (unicastAddress == null || appKeyIndex == null || rangeMin == null || rangeMax == null) {
+            call.reject("unicastAddress, appKeyIndex, rangeMin, and rangeMax are required")
+            return
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
+                return@launch
+            }
+
+            if (acknowledgement == true) {
+                PluginCallManager.getInstance()
+                    .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_SET, unicastAddress, call)
+            }
+
+            val result = implementation.sendLightCtlTemperatureRangeSet(
+                unicastAddress,
+                appKeyIndex,
+                rangeMin,
+                rangeMax
+            )
+
+            if (!result) {
+                call.reject("Failed to send Light CTL Temperature Range Set")
+            }
+        }
+    }
+
+    @PluginMethod
+    fun sendLightCtlTemperatureRangeGet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress")
+        val appKeyIndex = call.getInt("appKeyIndex")
+
+        if (unicastAddress == null || appKeyIndex == null) {
+            call.reject("unicastAddress and appKeyIndex are required")
+            return
+        }
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                call.reject("Failed to connect to Mesh proxy")
+                return@launch
+            }
+
+            PluginCallManager.getInstance()
+                .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_GET, unicastAddress, call)
+
+            val result = implementation.sendLightCtlTemperatureRangeGet(
+                unicastAddress,
+                appKeyIndex,
+            )
+
+            if (!result) {
+                call.reject("Failed to send Light CTL Get")
+            }
+        }
+    }
+
+    @PluginMethod
     fun sendVendorModelMessage(call: PluginCall) {
         val unicastAddress = call.getInt("unicastAddress")
         val appKeyIndex = call.getInt("appKeyIndex")

@@ -34,6 +34,8 @@ npx cap sync
 * [`sendLightHslGet(...)`](#sendlighthslget)
 * [`sendLightCtlSet(...)`](#sendlightctlset)
 * [`sendLightCtlGet(...)`](#sendlightctlget)
+* [`sendLightCtlTemperatureRangeSet(...)`](#sendlightctltemperaturerangeset)
+* [`sendLightCtlTemperatureRangeGet(...)`](#sendlightctltemperaturerangeget)
 * [`sendVendorModelMessage(...)`](#sendvendormodelmessage)
 * [`initMeshNetwork(...)`](#initmeshnetwork)
 * [`exportMeshNetwork()`](#exportmeshnetwork)
@@ -322,6 +324,36 @@ sendLightCtlSet(options: { unicastAddress: number; appKeyIndex: number; lightnes
 
 ```typescript
 sendLightCtlGet(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+```
+
+| Param         | Type                                                          |
+| ------------- | ------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+
+--------------------
+
+
+### sendLightCtlTemperatureRangeSet(...)
+
+```typescript
+sendLightCtlTemperatureRangeSet(options: { unicastAddress: number; appKeyIndex: number; rangeMin: number; rangeMax: number; acknowledgement: boolean; }) => Promise<ModelMessageStatus | PluginCallRejection>
+```
+
+| Param         | Type                                                                                                                        |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; rangeMin: number; rangeMax: number; acknowledgement: boolean; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+
+--------------------
+
+
+### sendLightCtlTemperatureRangeGet(...)
+
+```typescript
+sendLightCtlTemperatureRangeGet(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
 ```
 
 | Param         | Type                                                          |

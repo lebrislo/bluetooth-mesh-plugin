@@ -64,6 +64,8 @@ class PluginCallManager private constructor() {
         val pluginCall =
             pluginCalls.find { it is SigPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
 
+        Log.d(tag, "resolveSigPluginCall: registered call: ${pluginCall != null}")
+
         if (pluginCall != null) {
             pluginCall as SigPluginCall
             pluginCall.resolve(callResponse)
