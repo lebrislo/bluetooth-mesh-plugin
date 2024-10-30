@@ -41,6 +41,16 @@ class PluginCallManager private constructor() {
     }
 
     /**
+     * Remove a plugin call from the list of plugin calls.
+     *
+     * @param call Plugin call.
+     */
+    fun removePluginCall(call: BasePluginCall) {
+        pluginCalls.remove(call)
+        Log.d(tag, "Remove call due to timeout ${call.call.methodName}")
+    }
+
+    /**
      * Add a SIG plugin call to the list of plugin calls to watch for a response.
      *
      * @param meshOperation Mesh operation.

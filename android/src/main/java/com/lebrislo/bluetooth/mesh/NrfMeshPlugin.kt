@@ -59,8 +59,9 @@ class NrfMeshPlugin : Plugin() {
     private val tag: String = NrfMeshPlugin::class.java.simpleName
 
     companion object {
-        val MESH_EVENT_STRING: String = "meshEvent"
-        val BLUETOOTH_ADAPTER_EVENT_STRING: String = "bluetoothAdapterEvent"
+        const val MESH_EVENT_STRING: String = "meshEvent"
+        const val BLUETOOTH_ADAPTER_EVENT_STRING: String = "bluetoothAdapterEvent"
+        const val BLUETOOTH_CONNECTION_EVENT_STRING: String = "bluetoothConnectionEvent"
     }
 
     private lateinit var implementation: NrfMeshManager
@@ -84,6 +85,9 @@ class NrfMeshPlugin : Plugin() {
         super.handleOnStart()
         // Register for Bluetooth state changes
         val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+
         bluetoothStateReceiver = BluetoothStateReceiver(this)
         context.registerReceiver(bluetoothStateReceiver, filter)
         implementation.startScan()
@@ -150,6 +154,14 @@ class NrfMeshPlugin : Plugin() {
     @ActivityCallback
     private fun handleRequestEnableResult(call: PluginCall, result: ActivityResult) {
         call.resolve(JSObject().put("enabled", result.resultCode == Activity.RESULT_OK))
+    }
+
+    @PluginMethod
+    fun isBluetoothConnected(call: PluginCall) {
+        val connected = implementation.isBleConnected()
+        implementation.connectedDevice()?.let {
+            call.resolve(JSObject().put("connected", connected).put("macAddress", it.address))
+        } ?: call.resolve(JSObject().put("connected", connected))
     }
 
     @PluginMethod
@@ -349,6 +361,10 @@ class NrfMeshPlugin : Plugin() {
                 return@launch
             }
 
+            withContext(Dispatchers.IO) {
+                implementation.disconnectBle()
+            }
+
             when (meshDevice) {
                 is BleMeshDevice.Provisioned -> {
                     val result = JSObject().apply {
@@ -438,13 +454,15 @@ class NrfMeshPlugin : Plugin() {
                 return@launch
             }
 
-//            PluginCallManager.getInstance()
-//                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
+            PluginCallManager.getInstance()
+                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
 
             val deferred = implementation.addApplicationKeyToNode(unicastAddress, appKeyIndex)
             val result = deferred.await()
 
-            call.resolve(JSObject().put("success", result))
+            if (!result) {
+                call.reject("Failed to add application key to node")
+            }
         }
     }
 

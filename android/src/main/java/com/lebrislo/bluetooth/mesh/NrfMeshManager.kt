@@ -277,6 +277,7 @@ class NrfMeshManager(private val context: Context) {
                 val uuid = bleMeshDevice.node.uuid
                 provisioningStatusMap[uuid]?.complete(bleMeshDevice)
                 provisioningStatusMap.remove(uuid)
+                unprovisionedMeshNodes.remove(unprovisionedMeshNodes.first { node -> node.deviceUuid.toString() == uuid })
             }
 
             is BleMeshDevice.Unprovisioned -> {

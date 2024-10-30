@@ -15,6 +15,7 @@ npx cap sync
 
 * [`isBluetoothEnabled()`](#isbluetoothenabled)
 * [`requestBluetoothEnable()`](#requestbluetoothenable)
+* [`isBluetoothConnected()`](#isbluetoothconnected)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`scanMeshDevices(...)`](#scanmeshdevices)
@@ -68,6 +69,17 @@ requestBluetoothEnable() => Promise<BluetoothState>
 ```
 
 **Returns:** <code>Promise&lt;<a href="#bluetoothstate">BluetoothState</a>&gt;</code>
+
+--------------------
+
+
+### isBluetoothConnected()
+
+```typescript
+isBluetoothConnected() => Promise<BluetoothConnectionStatus>
+```
+
+**Returns:** <code>Promise&lt;<a href="#bluetoothconnectionstatus">BluetoothConnectionStatus</a>&gt;</code>
 
 --------------------
 
@@ -177,14 +189,14 @@ removeApplicationKey(options: { appKeyIndex: number; }) => Promise<void>
 ### addApplicationKeyToNode(...)
 
 ```typescript
-addApplicationKeyToNode(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<AddAppKeyStatus>
+addApplicationKeyToNode(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
 ```
 
 | Param         | Type                                                          |
 | ------------- | ------------------------------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
 
-**Returns:** <code>Promise&lt;<a href="#addappkeystatus">AddAppKeyStatus</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
 
 --------------------
 
@@ -454,6 +466,14 @@ removeAllListeners() => Promise<void>
 | **`enabled`** | <code>boolean</code> |
 
 
+#### BluetoothConnectionStatus
+
+| Prop             | Type                 |
+| ---------------- | -------------------- |
+| **`connected`**  | <code>boolean</code> |
+| **`macAddress`** | <code>string</code>  |
+
+
 #### Permissions
 
 
@@ -497,13 +517,6 @@ removeAllListeners() => Promise<void>
 | **`provisioningComplete`** | <code>boolean</code> |
 | **`uuid`**                 | <code>string</code>  |
 | **`unicastAddress`**       | <code>number</code>  |
-
-
-#### AddAppKeyStatus
-
-| Prop          | Type                 |
-| ------------- | -------------------- |
-| **`success`** | <code>boolean</code> |
 
 
 #### ModelMessageStatus

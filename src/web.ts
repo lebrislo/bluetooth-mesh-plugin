@@ -1,6 +1,6 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { AddAppKeyStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NrfMeshPlugin, Permissions, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices } from './definitions';
+import type { BluetoothConnectionStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NrfMeshPlugin, Permissions, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices } from './definitions';
 
 export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
 
@@ -12,6 +12,11 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
   async requestBluetoothEnable(): Promise<BluetoothState> {
     console.log('requestBluetoothEnabled');
     return { enabled: true };
+  }
+
+  async isBluetoothConnected(): Promise<BluetoothConnectionStatus> {
+    console.log('isBluetoothConnected');
+    return { connected: true };
   }
 
   async checkPermissions(): Promise<Permissions> {
@@ -51,9 +56,9 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('removeApplicationKey');
   }
 
-  async addApplicationKeyToNode(): Promise<AddAppKeyStatus> {
+  async addApplicationKeyToNode(): Promise<ModelMessageStatus | PluginCallRejection> {
     console.log('addApplicationKeyToNode');
-    return { success: true };
+    return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
   async bindApplicationKeyToModel(): Promise<void> {

@@ -55,5 +55,6 @@ abstract class BasePluginCall(val call: PluginCall, val timeout: Int = 10000) {
      */
     private fun reject(message: String, data: JSObject? = null) {
         call.reject(message, data)
+        PluginCallManager.getInstance().removePluginCall(this)
     }
 }

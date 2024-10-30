@@ -4,6 +4,11 @@ export interface BluetoothState {
   enabled: boolean;
 }
 
+export interface BluetoothConnectionStatus {
+  connected: boolean;
+  macAddress?: string;
+}
+
 export interface Permissions {
   [key: string]: string;
 }
@@ -60,10 +65,6 @@ export interface ModelMessageStatus {
   data: any;
 }
 
-export interface AddAppKeyStatus {
-  success: boolean;
-}
-
 export interface MeshNetworkObject {
   meshNetwork: string;
 }
@@ -71,6 +72,7 @@ export interface MeshNetworkObject {
 export interface NrfMeshPlugin {
   isBluetoothEnabled(): Promise<BluetoothState>;
   requestBluetoothEnable(): Promise<BluetoothState>;
+  isBluetoothConnected(): Promise<BluetoothConnectionStatus>;
   checkPermissions(): Promise<Permissions>
   requestPermissions(): Promise<any>
   scanMeshDevices(options: {
@@ -87,7 +89,7 @@ export interface NrfMeshPlugin {
   addApplicationKeyToNode(options: {
     unicastAddress: number;
     appKeyIndex: number;
-  }): Promise<AddAppKeyStatus>;
+  }): Promise<ModelMessageStatus | PluginCallRejection>;
   bindApplicationKeyToModel(options: {
     elementAddress: number;
     appKeyIndex: number;
