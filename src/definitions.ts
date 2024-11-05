@@ -47,18 +47,10 @@ export interface UnprovisionStatus {
   status: boolean;
 }
 
-export interface PluginCallRejection {
-  message: string;
-  data: {
-    methodName: string;
-    [key: string]: any;
-  };
-}
-
-export type Data = DataView | string;
-
-export interface ReadResult {
-  value?: Data;
+export interface ModelMessage {
+  unicastAddress: number;
+  appKeyIndex: number;
+  acknowledgement?: boolean;
 }
 
 export interface ModelMessageStatus {
@@ -80,89 +72,63 @@ export interface NrfMeshPlugin {
   disconnectBle(): Promise<void>;
   checkPermissions(): Promise<Permissions>
   requestPermissions(): Promise<any>
+  initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject>;
+  exportMeshNetwork(): Promise<MeshNetworkObject>;
+  importMeshNetwork(options: { meshNetwork: string }): Promise<void>;
   scanMeshDevices(options: {
     timeout: number;
   }): Promise<ScanMeshDevices>;
   getProvisioningCapabilities(options: {
     macAddress: string;
     uuid: string;
-  }): Promise<ProvisioningCapabilities | void>;
+  }): Promise<ProvisioningCapabilities>;
   provisionDevice(options: { macAddress: string; uuid: string }): Promise<ProvisioningStatus>;
   unprovisionDevice(options: { unicastAddress: number }): Promise<UnprovisionStatus>;
-  createApplicationKey(): Promise<void>;
-  removeApplicationKey(options: { appKeyIndex: number }): Promise<void>;
-  addApplicationKeyToNode(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  bindApplicationKeyToModel(options: {
-    elementAddress: number;
-    appKeyIndex: number;
+  createApplicationKey(): Promise<ModelMessageStatus>;
+  removeApplicationKey(options: { appKeyIndex: number }): Promise<ModelMessageStatus>;
+  addApplicationKeyToNode(options: ModelMessage): Promise<ModelMessageStatus>;
+  bindApplicationKeyToModel(options: ModelMessage & {
     modelId: number;
-  }): Promise<void>;
-  compositionDataGet(options: { unicastAddress: number }): Promise<void>;
-  sendGenericOnOffSet(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
+  }): Promise<ModelMessageStatus>;
+  getCompositionData(options: { unicastAddress: number }): Promise<MeshNetworkObject>;
+  sendGenericOnOffSet(options: ModelMessage & {
     onOff: boolean;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  sendGenericOnOffGet(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  sendGenericPowerLevelSet(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
+  }): Promise<ModelMessageStatus>;
+  sendGenericOnOffGet(options: ModelMessage): Promise<ModelMessageStatus>;
+  sendGenericPowerLevelSet(options: ModelMessage & {
     powerLevel: number;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  sendGenericPowerLevelGet(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  sendLightHslSet(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
+  }): Promise<ModelMessageStatus>;
+  sendGenericPowerLevelGet(options: ModelMessage): Promise<ModelMessageStatus>;
+  sendLightHslSet(options: ModelMessage & {
     hue: number;
     saturation: number;
     lightness: number;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  sendLightHslGet(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  sendLightCtlSet(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
+  }): Promise<ModelMessageStatus>;
+  sendLightHslGet(options: ModelMessage): Promise<ModelMessageStatus>;
+  sendLightCtlSet(options: ModelMessage & {
     lightness: number;
     temperature: number;
     deltaUv: number;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  sendLightCtlGet(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  sendLightCtlTemperatureRangeSet(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
+  }): Promise<ModelMessageStatus>;
+  sendLightCtlGet(options: ModelMessage): Promise<ModelMessageStatus>;
+  sendLightCtlTemperatureRangeSet(options: ModelMessage & {
     rangeMin: number;
     rangeMax: number;
-    acknowledgement: boolean;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  sendLightCtlTemperatureRangeGet(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  sendVendorModelMessage(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
+  }): Promise<ModelMessageStatus>;
+  sendLightCtlTemperatureRangeGet(options: ModelMessage): Promise<ModelMessageStatus>;
+  sendVendorModelMessage(options: ModelMessage & {
     modelId: number;
     opcode: number;
     payload?: Uint8Array;
     opPairCode?: number
-  }): Promise<ModelMessageStatus | PluginCallRejection>;
-  initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject>;
-  exportMeshNetwork(): Promise<MeshNetworkObject>;
-  importMeshNetwork(options: { meshNetwork: string }): Promise<void>;
+  }): Promise<ModelMessageStatus>;
   addListener(eventName: string, listenerFunc: (event: any) => void): Promise<PluginListenerHandle>;
   removeAllListeners(): Promise<void>;
+}
+
+export enum NrfMeshPluginEvents {
+  MeshModelMessageEvent = 'meshModelMessageEvent', /* Not Foundation model and vendor model message */
+  MeshFoundationMessageEvent = 'meshFoundationMessageEvent', /* Mesh Foundation model message */
+  BluetoothAdapterEvent = 'bluetoothAdapterEvent', /* Bluetooth adapter state change */
+  BluetoothConnectionEvent = 'bluetoothConnectionEvent', /* Bluetooth connection state change */
 }

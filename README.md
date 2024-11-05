@@ -19,6 +19,9 @@ npx cap sync
 * [`disconnectBle()`](#disconnectble)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
+* [`initMeshNetwork(...)`](#initmeshnetwork)
+* [`exportMeshNetwork()`](#exportmeshnetwork)
+* [`importMeshNetwork(...)`](#importmeshnetwork)
 * [`scanMeshDevices(...)`](#scanmeshdevices)
 * [`getProvisioningCapabilities(...)`](#getprovisioningcapabilities)
 * [`provisionDevice(...)`](#provisiondevice)
@@ -27,7 +30,7 @@ npx cap sync
 * [`removeApplicationKey(...)`](#removeapplicationkey)
 * [`addApplicationKeyToNode(...)`](#addapplicationkeytonode)
 * [`bindApplicationKeyToModel(...)`](#bindapplicationkeytomodel)
-* [`compositionDataGet(...)`](#compositiondataget)
+* [`getCompositionData(...)`](#getcompositiondata)
 * [`sendGenericOnOffSet(...)`](#sendgenericonoffset)
 * [`sendGenericOnOffGet(...)`](#sendgenericonoffget)
 * [`sendGenericPowerLevelSet(...)`](#sendgenericpowerlevelset)
@@ -39,9 +42,6 @@ npx cap sync
 * [`sendLightCtlTemperatureRangeSet(...)`](#sendlightctltemperaturerangeset)
 * [`sendLightCtlTemperatureRangeGet(...)`](#sendlightctltemperaturerangeget)
 * [`sendVendorModelMessage(...)`](#sendvendormodelmessage)
-* [`initMeshNetwork(...)`](#initmeshnetwork)
-* [`exportMeshNetwork()`](#exportmeshnetwork)
-* [`importMeshNetwork(...)`](#importmeshnetwork)
 * [`addListener(string, ...)`](#addlistenerstring-)
 * [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
@@ -116,6 +116,45 @@ requestPermissions() => Promise<any>
 --------------------
 
 
+### initMeshNetwork(...)
+
+```typescript
+initMeshNetwork(options: { networkName: string; }) => Promise<MeshNetworkObject>
+```
+
+| Param         | Type                                  |
+| ------------- | ------------------------------------- |
+| **`options`** | <code>{ networkName: string; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#meshnetworkobject">MeshNetworkObject</a>&gt;</code>
+
+--------------------
+
+
+### exportMeshNetwork()
+
+```typescript
+exportMeshNetwork() => Promise<MeshNetworkObject>
+```
+
+**Returns:** <code>Promise&lt;<a href="#meshnetworkobject">MeshNetworkObject</a>&gt;</code>
+
+--------------------
+
+
+### importMeshNetwork(...)
+
+```typescript
+importMeshNetwork(options: { meshNetwork: string; }) => Promise<void>
+```
+
+| Param         | Type                                  |
+| ------------- | ------------------------------------- |
+| **`options`** | <code>{ meshNetwork: string; }</code> |
+
+--------------------
+
+
 ### scanMeshDevices(...)
 
 ```typescript
@@ -134,14 +173,14 @@ scanMeshDevices(options: { timeout: number; }) => Promise<ScanMeshDevices>
 ### getProvisioningCapabilities(...)
 
 ```typescript
-getProvisioningCapabilities(options: { macAddress: string; uuid: string; }) => Promise<ProvisioningCapabilities | void>
+getProvisioningCapabilities(options: { macAddress: string; uuid: string; }) => Promise<ProvisioningCapabilities>
 ```
 
 | Param         | Type                                               |
 | ------------- | -------------------------------------------------- |
 | **`options`** | <code>{ macAddress: string; uuid: string; }</code> |
 
-**Returns:** <code>Promise&lt;void | <a href="#provisioningcapabilities">ProvisioningCapabilities</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#provisioningcapabilities">ProvisioningCapabilities</a>&gt;</code>
 
 --------------------
 
@@ -179,8 +218,10 @@ unprovisionDevice(options: { unicastAddress: number; }) => Promise<UnprovisionSt
 ### createApplicationKey()
 
 ```typescript
-createApplicationKey() => Promise<void>
+createApplicationKey() => Promise<ModelMessageStatus>
 ```
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -188,12 +229,14 @@ createApplicationKey() => Promise<void>
 ### removeApplicationKey(...)
 
 ```typescript
-removeApplicationKey(options: { appKeyIndex: number; }) => Promise<void>
+removeApplicationKey(options: { appKeyIndex: number; }) => Promise<ModelMessageStatus>
 ```
 
 | Param         | Type                                  |
 | ------------- | ------------------------------------- |
 | **`options`** | <code>{ appKeyIndex: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -201,14 +244,14 @@ removeApplicationKey(options: { appKeyIndex: number; }) => Promise<void>
 ### addApplicationKeyToNode(...)
 
 ```typescript
-addApplicationKeyToNode(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+addApplicationKeyToNode(options: ModelMessage) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                          |
-| ------------- | ------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
+| Param         | Type                                                  |
+| ------------- | ----------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a></code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -216,25 +259,29 @@ addApplicationKeyToNode(options: { unicastAddress: number; appKeyIndex: number; 
 ### bindApplicationKeyToModel(...)
 
 ```typescript
-bindApplicationKeyToModel(options: { elementAddress: number; appKeyIndex: number; modelId: number; }) => Promise<void>
+bindApplicationKeyToModel(options: ModelMessage & { modelId: number; }) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                                           |
-| ------------- | ------------------------------------------------------------------------------ |
-| **`options`** | <code>{ elementAddress: number; appKeyIndex: number; modelId: number; }</code> |
+| Param         | Type                                                                         |
+| ------------- | ---------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { modelId: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
 
-### compositionDataGet(...)
+### getCompositionData(...)
 
 ```typescript
-compositionDataGet(options: { unicastAddress: number; }) => Promise<void>
+getCompositionData(options: { unicastAddress: number; }) => Promise<MeshNetworkObject>
 ```
 
 | Param         | Type                                     |
 | ------------- | ---------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#meshnetworkobject">MeshNetworkObject</a>&gt;</code>
 
 --------------------
 
@@ -242,14 +289,14 @@ compositionDataGet(options: { unicastAddress: number; }) => Promise<void>
 ### sendGenericOnOffSet(...)
 
 ```typescript
-sendGenericOnOffSet(options: { unicastAddress: number; appKeyIndex: number; onOff: boolean; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendGenericOnOffSet(options: ModelMessage & { onOff: boolean; }) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                                          |
-| ------------- | ----------------------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; onOff: boolean; }</code> |
+| Param         | Type                                                                        |
+| ------------- | --------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { onOff: boolean; }</code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -257,14 +304,14 @@ sendGenericOnOffSet(options: { unicastAddress: number; appKeyIndex: number; onOf
 ### sendGenericOnOffGet(...)
 
 ```typescript
-sendGenericOnOffGet(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendGenericOnOffGet(options: ModelMessage) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                          |
-| ------------- | ------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
+| Param         | Type                                                  |
+| ------------- | ----------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a></code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -272,14 +319,14 @@ sendGenericOnOffGet(options: { unicastAddress: number; appKeyIndex: number; }) =
 ### sendGenericPowerLevelSet(...)
 
 ```typescript
-sendGenericPowerLevelSet(options: { unicastAddress: number; appKeyIndex: number; powerLevel: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendGenericPowerLevelSet(options: ModelMessage & { powerLevel: number; }) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                                              |
-| ------------- | --------------------------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; powerLevel: number; }</code> |
+| Param         | Type                                                                            |
+| ------------- | ------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { powerLevel: number; }</code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -287,14 +334,14 @@ sendGenericPowerLevelSet(options: { unicastAddress: number; appKeyIndex: number;
 ### sendGenericPowerLevelGet(...)
 
 ```typescript
-sendGenericPowerLevelGet(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendGenericPowerLevelGet(options: ModelMessage) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                          |
-| ------------- | ------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
+| Param         | Type                                                  |
+| ------------- | ----------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a></code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -302,14 +349,14 @@ sendGenericPowerLevelGet(options: { unicastAddress: number; appKeyIndex: number;
 ### sendLightHslSet(...)
 
 ```typescript
-sendLightHslSet(options: { unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendLightHslSet(options: ModelMessage & { hue: number; saturation: number; lightness: number; }) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                                                                              |
-| ------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; hue: number; saturation: number; lightness: number; }</code> |
+| Param         | Type                                                                                                            |
+| ------------- | --------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { hue: number; saturation: number; lightness: number; }</code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -317,14 +364,14 @@ sendLightHslSet(options: { unicastAddress: number; appKeyIndex: number; hue: num
 ### sendLightHslGet(...)
 
 ```typescript
-sendLightHslGet(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendLightHslGet(options: ModelMessage) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                          |
-| ------------- | ------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
+| Param         | Type                                                  |
+| ------------- | ----------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a></code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -332,14 +379,14 @@ sendLightHslGet(options: { unicastAddress: number; appKeyIndex: number; }) => Pr
 ### sendLightCtlSet(...)
 
 ```typescript
-sendLightCtlSet(options: { unicastAddress: number; appKeyIndex: number; lightness: number; temperature: number; deltaUv: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendLightCtlSet(options: ModelMessage & { lightness: number; temperature: number; deltaUv: number; }) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                                                                                   |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; lightness: number; temperature: number; deltaUv: number; }</code> |
+| Param         | Type                                                                                                                 |
+| ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { lightness: number; temperature: number; deltaUv: number; }</code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -347,14 +394,14 @@ sendLightCtlSet(options: { unicastAddress: number; appKeyIndex: number; lightnes
 ### sendLightCtlGet(...)
 
 ```typescript
-sendLightCtlGet(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendLightCtlGet(options: ModelMessage) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                          |
-| ------------- | ------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
+| Param         | Type                                                  |
+| ------------- | ----------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a></code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -362,14 +409,14 @@ sendLightCtlGet(options: { unicastAddress: number; appKeyIndex: number; }) => Pr
 ### sendLightCtlTemperatureRangeSet(...)
 
 ```typescript
-sendLightCtlTemperatureRangeSet(options: { unicastAddress: number; appKeyIndex: number; rangeMin: number; rangeMax: number; acknowledgement: boolean; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendLightCtlTemperatureRangeSet(options: ModelMessage & { rangeMin: number; rangeMax: number; }) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                                                                                        |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; rangeMin: number; rangeMax: number; acknowledgement: boolean; }</code> |
+| Param         | Type                                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { rangeMin: number; rangeMax: number; }</code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -377,14 +424,14 @@ sendLightCtlTemperatureRangeSet(options: { unicastAddress: number; appKeyIndex: 
 ### sendLightCtlTemperatureRangeGet(...)
 
 ```typescript
-sendLightCtlTemperatureRangeGet(options: { unicastAddress: number; appKeyIndex: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendLightCtlTemperatureRangeGet(options: ModelMessage) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                          |
-| ------------- | ------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; }</code> |
+| Param         | Type                                                  |
+| ------------- | ----------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a></code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -392,53 +439,14 @@ sendLightCtlTemperatureRangeGet(options: { unicastAddress: number; appKeyIndex: 
 ### sendVendorModelMessage(...)
 
 ```typescript
-sendVendorModelMessage(options: { unicastAddress: number; appKeyIndex: number; modelId: number; opcode: number; payload?: Uint8Array; opPairCode?: number; }) => Promise<ModelMessageStatus | PluginCallRejection>
+sendVendorModelMessage(options: ModelMessage & { modelId: number; opcode: number; payload?: Uint8Array; opPairCode?: number; }) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                                                                                                                                |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ unicastAddress: number; appKeyIndex: number; modelId: number; opcode: number; payload?: <a href="#uint8array">Uint8Array</a>; opPairCode?: number; }</code> |
+| Param         | Type                                                                                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { modelId: number; opcode: number; payload?: <a href="#uint8array">Uint8Array</a>; opPairCode?: number; }</code> |
 
-**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a> | <a href="#plugincallrejection">PluginCallRejection</a>&gt;</code>
-
---------------------
-
-
-### initMeshNetwork(...)
-
-```typescript
-initMeshNetwork(options: { networkName: string; }) => Promise<MeshNetworkObject>
-```
-
-| Param         | Type                                  |
-| ------------- | ------------------------------------- |
-| **`options`** | <code>{ networkName: string; }</code> |
-
-**Returns:** <code>Promise&lt;<a href="#meshnetworkobject">MeshNetworkObject</a>&gt;</code>
-
---------------------
-
-
-### exportMeshNetwork()
-
-```typescript
-exportMeshNetwork() => Promise<MeshNetworkObject>
-```
-
-**Returns:** <code>Promise&lt;<a href="#meshnetworkobject">MeshNetworkObject</a>&gt;</code>
-
---------------------
-
-
-### importMeshNetwork(...)
-
-```typescript
-importMeshNetwork(options: { meshNetwork: string; }) => Promise<void>
-```
-
-| Param         | Type                                  |
-| ------------- | ------------------------------------- |
-| **`options`** | <code>{ meshNetwork: string; }</code> |
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 
@@ -487,6 +495,13 @@ removeAllListeners() => Promise<void>
 
 
 #### Permissions
+
+
+#### MeshNetworkObject
+
+| Prop              | Type                |
+| ----------------- | ------------------- |
+| **`meshNetwork`** | <code>string</code> |
 
 
 #### ScanMeshDevices
@@ -549,12 +564,13 @@ removeAllListeners() => Promise<void>
 | **`data`**          | <code>any</code>    |
 
 
-#### PluginCallRejection
+#### ModelMessage
 
-| Prop          | Type                                                     |
-| ------------- | -------------------------------------------------------- |
-| **`message`** | <code>string</code>                                      |
-| **`data`**    | <code>{ [key: string]: any; methodName: string; }</code> |
+| Prop                  | Type                 |
+| --------------------- | -------------------- |
+| **`unicastAddress`**  | <code>number</code>  |
+| **`appKeyIndex`**     | <code>number</code>  |
+| **`acknowledgement`** | <code>boolean</code> |
 
 
 #### Uint8Array
@@ -630,13 +646,6 @@ buffer as needed.
 | Method    | Signature                                                                               | Description                                                     |
 | --------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | **slice** | (begin: number, end?: number \| undefined) =&gt; <a href="#arraybuffer">ArrayBuffer</a> | Returns a section of an <a href="#arraybuffer">ArrayBuffer</a>. |
-
-
-#### MeshNetworkObject
-
-| Prop              | Type                |
-| ----------------- | ------------------- |
-| **`meshNetwork`** | <code>string</code> |
 
 
 #### PluginListenerHandle

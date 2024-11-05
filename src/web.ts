@@ -1,6 +1,6 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { BluetoothConnectionStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NrfMeshPlugin, Permissions, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices, UnprovisionStatus } from './definitions';
+import type { BluetoothConnectionStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NrfMeshPlugin, Permissions, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices, UnprovisionStatus } from './definitions';
 
 export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
 
@@ -38,9 +38,19 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     return { unprovisioned: [], provisioned: [] };
   }
 
-  async getProvisioningCapabilities(): Promise<ProvisioningCapabilities | void> {
+  async getProvisioningCapabilities(): Promise<ProvisioningCapabilities> {
     console.log('getProvisioningCapabilities');
-    return;
+    return {
+      numberOfElements: 1,
+      availableOOBTypes: ['availableOOBTypes'],
+      algorithms: 1,
+      publicKeyType: 1,
+      staticOobTypes: 1,
+      outputOobSize: 1,
+      outputOobActions: 1,
+      inputOobSize: 1,
+      inputOobActions: 1
+    };
   }
 
   async provisionDevice(): Promise<ProvisioningStatus> {
@@ -53,53 +63,57 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     return { status: true };
   }
 
-  async createApplicationKey(): Promise<void> {
+  async createApplicationKey(): Promise<ModelMessageStatus> {
     console.log('createApplicationKey');
+    return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async removeApplicationKey(): Promise<void> {
+  async removeApplicationKey(): Promise<ModelMessageStatus> {
     console.log('removeApplicationKey');
+    return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async addApplicationKeyToNode(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async addApplicationKeyToNode(): Promise<ModelMessageStatus> {
     console.log('addApplicationKeyToNode');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async bindApplicationKeyToModel(): Promise<void> {
+  async bindApplicationKeyToModel(): Promise<ModelMessageStatus> {
     console.log('bindApplicationKeyToModel');
+    return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async compositionDataGet(): Promise<void> {
+  async getCompositionData(): Promise<MeshNetworkObject> {
     console.log('compositionDataGet');
+    return { meshNetwork: 'meshNetwork' };
   }
 
-  async sendGenericOnOffSet(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendGenericOnOffSet(): Promise<ModelMessageStatus> {
     console.log('sendGenericOnOffSet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendGenericOnOffGet(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendGenericOnOffGet(): Promise<ModelMessageStatus> {
     console.log('sendGenericOnOffSet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendGenericPowerLevelSet(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendGenericPowerLevelSet(): Promise<ModelMessageStatus> {
     console.log('sendGenericPowerLevelSet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendGenericPowerLevelGet(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendGenericPowerLevelGet(): Promise<ModelMessageStatus> {
     console.log('sendGenericPowerLevelGet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendLightHslSet(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendLightHslSet(): Promise<ModelMessageStatus> {
     console.log('sendLightHslSet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendLightHslGet(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendLightHslGet(): Promise<ModelMessageStatus> {
     console.log('sendLightHslGet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
@@ -117,34 +131,27 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('importMeshNetwork');
   }
 
-  async sendVendorModelMessage(options: {
-    unicastAddress: number;
-    appKeyIndex: number;
-    modelId: number;
-    companyIdentifier: number;
-    opcode: number;
-    payload: Uint8Array;
-  }): Promise<ModelMessageStatus | PluginCallRejection> {
-    console.log('sendVendorModelMessage', options);
+  async sendVendorModelMessage(): Promise<ModelMessageStatus> {
+    console.log('sendVendorModelMessage');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendLightCtlSet(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendLightCtlSet(): Promise<ModelMessageStatus> {
     console.log('sendLightCtlSet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendLightCtlGet(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendLightCtlGet(): Promise<ModelMessageStatus> {
     console.log('sendLightCtlGet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendLightCtlTemperatureRangeSet(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendLightCtlTemperatureRangeSet(): Promise<ModelMessageStatus> {
     console.log('sendLightCtlTemperatureRangeSet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async sendLightCtlTemperatureRangeGet(): Promise<ModelMessageStatus | PluginCallRejection> {
+  async sendLightCtlTemperatureRangeGet(): Promise<ModelMessageStatus> {
     console.log('sendLightCtlTemperatureRangeGet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }

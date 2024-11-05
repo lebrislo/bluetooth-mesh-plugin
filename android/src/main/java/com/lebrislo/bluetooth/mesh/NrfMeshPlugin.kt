@@ -138,10 +138,7 @@ class NrfMeshPlugin : Plugin() {
     @PluginMethod
     fun isBluetoothEnabled(call: PluginCall) {
         assertBluetoothAdapter(call) ?: return
-        val enabled = bluetoothAdapter.isEnabled
-        val result = JSObject()
-        result.put("enabled", enabled)
-        call.resolve(result)
+        return call.resolve(JSObject().put("enabled", bluetoothAdapter.isEnabled))
     }
 
     @PluginMethod
@@ -153,43 +150,42 @@ class NrfMeshPlugin : Plugin() {
 
     @ActivityCallback
     private fun handleRequestEnableResult(call: PluginCall, result: ActivityResult) {
-        call.resolve(JSObject().put("enabled", result.resultCode == Activity.RESULT_OK))
+        return call.resolve(JSObject().put("enabled", result.resultCode == Activity.RESULT_OK))
     }
 
     @PluginMethod
     fun isBluetoothConnected(call: PluginCall) {
         val connected = implementation.isBleConnected()
         implementation.connectedDevice()?.let {
-            call.resolve(JSObject().put("connected", connected).put("macAddress", it.address))
-        } ?: call.resolve(JSObject().put("connected", connected))
+            return call.resolve(JSObject().put("connected", connected).put("macAddress", it.address))
+        } ?: return call.resolve(JSObject().put("connected", connected))
     }
 
     @PluginMethod
     fun disconnectBle(call: PluginCall) {
         if (!implementation.isBleConnected()) {
-            call.resolve()
-            return
+            return call.resolve()
         }
         CoroutineScope(Dispatchers.IO).launch {
             implementation.disconnectBle()
-            call.resolve()
+            return@launch call.resolve()
         }
     }
 
     @PluginMethod
     fun scanMeshDevices(call: PluginCall) {
-        val scanDuration = call.getInt("timeout", 5000)
+        val scanDuration = call.getInt("timeout") ?: 5000
 
         if (!Permissions.isBleEnabled(context)) {
-            call.reject("Bluetooth is disabled")
+            return call.reject("Bluetooth is disabled")
         }
 
         if (!Permissions.isLocationGranted(context)) {
-            call.reject("Location permission is required")
+            return call.reject("Location permission is required")
         }
 
         CoroutineScope(Dispatchers.IO).launch {
-            val devices = implementation.scanMeshDevices(scanDuration!!)
+            val devices = implementation.scanMeshDevices(scanDuration)
 
             // return a dict of devices, unprovisioned and provisioned
             val result = JSObject().apply {
@@ -232,7 +228,7 @@ class NrfMeshPlugin : Plugin() {
                     }
                 })
             }
-            call.resolve(result)
+            return@launch call.resolve(result)
         }
     }
 
@@ -307,18 +303,13 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun getProvisioningCapabilities(call: PluginCall) {
-        val macAddress = call.getString("macAddress")
-        val uuid = call.getString("uuid")
-        if (macAddress == null || uuid == null) {
-            call.reject("macAddress and uuid are required")
-            return
-        }
+        val macAddress = call.getString("macAddress") ?: return call.reject("macAddress is required")
+        val uuid = call.getString("uuid") ?: return call.reject("uuid is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToUnprovisionedDevice(macAddress, uuid)
             if (!connected) {
-                call.reject("Failed to connect to device : $macAddress $uuid")
-                return@launch
+                return@launch call.reject("Failed to connect to device : $macAddress $uuid")
             }
 
             val deferred = implementation.getProvisioningCapabilities(UUID.fromString(uuid))
@@ -342,36 +333,27 @@ class NrfMeshPlugin : Plugin() {
                     put("inputOobSize", unprovisionedDevice.provisioningCapabilities.inputOOBSize)
                     put("inputOobActions", unprovisionedDevice.provisioningCapabilities.rawInputOOBAction)
                 }
-                call.resolve(result)
+                return@launch call.resolve(result)
             } else {
-                call.reject("Failed to get provisioning capabilities")
+                return@launch call.reject("Failed to get provisioning capabilities")
             }
         }
     }
 
     @PluginMethod
     fun provisionDevice(call: PluginCall) {
-        val macAddress = call.getString("macAddress")
-        val uuid = call.getString("uuid")
-        if (macAddress == null || uuid == null) {
-            call.reject("macAddress and uuid are required")
-            return
-        }
+        val macAddress = call.getString("macAddress") ?: return call.reject("macAddress is required")
+        val uuid = call.getString("uuid") ?: return call.reject("uuid is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToUnprovisionedDevice(macAddress, uuid)
             if (!connected) {
-                call.reject("Failed to connect to device : $macAddress $uuid")
-                return@launch
+                return@launch call.reject("Failed to connect to device : $macAddress $uuid")
             }
 
             val deferred = implementation.provisionDevice(UUID.fromString(uuid))
 
-            val meshDevice = deferred.await()
-            if (meshDevice == null) {
-                call.reject("Failed to provision device")
-                return@launch
-            }
+            val meshDevice = deferred.await() ?: return@launch call.reject("Failed to provision device")
 
             withContext(Dispatchers.IO) {
                 implementation.disconnectBle()
@@ -384,7 +366,7 @@ class NrfMeshPlugin : Plugin() {
                         put("uuid", meshDevice.node.uuid)
                         put("unicastAddress", meshDevice.node.unicastAddress)
                     }
-                    call.resolve(result)
+                    return@launch call.resolve(result)
                 }
 
                 is BleMeshDevice.Unprovisioned -> {
@@ -392,7 +374,7 @@ class NrfMeshPlugin : Plugin() {
                         put("provisioningComplete", false)
                         put("uuid", meshDevice.node.deviceUuid)
                     }
-                    call.resolve(result)
+                    return@launch call.resolve(result)
                 }
             }
         }
@@ -400,18 +382,12 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun unprovisionDevice(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-
-        if (unicastAddress == null) {
-            call.reject("unicastAddress is required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
             PluginCallManager.getInstance()
@@ -425,7 +401,7 @@ class NrfMeshPlugin : Plugin() {
     fun createApplicationKey(call: PluginCall) {
         val result = implementation.createApplicationKey()
 
-        if (result) {
+        return if (result) {
             call.resolve()
         } else {
             call.reject("Failed to add application key")
@@ -434,15 +410,11 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun removeApplicationKey(call: PluginCall) {
-        val appKeyIndex = call.getInt("appKeyIndex")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
-        if (appKeyIndex == null) {
-            call.reject("appKeyIndex is required")
-        }
+        val result = implementation.removeApplicationKey(appKeyIndex)
 
-        val result = implementation.removeApplicationKey(appKeyIndex!!)
-
-        if (result) {
+        return if (result) {
             call.resolve()
         } else {
             call.reject("Failed to remove application key")
@@ -451,70 +423,57 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun addApplicationKeyToNode(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-
-        if (appKeyIndex == null || unicastAddress == null) {
-            call.reject("appKeyIndex and unicastAddress are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
+        val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            PluginCallManager.getInstance()
-                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
+            if (acknowledgement) {
+                PluginCallManager.getInstance()
+                    .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
+            }
 
             val deferred = implementation.addApplicationKeyToNode(unicastAddress, appKeyIndex)
             val result = deferred.await()
 
-            if (!result) {
-                call.reject("Failed to add application key to node")
-            }
+            if (!result) return@launch call.reject("Failed to add application key to node")
+            if (!acknowledgement) return@launch call.resolve()
         }
     }
 
     @PluginMethod
     fun bindApplicationKeyToModel(call: PluginCall) {
-        val elementAddress = call.getInt("elementAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-        val modelId = call.getInt("modelId")
-
-        if (elementAddress == null || appKeyIndex == null || modelId == null) {
-            call.reject("elementAddress, appKeyIndex and modelId are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
+        val modelId = call.getInt("modelId") ?: return call.reject("modelId is required")
+        val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            PluginCallManager.getInstance()
-                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_MODEL_APP_BIND, elementAddress, call)
-
-            val result = implementation.bindApplicationKeyToModel(elementAddress, appKeyIndex, modelId)
-
-            if (!result) {
-                call.reject("Failed to bind application key")
+            if (acknowledgement) {
+                PluginCallManager.getInstance()
+                    .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_MODEL_APP_BIND, unicastAddress, call)
             }
+
+            val result = implementation.bindApplicationKeyToModel(unicastAddress, appKeyIndex, modelId)
+
+            if (!result) return@launch call.reject("Failed to bind application key")
+            if (!acknowledgement) return@launch call.resolve()
         }
     }
 
     @PluginMethod
-    fun compositionDataGet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-
-        if (unicastAddress == null) {
-            call.reject("unicastAddress is required")
-            return
-        }
+    fun getCompositionData(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
@@ -526,35 +485,30 @@ class NrfMeshPlugin : Plugin() {
             val deferred = implementation.compositionDataGet(unicastAddress)
 
             val result = deferred.await()
+
             if (result!!) {
                 val meshNetwork = implementation.exportMeshNetwork()
-                call.resolve(JSObject().put("meshNetwork", meshNetwork))
+                return@launch call.resolve(JSObject().put("meshNetwork", meshNetwork))
             } else {
-                call.reject("Failed to get composition data")
+                return@launch call.reject("Failed to get composition data")
             }
         }
     }
 
     @PluginMethod
     fun sendGenericOnOffSet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-        val onOff = call.getBoolean("onOff")
-        val acknowledgement = call.getBoolean("acknowledgement", false)
-
-        if (unicastAddress == null || appKeyIndex == null || onOff == null) {
-            call.reject("unicastAddress, appKeyIndex, and onOff are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
+        val onOff = call.getBoolean("onOff") ?: return call.reject("onOff is required")
+        val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            if (acknowledgement == true) {
+            if (acknowledgement) {
                 PluginCallManager.getInstance()
                     .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_SET, unicastAddress, call)
             }
@@ -566,31 +520,21 @@ class NrfMeshPlugin : Plugin() {
                 0
             )
 
-            if (!result) {
-                call.reject("Failed to send Generic OnOff Set")
-            } else {
-                if (acknowledgement == false) {
-                    call.resolve()
-                }
-            }
+            if (!result) return@launch call.reject("Failed to send Generic OnOff Set")
+            if (!acknowledgement) return@launch call.resolve()
         }
     }
 
     @PluginMethod
     fun sendGenericOnOffGet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-
-        if (unicastAddress == null || appKeyIndex == null) {
-            call.reject("unicastAddress and appKeyIndex are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
+
             }
 
             PluginCallManager.getInstance()
@@ -601,34 +545,24 @@ class NrfMeshPlugin : Plugin() {
                 appKeyIndex,
             )
 
-            if (!result) {
-                call.reject("Failed to send Generic OnOff Get")
-            } else {
-                call.resolve()
-            }
+            if (!result) return@launch call.reject("Failed to send Generic OnOff Get")
         }
     }
 
     @PluginMethod
     fun sendGenericPowerLevelSet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-        val powerLevel = call.getInt("powerLevel")
-        val acknowledgement = call.getBoolean("acknowledgement", false)
-
-        if (unicastAddress == null || appKeyIndex == null || powerLevel == null) {
-            call.reject("unicastAddress, appKeyIndex, and powerLevel are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
+        val powerLevel = call.getInt("powerLevel") ?: return call.reject("powerLevel is required")
+        val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            if (acknowledgement == true) {
+            if (acknowledgement) {
                 PluginCallManager.getInstance()
                     .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET, unicastAddress, call)
             }
@@ -640,31 +574,20 @@ class NrfMeshPlugin : Plugin() {
                 0
             )
 
-            if (!result) {
-                call.reject("Failed to send Generic Power Level Set")
-            } else {
-                if (acknowledgement == false) {
-                    call.resolve()
-                }
-            }
+            if (!result) return@launch call.reject("Failed to send Generic Power Level Set")
+            if (!acknowledgement) return@launch call.resolve()
         }
     }
 
     @PluginMethod
     fun sendGenericPowerLevelGet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-
-        if (unicastAddress == null || appKeyIndex == null) {
-            call.reject("unicastAddress and appKeyIndex are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
             PluginCallManager.getInstance()
@@ -675,36 +598,26 @@ class NrfMeshPlugin : Plugin() {
                 appKeyIndex,
             )
 
-            if (!result) {
-                call.reject("Failed to send Generic Power Level Get")
-            } else {
-                call.resolve()
-            }
+            if (!result) return@launch call.reject("Failed to send Generic Power Level Get")
         }
     }
 
     @PluginMethod
     fun sendLightHslSet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-        val hue = call.getInt("hue")
-        val saturation = call.getInt("saturation")
-        val lightness = call.getInt("lightness")
-        val acknowledgement = call.getBoolean("acknowledgement", false)
-
-        if (unicastAddress == null || appKeyIndex == null || hue == null || saturation == null || lightness == null) {
-            call.reject("unicastAddress, appKeyIndex, hue, saturation, and lightness are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
+        val hue = call.getInt("hue") ?: return call.reject("hue is required")
+        val saturation = call.getInt("saturation") ?: return call.reject("saturation is required")
+        val lightness = call.getInt("lightness") ?: return call.reject("lightness is required")
+        val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            if (acknowledgement == true) {
+            if (acknowledgement) {
                 PluginCallManager.getInstance()
                     .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_SET, unicastAddress, call)
             }
@@ -718,31 +631,20 @@ class NrfMeshPlugin : Plugin() {
                 0
             )
 
-            if (!result) {
-                call.reject("Failed to send Light HSL Set")
-            } else {
-                if (acknowledgement == false) {
-                    call.resolve()
-                }
-            }
+            if (!result) return@launch call.reject("Failed to send Light HSL Set")
+            if (!acknowledgement) return@launch call.resolve()
         }
     }
 
     @PluginMethod
     fun sendLightHslGet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-
-        if (unicastAddress == null || appKeyIndex == null) {
-            call.reject("unicastAddress and appKeyIndex are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
             PluginCallManager.getInstance()
@@ -753,36 +655,26 @@ class NrfMeshPlugin : Plugin() {
                 appKeyIndex,
             )
 
-            if (!result) {
-                call.reject("Failed to send Light HSL Get")
-            } else {
-                call.resolve()
-            }
+            if (!result) return@launch call.reject("Failed to send Light HSL Get")
         }
     }
 
     @PluginMethod
     fun sendLightCtlSet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-        val lightness = call.getInt("lightness")
-        val temperature = call.getInt("temperature")
-        val deltaUv = call.getInt("deltaUv")
-        val acknowledgement = call.getBoolean("acknowledgement", false)
-
-        if (unicastAddress == null || appKeyIndex == null || lightness == null || temperature == null || deltaUv == null) {
-            call.reject("unicastAddress, appKeyIndex, lightness, temperature, and deltaUv are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
+        val lightness = call.getInt("lightness") ?: return call.reject("lightness is required")
+        val temperature = call.getInt("temperature") ?: return call.reject("temperature is required")
+        val deltaUv = call.getInt("deltaUv") ?: return call.reject("deltaUv is required")
+        val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            if (acknowledgement == true) {
+            if (acknowledgement) {
                 PluginCallManager.getInstance()
                     .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_SET, unicastAddress, call)
             }
@@ -796,31 +688,20 @@ class NrfMeshPlugin : Plugin() {
                 0
             )
 
-            if (!result) {
-                call.reject("Failed to send Light CTL Set")
-            } else {
-                if (acknowledgement == false) {
-                    call.resolve()
-                }
-            }
+            if (!result) return@launch call.reject("Failed to send Light CTL Set")
+            if (!acknowledgement) return@launch call.resolve()
         }
     }
 
     @PluginMethod
     fun sendLightCtlGet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-
-        if (unicastAddress == null || appKeyIndex == null) {
-            call.reject("unicastAddress and appKeyIndex are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
             PluginCallManager.getInstance()
@@ -831,35 +712,25 @@ class NrfMeshPlugin : Plugin() {
                 appKeyIndex,
             )
 
-            if (!result) {
-                call.reject("Failed to send Light CTL Get")
-            } else {
-                call.resolve()
-            }
+            if (!result) return@launch call.reject("Failed to send Light CTL Get")
         }
     }
 
     @PluginMethod
     fun sendLightCtlTemperatureRangeSet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-        val rangeMin = call.getInt("rangeMin")
-        val rangeMax = call.getInt("rangeMax")
-        val acknowledgement = call.getBoolean("acknowledgement", false)
-
-        if (unicastAddress == null || appKeyIndex == null || rangeMin == null || rangeMax == null) {
-            call.reject("unicastAddress, appKeyIndex, rangeMin, and rangeMax are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
+        val rangeMin = call.getInt("rangeMin") ?: return call.reject("rangeMin is required")
+        val rangeMax = call.getInt("rangeMax") ?: return call.reject("rangeMax is required")
+        val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            if (acknowledgement == true) {
+            if (acknowledgement) {
                 PluginCallManager.getInstance()
                     .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_SET, unicastAddress, call)
             }
@@ -871,27 +742,20 @@ class NrfMeshPlugin : Plugin() {
                 rangeMax
             )
 
-            if (!result) {
-                call.reject("Failed to send Light CTL Temperature Range Set")
-            }
+            if (!result) return@launch call.reject("Failed to send Light CTL Temperature Range Set")
+            if (!acknowledgement) return@launch call.resolve()
         }
     }
 
     @PluginMethod
     fun sendLightCtlTemperatureRangeGet(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-
-        if (unicastAddress == null || appKeyIndex == null) {
-            call.reject("unicastAddress and appKeyIndex are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
             PluginCallManager.getInstance()
@@ -902,36 +766,29 @@ class NrfMeshPlugin : Plugin() {
                 appKeyIndex,
             )
 
-            if (!result) {
-                call.reject("Failed to send Light CTL Get")
-            }
+            if (!result) return@launch call.reject("Failed to send Light CTL Get")
         }
     }
 
     @PluginMethod
     fun sendVendorModelMessage(call: PluginCall) {
-        val unicastAddress = call.getInt("unicastAddress")
-        val appKeyIndex = call.getInt("appKeyIndex")
-        val modelId = call.getInt("modelId")
-        val opcode = call.getInt("opcode")
-        val payload = call.getObject("payload")
-        val opPairCode = call.getInt("opPairCode", null)
-        val companyIdentifier = modelId?.shr(16)
-
-        if (unicastAddress == null || appKeyIndex == null || modelId == null || companyIdentifier == null || opcode == null) {
-            call.reject("unicastAddress, appKeyIndex, modelId, companyIdentifier and opcode are required")
-            return
-        }
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
+        val modelId = call.getInt("modelId") ?: return call.reject("modelId is required")
+        val opcode = call.getInt("opcode") ?: return call.reject("opcode is required")
+        val payload = call.getObject("payload") ?: JSObject()
+        val opPairCode = call.getInt("opPairCode")
+        val companyIdentifier = modelId.shr(16)
 
         var payloadData = byteArrayOf()
-        if (payload != null) { // Convert the payload object into a ByteArray
-            payloadData = payload.keys()
-                .asSequence()
-                .mapNotNull { key -> payload.getInt(key) } // Convert each value to an Int, ignoring nulls
-                .map { it.toByte() } // Convert each Int to a Byte
-                .toList()
-                .toByteArray()
-        }
+        // Convert the payload object into a ByteArray
+        payloadData = payload.keys()
+            .asSequence()
+            .mapNotNull { key -> payload.getInt(key) } // Convert each value to an Int, ignoring nulls
+            .map { it.toByte() } // Convert each Int to a Byte
+            .toList()
+            .toByteArray()
+
 
         if (opPairCode != null) {
             PluginCallManager.getInstance()
@@ -941,8 +798,7 @@ class NrfMeshPlugin : Plugin() {
         CoroutineScope(Dispatchers.Main).launch {
             val connected = connectionToProvisionedDevice()
             if (!connected) {
-                call.reject("Failed to connect to Mesh proxy")
-                return@launch
+                return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
             val result = implementation.sendVendorModelMessage(
@@ -954,9 +810,8 @@ class NrfMeshPlugin : Plugin() {
                 payloadData,
             )
 
-            if (!result) {
-                call.reject("Failed to send Vendor Model Message")
-            }
+            if (!result) return@launch call.reject("Failed to send Vendor Model Message")
+            if (opPairCode == null) return@launch call.resolve()
         }
     }
 
@@ -964,7 +819,7 @@ class NrfMeshPlugin : Plugin() {
     fun exportMeshNetwork(call: PluginCall) {
         val result = implementation.exportMeshNetwork()
 
-        if (result != null) {
+        return if (result != null) {
             call.resolve(JSObject().put("meshNetwork", result))
         } else {
             call.reject("Failed to export mesh network")
@@ -973,32 +828,22 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun importMeshNetwork(call: PluginCall) {
-        val meshNetwork = call.getString("meshNetwork")
+        val meshNetwork = call.getString("meshNetwork") ?: return call.reject("meshNetwork is required")
 
-        if (meshNetwork == null) {
-            call.reject("meshNetwork is required")
-            return
-        }
+        implementation.importMeshNetwork(meshNetwork)
 
-        val result = implementation.importMeshNetwork(meshNetwork)
-
-        call.resolve()
+        return call.resolve()
     }
 
     @PluginMethod
     fun initMeshNetwork(call: PluginCall) {
-        val networkName = call.getString("networkName")
-
-        if (networkName == null) {
-            call.reject("networkName is required")
-            return
-        }
+        val networkName = call.getString("networkName") ?: return call.reject("networkName is required")
 
         implementation.initMeshNetwork(networkName)
 
         val network = implementation.exportMeshNetwork()
 
-        if (network != null) {
+        return if (network != null) {
             call.resolve(JSObject().put("meshNetwork", network))
         } else {
             call.reject("Failed to initialize mesh network")
