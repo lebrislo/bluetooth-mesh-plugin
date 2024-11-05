@@ -11,8 +11,10 @@ import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
@@ -309,6 +311,11 @@ class NrfMeshManager(private val context: Context) {
             val configNodeReset = ConfigNodeReset()
             meshManagerApi.createMeshPdu(unicastAddress, configNodeReset)
         }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            scanMeshDevices(1000)
+        }
+
         return true
     }
 

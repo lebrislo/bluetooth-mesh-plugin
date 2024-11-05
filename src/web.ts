@@ -1,6 +1,6 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { BluetoothConnectionStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NrfMeshPlugin, Permissions, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices } from './definitions';
+import type { BluetoothConnectionStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NrfMeshPlugin, Permissions, PluginCallRejection, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices, UnprovisionStatus } from './definitions';
 
 export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
 
@@ -17,6 +17,10 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
   async isBluetoothConnected(): Promise<BluetoothConnectionStatus> {
     console.log('isBluetoothConnected');
     return { connected: true };
+  }
+
+  async disconnectBle(): Promise<void> {
+    console.log('disconnectBle');
   }
 
   async checkPermissions(): Promise<Permissions> {
@@ -44,8 +48,9 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     return { provisioningComplete: true, uuid: '1234' };
   }
 
-  async unprovisionDevice(): Promise<void> {
+  async unprovisionDevice(): Promise<UnprovisionStatus> {
     console.log('unprovisionDevice');
+    return { status: true };
   }
 
   async createApplicationKey(): Promise<void> {

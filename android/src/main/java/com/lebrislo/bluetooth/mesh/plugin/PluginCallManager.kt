@@ -69,6 +69,7 @@ class PluginCallManager private constructor() {
      * @param meshMessage Mesh message.
      */
     fun resolveSigPluginCall(meshMessage: MeshMessage) {
+        Log.d(tag, "resolveSigPluginCall ${meshMessage.opCode} from ${meshMessage.src}")
         val callResponse = generateSigPluginCallResponse(meshMessage)
 
         val pluginCall =
@@ -103,18 +104,18 @@ class PluginCallManager private constructor() {
      * @param meshMessage Mesh message.
      */
     fun resolveConfigPluginCall(meshMessage: MeshMessage) {
+        Log.d(tag, "resolveConfigPluginCall ${meshMessage.opCode} from ${meshMessage.src}")
         val callResponse = generateConfigPluginCallResponse(meshMessage)
 
         val pluginCall =
             pluginCalls.find { it is ConfigPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
 
-        if (pluginCall == null) {
-            plugin.sendNotification(MESH_EVENT_STRING, callResponse)
-        } else {
+        if (pluginCall != null) {
             pluginCall as ConfigPluginCall
             pluginCall.resolve(callResponse)
             pluginCalls.remove(pluginCall)
         }
+        plugin.sendNotification(MESH_EVENT_STRING, callResponse)
     }
 
     /**
@@ -143,12 +144,11 @@ class PluginCallManager private constructor() {
         val pluginCall =
             pluginCalls.find { it is VendorPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
 
-        if (pluginCall == null) {
-            plugin.sendNotification(MESH_EVENT_STRING, callResponse)
-        } else {
+        if (pluginCall != null) {
             pluginCall as VendorPluginCall
             pluginCall.resolve(callResponse)
             pluginCalls.remove(pluginCall)
         }
+        plugin.sendNotification(MESH_EVENT_STRING, callResponse)
     }
 }

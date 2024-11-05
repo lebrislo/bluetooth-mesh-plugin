@@ -165,6 +165,18 @@ class NrfMeshPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun disconnectBle(call: PluginCall) {
+        if (!implementation.isBleConnected()) {
+            call.resolve()
+            return
+        }
+        CoroutineScope(Dispatchers.IO).launch {
+            implementation.disconnectBle()
+            call.resolve()
+        }
+    }
+
+    @PluginMethod
     fun scanMeshDevices(call: PluginCall) {
         val scanDuration = call.getInt("timeout", 5000)
 

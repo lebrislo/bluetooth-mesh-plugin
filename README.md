@@ -16,6 +16,7 @@ npx cap sync
 * [`isBluetoothEnabled()`](#isbluetoothenabled)
 * [`requestBluetoothEnable()`](#requestbluetoothenable)
 * [`isBluetoothConnected()`](#isbluetoothconnected)
+* [`disconnectBle()`](#disconnectble)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`scanMeshDevices(...)`](#scanmeshdevices)
@@ -80,6 +81,15 @@ isBluetoothConnected() => Promise<BluetoothConnectionStatus>
 ```
 
 **Returns:** <code>Promise&lt;<a href="#bluetoothconnectionstatus">BluetoothConnectionStatus</a>&gt;</code>
+
+--------------------
+
+
+### disconnectBle()
+
+```typescript
+disconnectBle() => Promise<void>
+```
 
 --------------------
 
@@ -154,12 +164,14 @@ provisionDevice(options: { macAddress: string; uuid: string; }) => Promise<Provi
 ### unprovisionDevice(...)
 
 ```typescript
-unprovisionDevice(options: { unicastAddress: number; }) => Promise<void>
+unprovisionDevice(options: { unicastAddress: number; }) => Promise<UnprovisionStatus>
 ```
 
 | Param         | Type                                     |
 | ------------- | ---------------------------------------- |
 | **`options`** | <code>{ unicastAddress: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#unprovisionstatus">UnprovisionStatus</a>&gt;</code>
 
 --------------------
 
@@ -517,6 +529,13 @@ removeAllListeners() => Promise<void>
 | **`provisioningComplete`** | <code>boolean</code> |
 | **`uuid`**                 | <code>string</code>  |
 | **`unicastAddress`**       | <code>number</code>  |
+
+
+#### UnprovisionStatus
+
+| Prop         | Type                 |
+| ------------ | -------------------- |
+| **`status`** | <code>boolean</code> |
 
 
 #### ModelMessageStatus

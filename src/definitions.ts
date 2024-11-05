@@ -43,6 +43,10 @@ export interface ProvisioningStatus {
   unicastAddress?: number;
 }
 
+export interface UnprovisionStatus {
+  status: boolean;
+}
+
 export interface PluginCallRejection {
   message: string;
   data: {
@@ -73,6 +77,7 @@ export interface NrfMeshPlugin {
   isBluetoothEnabled(): Promise<BluetoothState>;
   requestBluetoothEnable(): Promise<BluetoothState>;
   isBluetoothConnected(): Promise<BluetoothConnectionStatus>;
+  disconnectBle(): Promise<void>;
   checkPermissions(): Promise<Permissions>
   requestPermissions(): Promise<any>
   scanMeshDevices(options: {
@@ -83,7 +88,7 @@ export interface NrfMeshPlugin {
     uuid: string;
   }): Promise<ProvisioningCapabilities | void>;
   provisionDevice(options: { macAddress: string; uuid: string }): Promise<ProvisioningStatus>;
-  unprovisionDevice(options: { unicastAddress: number }): Promise<void>;
+  unprovisionDevice(options: { unicastAddress: number }): Promise<UnprovisionStatus>;
   createApplicationKey(): Promise<void>;
   removeApplicationKey(options: { appKeyIndex: number }): Promise<void>;
   addApplicationKeyToNode(options: {
