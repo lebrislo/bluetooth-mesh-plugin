@@ -59,7 +59,7 @@ class NrfMeshPlugin : Plugin() {
     private val tag: String = NrfMeshPlugin::class.java.simpleName
 
     companion object {
-        const val MESH_EVENT_STRING: String = "meshEvent"
+        const val MESH_MODEL_MESSAGE_EVENT_STRING: String = "meshModelMessageEvent"
         const val BLUETOOTH_ADAPTER_EVENT_STRING: String = "bluetoothAdapterEvent"
         const val BLUETOOTH_CONNECTION_EVENT_STRING: String = "bluetoothConnectionEvent"
     }
@@ -516,8 +516,7 @@ class NrfMeshPlugin : Plugin() {
             val result = implementation.sendGenericOnOffSet(
                 unicastAddress,
                 appKeyIndex,
-                onOff,
-                0
+                onOff
             )
 
             if (!result) return@launch call.reject("Failed to send Generic OnOff Set")
@@ -570,8 +569,7 @@ class NrfMeshPlugin : Plugin() {
             val result = implementation.sendGenericPowerLevelSet(
                 unicastAddress,
                 appKeyIndex,
-                powerLevel,
-                0
+                powerLevel
             )
 
             if (!result) return@launch call.reject("Failed to send Generic Power Level Set")
@@ -627,8 +625,7 @@ class NrfMeshPlugin : Plugin() {
                 appKeyIndex,
                 hue,
                 saturation,
-                lightness,
-                0
+                lightness
             )
 
             if (!result) return@launch call.reject("Failed to send Light HSL Set")
@@ -684,8 +681,7 @@ class NrfMeshPlugin : Plugin() {
                 appKeyIndex,
                 lightness,
                 temperature,
-                deltaUv,
-                0
+                deltaUv
             )
 
             if (!result) return@launch call.reject("Failed to send Light CTL Set")

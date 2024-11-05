@@ -127,8 +127,7 @@ export interface NrfMeshPlugin {
 }
 
 export enum NrfMeshPluginEvents {
-  MeshModelMessageEvent = 'meshModelMessageEvent', /* Not Foundation model and vendor model message */
-  MeshFoundationMessageEvent = 'meshFoundationMessageEvent', /* Mesh Foundation model message */
+  MeshModelMessageEvent = 'meshModelMessageEvent', /* Mesh model message received */
   BluetoothAdapterEvent = 'bluetoothAdapterEvent', /* Bluetooth adapter state change */
   BluetoothConnectionEvent = 'bluetoothConnectionEvent', /* Bluetooth connection state change */
 }

@@ -487,7 +487,7 @@ class NrfMeshManager(private val context: Context) {
         address: Int,
         appKeyIndex: Int,
         onOffvalue: Boolean,
-        tId: Int,
+        tId: Int = 0,
         transitionStep: Int? = 0,
         transitionResolution: Int? = 0,
         delay: Int = 0,
@@ -571,7 +571,7 @@ class NrfMeshManager(private val context: Context) {
         address: Int,
         appKeyIndex: Int,
         level: Int,
-        tId: Int,
+        tId: Int = 0,
         transitionStep: Int? = 0,
         transitionResolution: Int? = 0,
         delay: Int = 0,
@@ -628,7 +628,7 @@ class NrfMeshManager(private val context: Context) {
         address: Int,
         appKeyIndex: Int,
         powerLevel: Int,
-        tId: Int,
+        tId: Int = 0,
         transitionStep: Int? = 0,
         transitionResolution: Int? = 0,
         delay: Int = 0,
@@ -644,20 +644,20 @@ class NrfMeshManager(private val context: Context) {
         if (acknowledgement) {
             meshMessage = GenericPowerLevelSet(
                 meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
-                tId,
                 transitionStep,
                 transitionResolution,
+                delay,
                 powerLevel,
-                delay
+                tId
             )
         } else {
             meshMessage = GenericPowerLevelSetUnacknowledged(
                 meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
-                tId,
                 transitionStep,
                 transitionResolution,
+                delay,
                 powerLevel,
-                delay
+                tId
             )
         }
         meshManagerApi.createMeshPdu(address, meshMessage)
@@ -715,7 +715,7 @@ class NrfMeshManager(private val context: Context) {
         hue: Int,
         saturation: Int,
         lightness: Int,
-        tId: Int,
+        tId: Int = 0,
         transitionStep: Int? = 0,
         transitionResolution: Int? = 0,
         delay: Int = 0,
@@ -796,7 +796,7 @@ class NrfMeshManager(private val context: Context) {
         lightness: Int,
         temperature: Int,
         deltaUv: Int,
-        tId: Int,
+        tId: Int = 0,
         transitionStep: Int? = 0,
         transitionResolution: Int? = 0,
         delay: Int = 0,

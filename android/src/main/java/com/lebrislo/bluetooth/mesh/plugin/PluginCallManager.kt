@@ -3,13 +3,14 @@ package com.lebrislo.bluetooth.mesh.plugin
 import android.util.Log
 import com.getcapacitor.PluginCall
 import com.lebrislo.bluetooth.mesh.NrfMeshPlugin
-import com.lebrislo.bluetooth.mesh.NrfMeshPlugin.Companion.MESH_EVENT_STRING
+import com.lebrislo.bluetooth.mesh.NrfMeshPlugin.Companion.MESH_MODEL_MESSAGE_EVENT_STRING
 import com.lebrislo.bluetooth.mesh.plugin.ConfigOperationPair.Companion.getConfigOperationPair
 import com.lebrislo.bluetooth.mesh.plugin.ConfigPluginCall.Companion.generateConfigPluginCallResponse
 import com.lebrislo.bluetooth.mesh.plugin.SigOperationPair.Companion.getSigOperationPair
 import com.lebrislo.bluetooth.mesh.plugin.SigPluginCall.Companion.generateSigPluginCallResponse
 import com.lebrislo.bluetooth.mesh.plugin.VendorPluginCall.Companion.generateVendorPluginCallResponse
 import no.nordicsemi.android.mesh.transport.MeshMessage
+import no.nordicsemi.android.mesh.utils.MeshAddress
 
 /**
  * This class is used to manage plugin calls.
@@ -58,6 +59,11 @@ class PluginCallManager private constructor() {
      * @param call Plugin call.
      */
     fun addSigPluginCall(meshOperation: Int, meshAddress: Int, call: PluginCall) {
+        Log.d(tag, "addSigPluginCall: Group address $meshAddress")
+
+        if (MeshAddress.isValidGroupAddress(meshAddress)) {
+            return call.resolve()
+        }
         val operationPair = getSigOperationPair(meshOperation)
         pluginCalls.add(SigPluginCall(operationPair, meshAddress, call))
     }
@@ -82,7 +88,7 @@ class PluginCallManager private constructor() {
             pluginCall.resolve(callResponse)
             pluginCalls.remove(pluginCall)
         }
-        plugin.sendNotification(MESH_EVENT_STRING, callResponse)
+        plugin.sendNotification(MESH_MODEL_MESSAGE_EVENT_STRING, callResponse)
     }
 
     /**
@@ -110,12 +116,14 @@ class PluginCallManager private constructor() {
         val pluginCall =
             pluginCalls.find { it is ConfigPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
 
+        Log.d(tag, "resolveConfigPluginCall: registered call: ${pluginCall != null}")
+
         if (pluginCall != null) {
             pluginCall as ConfigPluginCall
             pluginCall.resolve(callResponse)
             pluginCalls.remove(pluginCall)
         }
-        plugin.sendNotification(MESH_EVENT_STRING, callResponse)
+        plugin.sendNotification(MESH_MODEL_MESSAGE_EVENT_STRING, callResponse)
     }
 
     /**
@@ -144,11 +152,13 @@ class PluginCallManager private constructor() {
         val pluginCall =
             pluginCalls.find { it is VendorPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
 
+        Log.d(tag, "resolveVendorPluginCall: registered call: ${pluginCall != null}")
+
         if (pluginCall != null) {
             pluginCall as VendorPluginCall
             pluginCall.resolve(callResponse)
             pluginCalls.remove(pluginCall)
         }
-        plugin.sendNotification(MESH_EVENT_STRING, callResponse)
+        plugin.sendNotification(MESH_MODEL_MESSAGE_EVENT_STRING, callResponse)
     }
 }
