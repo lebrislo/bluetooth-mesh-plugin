@@ -173,6 +173,41 @@ class NrfMeshPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun initMeshNetwork(call: PluginCall) {
+        val networkName = call.getString("networkName") ?: return call.reject("networkName is required")
+
+        implementation.initMeshNetwork(networkName)
+
+        val network = implementation.exportMeshNetwork()
+
+        return if (network != null) {
+            call.resolve(JSObject().put("meshNetwork", network))
+        } else {
+            call.reject("Failed to initialize mesh network")
+        }
+    }
+
+    @PluginMethod
+    fun exportMeshNetwork(call: PluginCall) {
+        val result = implementation.exportMeshNetwork()
+
+        return if (result != null) {
+            call.resolve(JSObject().put("meshNetwork", result))
+        } else {
+            call.reject("Failed to export mesh network")
+        }
+    }
+
+    @PluginMethod
+    fun importMeshNetwork(call: PluginCall) {
+        val meshNetwork = call.getString("meshNetwork") ?: return call.reject("meshNetwork is required")
+
+        implementation.importMeshNetwork(meshNetwork)
+
+        return call.resolve()
+    }
+
+    @PluginMethod
     fun scanMeshDevices(call: PluginCall) {
         val scanDuration = call.getInt("timeout") ?: 5000
 
@@ -438,8 +473,7 @@ class NrfMeshPlugin : Plugin() {
                     .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
             }
 
-            val deferred = implementation.addApplicationKeyToNode(unicastAddress, appKeyIndex)
-            val result = deferred.await()
+            val result = implementation.addApplicationKeyToNode(unicastAddress, appKeyIndex)
 
             if (!result) return@launch call.reject("Failed to add application key to node")
             if (!acknowledgement) return@launch call.resolve()
@@ -482,16 +516,12 @@ class NrfMeshPlugin : Plugin() {
                 return@launch
             }
 
-            val deferred = implementation.compositionDataGet(unicastAddress)
+            PluginCallManager.getInstance()
+                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_COMPOSITION_DATA_GET, unicastAddress, call)
 
-            val result = deferred.await()
+            val result = implementation.compositionDataGet(unicastAddress)
 
-            if (result!!) {
-                val meshNetwork = implementation.exportMeshNetwork()
-                return@launch call.resolve(JSObject().put("meshNetwork", meshNetwork))
-            } else {
-                return@launch call.reject("Failed to get composition data")
-            }
+            if (!result) call.reject("Failed to get composition data")
         }
     }
 
@@ -808,41 +838,6 @@ class NrfMeshPlugin : Plugin() {
 
             if (!result) return@launch call.reject("Failed to send Vendor Model Message")
             if (opPairCode == null) return@launch call.resolve()
-        }
-    }
-
-    @PluginMethod
-    fun exportMeshNetwork(call: PluginCall) {
-        val result = implementation.exportMeshNetwork()
-
-        return if (result != null) {
-            call.resolve(JSObject().put("meshNetwork", result))
-        } else {
-            call.reject("Failed to export mesh network")
-        }
-    }
-
-    @PluginMethod
-    fun importMeshNetwork(call: PluginCall) {
-        val meshNetwork = call.getString("meshNetwork") ?: return call.reject("meshNetwork is required")
-
-        implementation.importMeshNetwork(meshNetwork)
-
-        return call.resolve()
-    }
-
-    @PluginMethod
-    fun initMeshNetwork(call: PluginCall) {
-        val networkName = call.getString("networkName") ?: return call.reject("networkName is required")
-
-        implementation.initMeshNetwork(networkName)
-
-        val network = implementation.exportMeshNetwork()
-
-        return if (network != null) {
-            call.resolve(JSObject().put("meshNetwork", network))
-        } else {
-            call.reject("Failed to initialize mesh network")
         }
     }
 

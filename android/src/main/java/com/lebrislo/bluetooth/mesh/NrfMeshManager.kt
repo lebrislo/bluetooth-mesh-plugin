@@ -19,9 +19,7 @@ import kotlinx.coroutines.withContext
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyAdd
-import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataGet
-import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
 import no.nordicsemi.android.mesh.transport.ConfigNodeReset
 import no.nordicsemi.android.mesh.transport.GenericLevelSet
@@ -63,14 +61,12 @@ class NrfMeshManager(private val context: Context) {
 
     private val provisioningCapabilitiesMap = ConcurrentHashMap<UUID, CompletableDeferred<UnprovisionedMeshNode?>>()
     private val provisioningStatusMap = ConcurrentHashMap<String, CompletableDeferred<BleMeshDevice?>>()
-    private val compositionDataStatusMap = ConcurrentHashMap<Int, CompletableDeferred<Boolean?>>()
-    private val addAppKeyStatusMap = ConcurrentHashMap<Int, CompletableDeferred<Boolean>>()
 
     init {
         meshCallbacksManager = MeshCallbacksManager(bleMeshManager)
         meshProvisioningCallbacksManager =
             MeshProvisioningCallbacksManager(unprovisionedMeshNodes, this)
-        meshStatusCallbacksManager = MeshStatusCallbacksManager(this)
+        meshStatusCallbacksManager = MeshStatusCallbacksManager()
         bleCallbacksManager = BleCallbacksManager(meshManagerApi)
         scannerRepository = ScannerRepository(context, meshManagerApi)
 
@@ -80,6 +76,36 @@ class NrfMeshManager(private val context: Context) {
         bleMeshManager.setGattCallbacks(bleCallbacksManager)
 
         meshManagerApi.loadMeshNetwork()
+    }
+
+    /**
+     * Create a new mesh network
+     *
+     * @param networkName name of the mesh network
+     *
+     * @return Unit
+     */
+    fun initMeshNetwork(networkName: String) {
+        meshManagerApi.resetMeshNetwork()
+        meshManagerApi.meshNetwork!!.meshName = networkName
+    }
+
+    /**
+     * Export the mesh network to a json string
+     *
+     * @return String
+     */
+    fun exportMeshNetwork(): String? {
+        return meshManagerApi.exportMeshNetwork()
+    }
+
+    /**
+     * Import a mesh network from a json string
+     *
+     * @param json json string of the mesh network
+     */
+    fun importMeshNetwork(json: String) {
+        meshManagerApi.importMeshNetworkJson(json)
     }
 
     /**
@@ -352,14 +378,10 @@ class NrfMeshManager(private val context: Context) {
      *
      * @return Boolean whether the message was sent successfully
      */
-    fun addApplicationKeyToNode(elementAddress: Int, appKeyIndex: Int): CompletableDeferred<Boolean> {
-        val deferred = CompletableDeferred<Boolean>()
-        addAppKeyStatusMap[appKeyIndex] = deferred
-
+    fun addApplicationKeyToNode(elementAddress: Int, appKeyIndex: Int): Boolean {
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Not connected to a mesh proxy")
-            deferred.cancel()
-            return deferred
+            return false
         }
 
         val netKey = meshManagerApi.meshNetwork?.primaryNetworkKey
@@ -368,15 +390,7 @@ class NrfMeshManager(private val context: Context) {
         val configModelAppBind = ConfigAppKeyAdd(netKey!!, appKey!!)
         meshManagerApi.createMeshPdu(elementAddress, configModelAppBind)
 
-        return deferred
-    }
-
-    fun onAppKeyAddStatusReceived(meshMessage: ConfigAppKeyStatus) {
-        val appKeyIndex = meshMessage.appKeyIndex
-        val operationSucceeded = meshMessage.statusCode == 0
-
-        addAppKeyStatusMap[appKeyIndex]?.complete(operationSucceeded)
-        addAppKeyStatusMap.remove(appKeyIndex)
+        return true
     }
 
     /**
@@ -403,68 +417,23 @@ class NrfMeshManager(private val context: Context) {
     }
 
     /**
-     * Export the mesh network to a json string
-     *
-     * @return String
-     */
-    fun exportMeshNetwork(): String? {
-        return meshManagerApi.exportMeshNetwork()
-    }
-
-    /**
-     * Import a mesh network from a json string
-     *
-     * @param json json string of the mesh network
-     */
-    fun importMeshNetwork(json: String) {
-        meshManagerApi.importMeshNetworkJson(json)
-    }
-
-    /**
-     * Create a new mesh network
-     *
-     * @param networkName name of the mesh network
-     *
-     * @return Unit
-     */
-    fun initMeshNetwork(networkName: String) {
-        meshManagerApi.resetMeshNetwork()
-        meshManagerApi.meshNetwork!!.meshName = networkName
-    }
-
-    /**
      * Retrieve the composition data of a node
      *
      * Note: The application must be connected to a mesh proxy before sending messages
      *
      * @param unicastAddress unicast address of the node
-     * @return CompletableDeferred<Boolean?>
+     * @return Boolean
      */
-    fun compositionDataGet(unicastAddress: Int): CompletableDeferred<Boolean?> {
-        val deferred = CompletableDeferred<Boolean?>()
-        compositionDataStatusMap[unicastAddress] = deferred
-
+    fun compositionDataGet(unicastAddress: Int): Boolean {
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Not connected to a mesh proxy")
-            deferred.cancel()
-            return deferred
+            return false
         }
 
         val configCompositionDataGet = ConfigCompositionDataGet()
         meshManagerApi.createMeshPdu(unicastAddress, configCompositionDataGet)
 
-        return deferred
-    }
-
-    fun onCompositionDataStatusReceived(meshMessage: ConfigCompositionDataStatus) {
-        Log.d(tag, "onCompositionDataStatusReceived")
-        val unicastAddress = meshMessage.src
-        val operationSucceeded = meshMessage.statusCode == 0
-
-        if (operationSucceeded) {
-            compositionDataStatusMap[unicastAddress]?.complete(true)
-            compositionDataStatusMap.remove(unicastAddress)
-        }
+        return true
     }
 
     /**

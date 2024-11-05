@@ -16,7 +16,7 @@ import no.nordicsemi.android.mesh.transport.LightHslStatus
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.VendorModelMessageStatus
 
-class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatusCallbacks {
+class MeshStatusCallbacksManager() : MeshStatusCallbacks {
     private val tag: String = MeshStatusCallbacksManager::class.java.simpleName
 
     override fun onTransactionFailed(dst: Int, hasIncompleteTimerExpired: Boolean) {
@@ -42,17 +42,8 @@ class MeshStatusCallbacksManager(var nrfMeshManager: NrfMeshManager) : MeshStatu
     override fun onMeshMessageReceived(src: Int, meshMessage: MeshMessage) {
         Log.d(tag, "onMeshMessageReceived ${meshMessage.javaClass.simpleName}")
         when (meshMessage) {
-            is ConfigNodeResetStatus, is ConfigModelAppStatus -> {
+            is ConfigNodeResetStatus, is ConfigModelAppStatus, is ConfigAppKeyStatus, is ConfigCompositionDataStatus -> {
                 PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
-            }
-
-            is ConfigAppKeyStatus -> {
-                nrfMeshManager.onAppKeyAddStatusReceived(meshMessage)
-                PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
-            }
-
-            is ConfigCompositionDataStatus -> {
-                nrfMeshManager.onCompositionDataStatusReceived(meshMessage)
             }
 
             is GenericOnOffStatus, is GenericPowerLevelStatus, is LightHslStatus, is LightCtlStatus, is LightCtlTemperatureRangeStatus -> {
