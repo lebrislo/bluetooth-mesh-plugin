@@ -23,7 +23,6 @@ import com.getcapacitor.annotation.Permission
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import com.lebrislo.bluetooth.mesh.utils.BluetoothStateReceiver
-import com.lebrislo.bluetooth.mesh.utils.Permissions
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,13 +44,6 @@ import java.util.UUID
                 android.Manifest.permission.ACCESS_COARSE_LOCATION
             ],
             alias = "LOCATION"
-        ),
-        Permission(
-            strings = [
-                android.Manifest.permission.BLUETOOTH,
-                android.Manifest.permission.BLUETOOTH_ADMIN,
-            ],
-            alias = "BLUETOOTH"
         )
     ]
 )
@@ -210,14 +202,6 @@ class NrfMeshPlugin : Plugin() {
     @PluginMethod
     fun scanMeshDevices(call: PluginCall) {
         val scanDuration = call.getInt("timeout") ?: 5000
-
-        if (!Permissions.isBleEnabled(context)) {
-            return call.reject("Bluetooth is disabled")
-        }
-
-        if (!Permissions.isLocationGranted(context)) {
-            return call.reject("Location permission is required")
-        }
 
         CoroutineScope(Dispatchers.IO).launch {
             val devices = implementation.scanMeshDevices(scanDuration)
