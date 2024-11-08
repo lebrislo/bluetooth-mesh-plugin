@@ -58,11 +58,13 @@ class NrfMeshPlugin : Plugin() {
 
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
+        Log.d(tag, "Bluetooth Adapter enabled : ${bluetoothAdapter.isEnabled}")
     }
 
     override fun handleOnStart() {
         Log.d(tag, "handleOnStart")
         super.handleOnStart()
+
         // Register for Bluetooth state changes
         val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
@@ -71,12 +73,13 @@ class NrfMeshPlugin : Plugin() {
         bluetoothStateReceiver = BluetoothStateReceiver(this)
         context.registerReceiver(bluetoothStateReceiver, filter)
 
-        implementation.startScan()
+        this.startScan()
     }
 
     override fun handleOnStop() {
         Log.d(tag, "handleOnStop")
         super.handleOnStop()
+
         try {
             context.unregisterReceiver(bluetoothStateReceiver)
         } catch (e: IllegalArgumentException) {
@@ -89,7 +92,7 @@ class NrfMeshPlugin : Plugin() {
             }
         }
 
-        implementation.stopScan()
+        this.stopScan()
     }
 
     override fun handleOnDestroy() {
@@ -106,15 +109,34 @@ class NrfMeshPlugin : Plugin() {
                 implementation.disconnectBle()
             }
         }
-        implementation.stopScan()
+        this.stopScan()
     }
 
-    private fun assertBluetoothAdapter(call: PluginCall): Boolean? {
+    private fun assertBluetoothAdapter(call: PluginCall?): Boolean {
         if (bluetoothAdapter == null) {
-            call.reject("Bluetooth LE not initialized.")
-            return null
+            call?.reject("Bluetooth adapter is not available")
+            return false
         }
         return true
+    }
+
+    private fun assertBluetoothEnabled(call: PluginCall?): Boolean {
+        if (!assertBluetoothAdapter(call)) return false
+        if (!bluetoothAdapter.isEnabled) {
+            call?.reject("Bluetooth is not enabled")
+            return false
+        }
+        return true
+    }
+
+    fun startScan() {
+        if (!assertBluetoothEnabled(null)) return
+        implementation.startScan()
+    }
+
+    fun stopScan() {
+        if (!assertBluetoothEnabled(null)) return
+        implementation.stopScan()
     }
 
     @PluginMethod
@@ -137,6 +159,7 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun isBluetoothConnected(call: PluginCall) {
+        if (!assertBluetoothEnabled(null)) return
         val connected = implementation.isBleConnected()
         implementation.connectedDevice()?.let {
             return call.resolve(JSObject().put("connected", connected).put("macAddress", it.address))
@@ -145,6 +168,7 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun disconnectBle(call: PluginCall) {
+        if (!assertBluetoothEnabled(null)) return
         if (!implementation.isBleConnected()) {
             return call.resolve()
         }
@@ -192,6 +216,8 @@ class NrfMeshPlugin : Plugin() {
     @PluginMethod
     fun scanMeshDevices(call: PluginCall) {
         val scanDuration = call.getInt("timeout") ?: 5000
+
+        if (!assertBluetoothEnabled(call)) return
 
         CoroutineScope(Dispatchers.IO).launch {
             val devices = implementation.scanMeshDevices(scanDuration)
@@ -315,7 +341,9 @@ class NrfMeshPlugin : Plugin() {
         val macAddress = call.getString("macAddress") ?: return call.reject("macAddress is required")
         val uuid = call.getString("uuid") ?: return call.reject("uuid is required")
 
+
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToUnprovisionedDevice(macAddress, uuid)
             if (!connected) {
                 return@launch call.reject("Failed to connect to device : $macAddress $uuid")
@@ -355,6 +383,7 @@ class NrfMeshPlugin : Plugin() {
         val uuid = call.getString("uuid") ?: return call.reject("uuid is required")
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToUnprovisionedDevice(macAddress, uuid)
             if (!connected) {
                 return@launch call.reject("Failed to connect to device : $macAddress $uuid")
@@ -394,6 +423,7 @@ class NrfMeshPlugin : Plugin() {
         val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -437,6 +467,7 @@ class NrfMeshPlugin : Plugin() {
         val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -462,6 +493,7 @@ class NrfMeshPlugin : Plugin() {
         val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -484,6 +516,7 @@ class NrfMeshPlugin : Plugin() {
         val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 call.reject("Failed to connect to Mesh proxy")
@@ -507,6 +540,7 @@ class NrfMeshPlugin : Plugin() {
         val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -534,6 +568,7 @@ class NrfMeshPlugin : Plugin() {
         val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -560,6 +595,7 @@ class NrfMeshPlugin : Plugin() {
         val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -587,6 +623,7 @@ class NrfMeshPlugin : Plugin() {
         val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -614,6 +651,7 @@ class NrfMeshPlugin : Plugin() {
         val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -643,6 +681,7 @@ class NrfMeshPlugin : Plugin() {
         val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -670,6 +709,7 @@ class NrfMeshPlugin : Plugin() {
         val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -699,6 +739,7 @@ class NrfMeshPlugin : Plugin() {
         val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -725,6 +766,7 @@ class NrfMeshPlugin : Plugin() {
         val acknowledgement = call.getBoolean("acknowledgement") ?: false
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -753,6 +795,7 @@ class NrfMeshPlugin : Plugin() {
         val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
@@ -790,15 +833,16 @@ class NrfMeshPlugin : Plugin() {
             .toByteArray()
 
 
-        if (opPairCode != null) {
-            PluginCallManager.getInstance()
-                .addVendorPluginCall(modelId, opcode, opPairCode, unicastAddress, call)
-        }
-
         CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToProvisionedDevice()
             if (!connected) {
                 return@launch call.reject("Failed to connect to Mesh proxy")
+            }
+
+            if (opPairCode != null) {
+                PluginCallManager.getInstance()
+                    .addVendorPluginCall(modelId, opcode, opPairCode, unicastAddress, call)
             }
 
             val result = implementation.sendVendorModelMessage(
