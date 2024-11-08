@@ -26,7 +26,7 @@ android {
     namespace "com.lebrislo.bluetooth.mesh"
     compileSdk project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 34
     defaultConfig {
-        minSdkVersion project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 31
+        minSdkVersion project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 30
         targetSdkVersion project.hasProperty('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 34
         versionCode 1
         versionName "1.0"

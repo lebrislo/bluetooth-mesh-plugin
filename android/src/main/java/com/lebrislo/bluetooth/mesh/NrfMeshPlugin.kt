@@ -1,6 +1,5 @@
 package com.lebrislo.bluetooth.mesh
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothAdapter.ACTION_REQUEST_ENABLE
@@ -19,10 +18,10 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
-import com.getcapacitor.annotation.Permission
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import com.lebrislo.bluetooth.mesh.utils.BluetoothStateReceiver
+import com.lebrislo.bluetooth.mesh.utils.PermissionsManager
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,15 +36,6 @@ import java.util.UUID
 
 @CapacitorPlugin(
     name = "NrfMesh",
-    permissions = [
-        Permission(
-            strings = [
-                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            ],
-            alias = "LOCATION"
-        )
-    ]
 )
 class NrfMeshPlugin : Plugin() {
     private val tag: String = NrfMeshPlugin::class.java.simpleName
@@ -60,13 +50,11 @@ class NrfMeshPlugin : Plugin() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var bluetoothStateReceiver: BroadcastReceiver
 
-    @SuppressLint("ServiceCast")
     override fun load() {
         this.implementation = NrfMeshManager(this.context)
         PluginCallManager.getInstance().setPlugin(this)
-
-        Log.i(tag, "Permissions : ${this.permissionStates.keys}")
-        Log.i(tag, "Permissions : ${this.permissionStates.values}")
+        PermissionsManager.getInstance().setActivity(activity)
+        PermissionsManager.getInstance().setContext(context)
 
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
@@ -82,6 +70,7 @@ class NrfMeshPlugin : Plugin() {
 
         bluetoothStateReceiver = BluetoothStateReceiver(this)
         context.registerReceiver(bluetoothStateReceiver, filter)
+
         implementation.startScan()
     }
 
@@ -99,6 +88,7 @@ class NrfMeshPlugin : Plugin() {
                 implementation.disconnectBle()
             }
         }
+
         implementation.stopScan()
     }
 

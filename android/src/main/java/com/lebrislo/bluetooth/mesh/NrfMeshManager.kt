@@ -1,6 +1,5 @@
 package com.lebrislo.bluetooth.mesh
 
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.util.Log
@@ -148,7 +147,6 @@ class NrfMeshManager(private val context: Context) {
      *
      * @return BluetoothDevice?
      */
-    @SuppressLint("MissingPermission")
     suspend fun searchProxyMesh(): BluetoothDevice? {
         if (bleMeshManager.isConnected) {
             Log.d(tag, "searchProxyMesh : Connected to a bluetooth device")

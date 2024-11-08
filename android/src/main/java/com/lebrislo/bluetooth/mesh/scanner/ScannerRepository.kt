@@ -1,9 +1,11 @@
 package com.lebrislo.bluetooth.mesh.scanner
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.ParcelUuid
 import android.util.Log
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
+import com.lebrislo.bluetooth.mesh.utils.PermissionsManager
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.MeshNetwork
@@ -117,6 +119,13 @@ class ScannerRepository(
      * MESH_PROXY_UUID: 00001828-0000-1000-8000-00805F9B34FB
      */
     fun startScanDevices() {
+
+        val permission = PermissionsManager.getInstance().requestPermissions()
+        Log.i(tag, "Permission to scan devices: $permission")
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+
         //Scanning settings
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY) // Refresh the devices list every second
