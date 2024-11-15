@@ -4,8 +4,12 @@ import android.bluetooth.BluetoothDevice
 import android.os.Parcel
 import android.os.Parcelable
 import android.os.Parcelable.Creator
+import com.lebrislo.bluetooth.mesh.utils.Utils
 import no.nordicsemi.android.mesh.MeshBeacon
+import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.support.v18.scanner.ScanResult
+import java.nio.ByteBuffer
+import java.util.UUID
 
 class ExtendedBluetoothDevice : Parcelable {
     val device: BluetoothDevice?
@@ -36,12 +40,24 @@ class ExtendedBluetoothDevice : Parcelable {
         this.rssi = scanResult.rssi
     }
 
-    protected constructor(`in`: Parcel) {
-        device = `in`.readParcelable(BluetoothDevice::class.java.classLoader)
-        scanResult = `in`.readParcelable(ScanResult::class.java.classLoader)
-        name = `in`.readString()
-        rssi = `in`.readInt()
-        beacon = `in`.readParcelable(MeshBeacon::class.java.classLoader)
+    protected constructor(parcel: Parcel) {
+        device = parcel.readParcelable(BluetoothDevice::class.java.classLoader)
+        scanResult = parcel.readParcelable(ScanResult::class.java.classLoader)
+        name = parcel.readString()
+        rssi = parcel.readInt()
+        beacon = parcel.readParcelable(MeshBeacon::class.java.classLoader)
+    }
+
+    fun getDeviceUuid(): UUID? {
+        val serviceData = scanResult?.let {
+            Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
+        }
+        return if (serviceData != null && serviceData.size >= 18) {
+            val buffer = ByteBuffer.wrap(serviceData)
+            val msb = buffer.getLong()
+            val lsb = buffer.getLong()
+            UUID(msb, lsb)
+        } else null
     }
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
@@ -59,7 +75,6 @@ class ExtendedBluetoothDevice : Parcelable {
     val address: String
         get() = device!!.address
 
-    // Parcelable implementation
     fun matches(scanResult: ScanResult): Boolean {
         return device!!.address == scanResult.device.address
     }
@@ -90,3 +105,4 @@ class ExtendedBluetoothDevice : Parcelable {
         }
     }
 }
+

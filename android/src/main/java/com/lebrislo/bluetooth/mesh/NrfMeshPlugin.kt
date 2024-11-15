@@ -21,6 +21,7 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import com.lebrislo.bluetooth.mesh.utils.BluetoothStateReceiver
+import com.lebrislo.bluetooth.mesh.utils.NotificationManager
 import com.lebrislo.bluetooth.mesh.utils.PermissionsManager
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
@@ -44,6 +45,7 @@ class NrfMeshPlugin : Plugin() {
         const val MESH_MODEL_MESSAGE_EVENT_STRING: String = "meshModelMessageEvent"
         const val BLUETOOTH_ADAPTER_EVENT_STRING: String = "bluetoothAdapterEvent"
         const val BLUETOOTH_CONNECTION_EVENT_STRING: String = "bluetoothConnectionEvent"
+        const val MESH_DEVICE_SCAN_EVENT: String = "meshDeviceScanEvent"
     }
 
     private lateinit var implementation: NrfMeshManager
@@ -52,7 +54,7 @@ class NrfMeshPlugin : Plugin() {
 
     override fun load() {
         this.implementation = NrfMeshManager(this.context)
-        PluginCallManager.getInstance().setPlugin(this)
+        NotificationManager.getInstance().setPlugin(this)
         PermissionsManager.getInstance().setActivity(activity)
         PermissionsManager.getInstance().setContext(context)
 
@@ -220,7 +222,7 @@ class NrfMeshPlugin : Plugin() {
         if (!assertBluetoothEnabled(call)) return
 
         CoroutineScope(Dispatchers.IO).launch {
-            val devices = implementation.scanMeshDevices(scanDuration)
+            val devices = implementation.getMeshDevices(scanDuration)
 
             // return a dict of devices, unprovisioned and provisioned
             val result = JSObject().apply {
@@ -265,6 +267,15 @@ class NrfMeshPlugin : Plugin() {
             }
             return@launch call.resolve(result)
         }
+    }
+
+    @PluginMethod
+    fun clearMeshDevicesScan(call: PluginCall) {
+        if (!assertBluetoothEnabled(call)) return
+
+        implementation.restartMeshDevicesScan()
+
+        return call.resolve()
     }
 
     private fun connectedToUnprovisionedDestinations(destinationMacAddress: String): Boolean {

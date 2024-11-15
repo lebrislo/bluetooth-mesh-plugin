@@ -23,6 +23,7 @@ npx cap sync
 * [`exportMeshNetwork()`](#exportmeshnetwork)
 * [`importMeshNetwork(...)`](#importmeshnetwork)
 * [`scanMeshDevices(...)`](#scanmeshdevices)
+* [`clearMeshDevicesScan()`](#clearmeshdevicesscan)
 * [`getProvisioningCapabilities(...)`](#getprovisioningcapabilities)
 * [`provisionDevice(...)`](#provisiondevice)
 * [`unprovisionDevice(...)`](#unprovisiondevice)
@@ -166,6 +167,15 @@ scanMeshDevices(options: { timeout: number; }) => Promise<ScanMeshDevices>
 | **`options`** | <code>{ timeout: number; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#scanmeshdevices">ScanMeshDevices</a>&gt;</code>
+
+--------------------
+
+
+### clearMeshDevicesScan()
+
+```typescript
+clearMeshDevicesScan() => Promise<void>
+```
 
 --------------------
 

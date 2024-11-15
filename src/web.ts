@@ -38,6 +38,10 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     return { unprovisioned: [], provisioned: [] };
   }
 
+  async clearMeshDevicesScan(): Promise<void> {
+    console.log('clearMeshDevicesScan');
+  }
+
   async getProvisioningCapabilities(): Promise<ProvisioningCapabilities> {
     console.log('getProvisioningCapabilities');
     return {

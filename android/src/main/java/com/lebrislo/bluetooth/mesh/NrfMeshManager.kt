@@ -44,7 +44,7 @@ import no.nordicsemi.android.mesh.transport.VendorModelMessageUnacked
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-class NrfMeshManager(private val context: Context) {
+class NrfMeshManager(context: Context) {
     private val tag: String = NrfMeshManager::class.java.simpleName
 
     private val meshCallbacksManager: MeshCallbacksManager
@@ -67,7 +67,7 @@ class NrfMeshManager(private val context: Context) {
             MeshProvisioningCallbacksManager(unprovisionedMeshNodes, this)
         meshStatusCallbacksManager = MeshStatusCallbacksManager()
         bleCallbacksManager = BleCallbacksManager(meshManagerApi)
-        scannerRepository = ScannerRepository(context, meshManagerApi)
+        scannerRepository = ScannerRepository(meshManagerApi)
 
         meshManagerApi.setMeshManagerCallbacks(meshCallbacksManager)
         meshManagerApi.setProvisioningStatusCallbacks(meshProvisioningCallbacksManager)
@@ -215,13 +215,20 @@ class NrfMeshManager(private val context: Context) {
      *
      * @return List<ExtendedBluetoothDevice>
      */
-    suspend fun scanMeshDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
+    suspend fun getMeshDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
         scannerRepository.unprovisionedDevices.clear()
         scannerRepository.provisionedDevices.clear()
         scannerRepository.stopScanDevices()
         scannerRepository.startScanDevices()
         delay(scanDurationMs.toLong())
         return scannerRepository.unprovisionedDevices + scannerRepository.provisionedDevices
+    }
+
+    fun restartMeshDevicesScan() {
+        scannerRepository.unprovisionedDevices.clear()
+        scannerRepository.provisionedDevices.clear()
+        scannerRepository.stopScanDevices()
+        scannerRepository.startScanDevices()
     }
 
     /**
@@ -337,7 +344,7 @@ class NrfMeshManager(private val context: Context) {
         }
 
         CoroutineScope(Dispatchers.IO).launch {
-            scanMeshDevices(1000)
+            getMeshDevices(1000)
         }
 
         return true

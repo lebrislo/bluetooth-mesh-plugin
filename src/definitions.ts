@@ -65,6 +65,13 @@ export interface MeshNetworkObject {
   meshNetwork: string;
 }
 
+export enum NrfMeshPluginEvents {
+  MeshModelMessageEvent = 'meshModelMessageEvent', /* Mesh model message received */
+  BluetoothAdapterEvent = 'bluetoothAdapterEvent', /* Bluetooth adapter state change */
+  BluetoothConnectionEvent = 'bluetoothConnectionEvent', /* Bluetooth connection state change */
+  MeshDeviceScanEvent = 'meshDeviceScanEvent', /* Mesh device scan event */
+}
+
 export interface NrfMeshPlugin {
   isBluetoothEnabled(): Promise<BluetoothState>;
   requestBluetoothEnable(): Promise<BluetoothState>;
@@ -78,6 +85,7 @@ export interface NrfMeshPlugin {
   scanMeshDevices(options: {
     timeout: number;
   }): Promise<ScanMeshDevices>;
+  clearMeshDevicesScan(): Promise<void>;
   getProvisioningCapabilities(options: {
     macAddress: string;
     uuid: string;
@@ -124,10 +132,4 @@ export interface NrfMeshPlugin {
   }): Promise<ModelMessageStatus>;
   addListener(eventName: string, listenerFunc: (event: any) => void): Promise<PluginListenerHandle>;
   removeAllListeners(): Promise<void>;
-}
-
-export enum NrfMeshPluginEvents {
-  MeshModelMessageEvent = 'meshModelMessageEvent', /* Mesh model message received */
-  BluetoothAdapterEvent = 'bluetoothAdapterEvent', /* Bluetooth adapter state change */
-  BluetoothConnectionEvent = 'bluetoothConnectionEvent', /* Bluetooth connection state change */
 }

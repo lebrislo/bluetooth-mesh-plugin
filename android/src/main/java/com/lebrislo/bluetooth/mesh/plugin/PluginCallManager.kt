@@ -2,13 +2,13 @@ package com.lebrislo.bluetooth.mesh.plugin
 
 import android.util.Log
 import com.getcapacitor.PluginCall
-import com.lebrislo.bluetooth.mesh.NrfMeshPlugin
 import com.lebrislo.bluetooth.mesh.NrfMeshPlugin.Companion.MESH_MODEL_MESSAGE_EVENT_STRING
 import com.lebrislo.bluetooth.mesh.plugin.ConfigOperationPair.Companion.getConfigOperationPair
 import com.lebrislo.bluetooth.mesh.plugin.ConfigPluginCall.Companion.generateConfigPluginCallResponse
 import com.lebrislo.bluetooth.mesh.plugin.SigOperationPair.Companion.getSigOperationPair
 import com.lebrislo.bluetooth.mesh.plugin.SigPluginCall.Companion.generateSigPluginCallResponse
 import com.lebrislo.bluetooth.mesh.plugin.VendorPluginCall.Companion.generateVendorPluginCallResponse
+import com.lebrislo.bluetooth.mesh.utils.NotificationManager
 import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.utils.MeshAddress
 
@@ -18,7 +18,6 @@ import no.nordicsemi.android.mesh.utils.MeshAddress
 class PluginCallManager private constructor() {
     private val tag: String = PluginCallManager::class.java.simpleName
 
-    private lateinit var plugin: NrfMeshPlugin
     private val pluginCalls: MutableList<BasePluginCall> = mutableListOf()
 
     companion object {
@@ -30,15 +29,6 @@ class PluginCallManager private constructor() {
             instance ?: synchronized(this) {
                 instance ?: PluginCallManager().also { instance = it }
             }
-    }
-
-    /**
-     * Set the plugin, must be called before any other method.
-     *
-     * @param plugin Plugin.
-     */
-    fun setPlugin(plugin: NrfMeshPlugin) {
-        this.plugin = plugin
     }
 
     /**
@@ -88,7 +78,7 @@ class PluginCallManager private constructor() {
             pluginCall.resolve(callResponse)
             pluginCalls.remove(pluginCall)
         }
-        plugin.sendNotification(MESH_MODEL_MESSAGE_EVENT_STRING, callResponse)
+        NotificationManager.getInstance().sendNotification(MESH_MODEL_MESSAGE_EVENT_STRING, callResponse)
     }
 
     /**
@@ -123,7 +113,7 @@ class PluginCallManager private constructor() {
             pluginCall.resolve(callResponse)
             pluginCalls.remove(pluginCall)
         }
-        plugin.sendNotification(MESH_MODEL_MESSAGE_EVENT_STRING, callResponse)
+        NotificationManager.getInstance().sendNotification(MESH_MODEL_MESSAGE_EVENT_STRING, callResponse)
     }
 
     /**
@@ -159,6 +149,6 @@ class PluginCallManager private constructor() {
             pluginCall.resolve(callResponse)
             pluginCalls.remove(pluginCall)
         }
-        plugin.sendNotification(MESH_MODEL_MESSAGE_EVENT_STRING, callResponse)
+        NotificationManager.getInstance().sendNotification(MESH_MODEL_MESSAGE_EVENT_STRING, callResponse)
     }
 }

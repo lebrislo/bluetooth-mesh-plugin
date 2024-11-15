@@ -1,10 +1,13 @@
 package com.lebrislo.bluetooth.mesh.scanner
 
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.ParcelUuid
 import android.util.Log
+import com.getcapacitor.JSArray
+import com.getcapacitor.JSObject
+import com.lebrislo.bluetooth.mesh.NrfMeshPlugin
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
+import com.lebrislo.bluetooth.mesh.utils.NotificationManager
 import com.lebrislo.bluetooth.mesh.utils.PermissionsManager
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import no.nordicsemi.android.mesh.MeshManagerApi
@@ -14,14 +17,12 @@ import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanFilter
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import no.nordicsemi.android.support.v18.scanner.ScanSettings
-import java.util.UUID
 
 
 /**
  * Repository for scanning for bluetooth mesh devices
  */
 class ScannerRepository(
-    private val context: Context,
     private val meshManagerApi: MeshManagerApi
 ) {
     private val tag: String = ScannerRepository::class.java.simpleName
@@ -64,36 +65,28 @@ class ScannerRepository(
     }
 
     private fun unprovDeviceDiscovered(result: ScanResult) {
-        val device: ExtendedBluetoothDevice
-        val scanRecord = result.scanRecord
+        val device = ExtendedBluetoothDevice(result)
+        synchronized(unprovisionedDevices) {
+            if (!unprovisionedDevices.contains(device)) {
+                Log.d(tag, "Unprovisioned device discovered: ${result.device.address}")
+                unprovisionedDevices.add(device)
 
-        if (scanRecord != null) {
-            if (scanRecord.bytes != null && scanRecord.serviceUuids != null) {
-                device = ExtendedBluetoothDevice(result)
-                synchronized(unprovisionedDevices) {
-                    if (!unprovisionedDevices.contains(device)) {
-                        Log.d(tag, "Unprovisioned device discovered: ${result.device.address} ")
-                        unprovisionedDevices.add(device)
+                // Get the device UUID
+                val deviceUuid = device.getDeviceUuid() ?: return
 
-                        // Delete the node from the mesh network if it was previously provisioned
-                        val serviceData = Utils.getServiceData(
-                            device.scanResult!!,
-                            MeshManagerApi.MESH_PROVISIONING_UUID
-                        )
+                // Notify about the scanned device
+                this.notifyMeshDeviceScanned()
 
-                        if (serviceData == null || serviceData.size < 18) return
-
-                        val deviceUuid: UUID = meshManagerApi.getDeviceUuid(serviceData)
-                        meshManagerApi.meshNetwork?.nodes?.forEach { node ->
-                            if (node.uuid == deviceUuid.toString()) {
-                                meshManagerApi.meshNetwork?.deleteNode(node)
-                            }
-                        }
+                // Delete the node from the mesh network if it was previously provisioned
+                meshManagerApi.meshNetwork?.nodes?.forEach { node ->
+                    if (node.uuid == deviceUuid.toString()) {
+                        meshManagerApi.meshNetwork?.deleteNode(node)
                     }
                 }
             }
         }
     }
+
 
     private fun provDeviceDiscovered(result: ScanResult) {
         val device: ExtendedBluetoothDevice
@@ -106,10 +99,40 @@ class ScannerRepository(
                     Log.d(tag, "Provisioned device discovered: ${result.device.address} ")
                     synchronized(provisionedDevices) {
                         provisionedDevices.add(device)
+                        // Notify about the scanned device
+                        this.notifyMeshDeviceScanned()
                     }
                 }
             }
         }
+    }
+
+    private fun notifyMeshDeviceScanned() {
+        val scanNotification = JSObject().apply {
+            put("unprovisioned", JSArray().apply {
+                unprovisionedDevices.forEach {
+                    put(JSObject().apply {
+                        put("uuid", it.getDeviceUuid().toString())
+                        put("macAddress", it.address)
+                        put("rssi", it.rssi)
+                        put("name", it.name)
+                    })
+                }
+            })
+            put("provisioned", JSArray().apply {
+                provisionedDevices.forEach {
+                    put(JSObject().apply {
+                        put("uuid", it.getDeviceUuid().toString())
+                        put("macAddress", it.address)
+                        put("rssi", it.rssi)
+                        put("name", it.name)
+                    })
+                }
+            })
+        }
+
+        // Notify the listeners
+        NotificationManager.getInstance().sendNotification(NrfMeshPlugin.MESH_DEVICE_SCAN_EVENT, scanNotification)
     }
 
     /**
