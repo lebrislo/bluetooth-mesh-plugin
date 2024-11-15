@@ -244,6 +244,8 @@ class NrfMeshManager(context: Context) {
         val deferred = CompletableDeferred<UnprovisionedMeshNode?>()
         provisioningCapabilitiesMap[uuid] = deferred
 
+        unprovisionedMeshNodes.clear()
+
         if (!bleMeshManager.isConnected) {
             Log.e(tag, "Failed to connect to unprovisioned device")
             deferred.cancel()
