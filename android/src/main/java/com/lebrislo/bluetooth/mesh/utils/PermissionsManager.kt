@@ -68,10 +68,10 @@ class PermissionsManager private constructor() {
 
             return ActivityCompat.checkSelfPermission(ctx, Manifest.permission.BLUETOOTH_ADMIN)
         } else {
-            val result = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.BLUETOOTH_SCAN)
-            Log.i(tag, "BLUETOOTH_SCAN Permission : $result")
+            val bluetoothScan = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.BLUETOOTH_SCAN)
+            Log.i(tag, "BLUETOOTH_SCAN Permission : $bluetoothScan")
 
-            if (result != PackageManager.PERMISSION_GRANTED) {
+            if (bluetoothScan != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(
                     act,
                     arrayOf(Manifest.permission.BLUETOOTH_SCAN),
@@ -79,7 +79,21 @@ class PermissionsManager private constructor() {
                 )
             }
 
-            return ActivityCompat.checkSelfPermission(ctx, Manifest.permission.BLUETOOTH_SCAN)
+            val bluetoothConnect = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.BLUETOOTH_CONNECT)
+            Log.i(tag, "BLUETOOTH_CONNECT Permission : $bluetoothConnect")
+
+            if (bluetoothConnect != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    act,
+                    arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                    0
+                )
+            }
+
+            return ActivityCompat.checkSelfPermission(
+                ctx,
+                Manifest.permission.BLUETOOTH_SCAN
+            ) and ActivityCompat.checkSelfPermission(ctx, Manifest.permission.BLUETOOTH_CONNECT)
         }
     }
 
