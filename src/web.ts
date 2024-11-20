@@ -159,4 +159,8 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
     console.log('sendLightCtlTemperatureRangeGet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
+
+  async sendConfigHeartbeatPublicationSet(): Promise<void> {
+    console.log('sendConfigHeartbeatPublicationSet');
+  }
 }

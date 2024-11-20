@@ -870,6 +870,36 @@ class NrfMeshPlugin : Plugin() {
         }
     }
 
+    @PluginMethod
+    fun sendConfigHeartbeatPublicationSet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("destination is required")
+        val destinationAddress =
+            call.getInt("destinationAddress") ?: return call.reject("destinationAddress is required")
+        val count = call.getInt("count") ?: return call.reject("count is required")
+        val period = call.getInt("period") ?: return call.reject("period is required")
+        val ttl = call.getInt("ttl") ?: return call.reject("ttl is required")
+        val netKeyIndex = call.getInt("netKeyIndex") ?: return call.reject("netKeyIndex is required")
+
+        CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                return@launch call.reject("Failed to connect to Mesh proxy")
+            }
+
+            val result = implementation.sendConfigHeartbeatPublicationSet(
+                unicastAddress,
+                destinationAddress,
+                count,
+                period,
+                ttl,
+                netKeyIndex
+            )
+
+            if (!result) return@launch call.reject("Failed to send Heartbeat Publication")
+        }
+    }
+
     fun sendNotification(eventName: String, data: JSObject) {
         if (!hasListeners(eventName)) {
             return

@@ -15,10 +15,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import no.nordicsemi.android.mesh.Features
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyAdd
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataGet
+import no.nordicsemi.android.mesh.transport.ConfigHeartbeatPublicationSet
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
 import no.nordicsemi.android.mesh.transport.ConfigNodeReset
 import no.nordicsemi.android.mesh.transport.GenericLevelSet
@@ -955,6 +957,38 @@ class NrfMeshManager(context: Context) {
             )
         }
         meshManagerApi.createMeshPdu(address, meshMessage)
+        return true
+    }
+
+    fun sendConfigHeartbeatPublicationSet(
+        unicastAddress: Int,
+        destinationAddress: Int,
+        count: Int,
+        period: Int,
+        ttl: Int,
+        netKeyIndex: Int
+    ): Boolean {
+        if (!bleMeshManager.isConnected) {
+            Log.e(tag, "Not connected to a mesh proxy")
+            return false
+        }
+
+        val feature = Features()
+        feature.proxy = Features.ENABLED
+        feature.relay = Features.ENABLED
+
+        meshManagerApi.createMeshPdu(
+            unicastAddress,
+            ConfigHeartbeatPublicationSet(
+                destinationAddress,
+                count.toByte(),
+                period.toByte(),
+                ttl,
+                feature,
+                netKeyIndex
+            )
+        )
+
         return true
     }
 }

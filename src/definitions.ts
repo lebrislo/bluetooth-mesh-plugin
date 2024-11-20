@@ -65,6 +65,15 @@ export interface MeshNetworkObject {
   meshNetwork: string;
 }
 
+export interface ConfigHeartbeatPublicationSet {
+  unicastAddress: number;
+  destinationAddress: number;
+  count: number;
+  period: number;
+  ttl: number;
+  netKeyIndex: number;
+}
+
 export enum NrfMeshPluginEvents {
   MeshModelMessageEvent = 'meshModelMessageEvent', /* Mesh model message received */
   BluetoothAdapterEvent = 'bluetoothAdapterEvent', /* Bluetooth adapter state change */
@@ -130,6 +139,7 @@ export interface NrfMeshPlugin {
     payload?: Uint8Array;
     opPairCode?: number
   }): Promise<ModelMessageStatus>;
+  sendConfigHeartbeatPublicationSet(option: ConfigHeartbeatPublicationSet): Promise<void>;
   addListener(eventName: string, listenerFunc: (event: any) => void): Promise<PluginListenerHandle>;
   removeAllListeners(): Promise<void>;
 }

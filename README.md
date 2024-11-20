@@ -43,6 +43,7 @@ npx cap sync
 * [`sendLightCtlTemperatureRangeSet(...)`](#sendlightctltemperaturerangeset)
 * [`sendLightCtlTemperatureRangeGet(...)`](#sendlightctltemperaturerangeget)
 * [`sendVendorModelMessage(...)`](#sendvendormodelmessage)
+* [`sendConfigHeartbeatPublicationSet(...)`](#sendconfigheartbeatpublicationset)
 * [`addListener(string, ...)`](#addlistenerstring-)
 * [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
@@ -461,6 +462,19 @@ sendVendorModelMessage(options: ModelMessage & { modelId: number; opcode: number
 --------------------
 
 
+### sendConfigHeartbeatPublicationSet(...)
+
+```typescript
+sendConfigHeartbeatPublicationSet(option: ConfigHeartbeatPublicationSet) => Promise<void>
+```
+
+| Param        | Type                                                                                    |
+| ------------ | --------------------------------------------------------------------------------------- |
+| **`option`** | <code><a href="#configheartbeatpublicationset">ConfigHeartbeatPublicationSet</a></code> |
+
+--------------------
+
+
 ### addListener(string, ...)
 
 ```typescript
@@ -656,6 +670,18 @@ buffer as needed.
 | Method    | Signature                                                                               | Description                                                     |
 | --------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | **slice** | (begin: number, end?: number \| undefined) =&gt; <a href="#arraybuffer">ArrayBuffer</a> | Returns a section of an <a href="#arraybuffer">ArrayBuffer</a>. |
+
+
+#### ConfigHeartbeatPublicationSet
+
+| Prop                     | Type                |
+| ------------------------ | ------------------- |
+| **`unicastAddress`**     | <code>number</code> |
+| **`destinationAddress`** | <code>number</code> |
+| **`count`**              | <code>number</code> |
+| **`period`**             | <code>number</code> |
+| **`ttl`**                | <code>number</code> |
+| **`netKeyIndex`**        | <code>number</code> |
 
 
 #### PluginListenerHandle

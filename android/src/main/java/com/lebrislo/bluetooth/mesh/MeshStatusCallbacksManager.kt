@@ -5,6 +5,7 @@ import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import no.nordicsemi.android.mesh.MeshStatusCallbacks
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
+import no.nordicsemi.android.mesh.transport.ConfigHeartbeatPublicationStatus
 import no.nordicsemi.android.mesh.transport.ConfigModelAppStatus
 import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.ControlMessage
@@ -52,6 +53,10 @@ class MeshStatusCallbacksManager() : MeshStatusCallbacks {
 
             is VendorModelMessageStatus -> {
                 PluginCallManager.getInstance().resolveVendorPluginCall(meshMessage)
+            }
+
+            is ConfigHeartbeatPublicationStatus -> {
+                Log.d(tag, "Heartbeat publication status: ${meshMessage.heartbeatPublication.toString()}")
             }
         }
     }
