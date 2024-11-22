@@ -51,7 +51,7 @@ class PluginCallManager private constructor() {
     fun addSigPluginCall(meshOperation: Int, meshAddress: Int, call: PluginCall) {
         Log.d(tag, "addSigPluginCall: Group address $meshAddress")
 
-        if (MeshAddress.isValidGroupAddress(meshAddress)) {
+        if (!MeshAddress.isValidUnicastAddress(meshAddress)) {
             return call.resolve()
         }
         val operationPair = getSigOperationPair(meshOperation)
@@ -126,6 +126,9 @@ class PluginCallManager private constructor() {
      * @param call Plugin call.
      */
     fun addVendorPluginCall(modelId: Int, opCode: Int, opPairCode: Int, meshAddress: Int, call: PluginCall) {
+        if (!MeshAddress.isValidUnicastAddress(meshAddress)) {
+            return call.resolve()
+        }
         pluginCalls.add(VendorPluginCall(modelId, opCode, opPairCode, meshAddress, call))
     }
 
