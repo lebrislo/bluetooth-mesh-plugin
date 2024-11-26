@@ -2,10 +2,10 @@ package com.lebrislo.bluetooth.mesh
 
 import android.util.Log
 import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
+import com.lebrislo.bluetooth.mesh.utils.NodesOnlineStateManager
 import no.nordicsemi.android.mesh.MeshStatusCallbacks
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
-import no.nordicsemi.android.mesh.transport.ConfigHeartbeatPublicationStatus
 import no.nordicsemi.android.mesh.transport.ConfigModelAppStatus
 import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.ControlMessage
@@ -36,6 +36,11 @@ class MeshStatusCallbacksManager() : MeshStatusCallbacks {
 
     }
 
+    override fun onHeartbeatMessageReceived(src: Int, message: ControlMessage) {
+        Log.d(tag, "onHeartbeatMessageReceived")
+        NodesOnlineStateManager.getInstance().heartbeatReceived(src)
+    }
+
     override fun onMeshMessageProcessed(dst: Int, meshMessage: MeshMessage) {
         Log.d(tag, "onMeshMessageProcessed ${meshMessage.javaClass.simpleName}")
     }
@@ -54,10 +59,10 @@ class MeshStatusCallbacksManager() : MeshStatusCallbacks {
             is VendorModelMessageStatus -> {
                 PluginCallManager.getInstance().resolveVendorPluginCall(meshMessage)
             }
+        }
 
-            is ConfigHeartbeatPublicationStatus -> {
-                Log.d(tag, "Heartbeat publication status: ${meshMessage.heartbeatPublication.toString()}")
-            }
+        if (meshMessage is ConfigNodeResetStatus) {
+            NodesOnlineStateManager.getInstance().removeNode(src)
         }
     }
 

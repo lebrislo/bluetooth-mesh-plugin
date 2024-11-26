@@ -45,12 +45,10 @@ class MeshCallbacksManager(val bleMeshManager: BleMeshManager) : MeshManagerCall
     }
 
     override fun sendProvisioningPdu(meshNode: UnprovisionedMeshNode?, pdu: ByteArray?) {
-
         bleMeshManager.sendPdu(pdu)
     }
 
     override fun onMeshPduCreated(pdu: ByteArray?) {
-
         bleMeshManager.sendPdu(pdu)
     }
 

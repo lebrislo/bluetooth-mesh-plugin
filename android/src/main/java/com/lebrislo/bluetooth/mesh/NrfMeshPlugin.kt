@@ -21,6 +21,7 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import com.lebrislo.bluetooth.mesh.utils.BluetoothStateReceiver
+import com.lebrislo.bluetooth.mesh.utils.NodesOnlineStateManager
 import com.lebrislo.bluetooth.mesh.utils.NotificationManager
 import com.lebrislo.bluetooth.mesh.utils.PermissionsManager
 import com.lebrislo.bluetooth.mesh.utils.Utils
@@ -46,6 +47,7 @@ class NrfMeshPlugin : Plugin() {
         const val BLUETOOTH_ADAPTER_EVENT_STRING: String = "bluetoothAdapterEvent"
         const val BLUETOOTH_CONNECTION_EVENT_STRING: String = "bluetoothConnectionEvent"
         const val MESH_DEVICE_SCAN_EVENT: String = "meshDeviceScanEvent"
+        const val MESH_NODE_ONLINE_STATE_EVENT: String = "meshNodeOnlineStateEvent"
     }
 
     private lateinit var implementation: NrfMeshManager
@@ -76,6 +78,7 @@ class NrfMeshPlugin : Plugin() {
         context.registerReceiver(bluetoothStateReceiver, filter)
 
         this.startScan()
+        NodesOnlineStateManager.getInstance().startMonitoring()
     }
 
     override fun handleOnStop() {
@@ -95,6 +98,7 @@ class NrfMeshPlugin : Plugin() {
         }
 
         this.stopScan()
+        NodesOnlineStateManager.getInstance().stopMonitoring()
     }
 
     override fun handleOnDestroy() {

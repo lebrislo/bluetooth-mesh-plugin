@@ -8,6 +8,7 @@ import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
+import com.lebrislo.bluetooth.mesh.utils.NodesOnlineStateManager
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -315,6 +316,7 @@ class NrfMeshManager(context: Context) {
                 provisioningStatusMap[uuid]?.complete(bleMeshDevice)
                 provisioningStatusMap.remove(uuid)
                 unprovisionedMeshNodes.remove(unprovisionedMeshNodes.first { node -> node.deviceUuid.toString() == uuid })
+                NodesOnlineStateManager.getInstance().addNode(bleMeshDevice.node.unicastAddress)
             }
 
             is BleMeshDevice.Unprovisioned -> {
