@@ -25,8 +25,9 @@ import no.nordicsemi.android.support.v18.scanner.ScanSettings
 class ScannerRepository(
     private val meshManagerApi: MeshManagerApi
 ) {
-    private val tag: String = ScannerRepository::class.java.simpleName
+    private val tag: String = "ScannerRepo"
 
+    private var meshProxyScannedCallback: ((proxy: ExtendedBluetoothDevice) -> Unit)? = null
     var isScanning: Boolean = false
 
     val unprovisionedDevices: MutableList<ExtendedBluetoothDevice> = mutableListOf()
@@ -36,7 +37,6 @@ class ScannerRepository(
 
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val serviceUuid = result.scanRecord?.serviceUuids?.get(0)?.uuid
-
             if (serviceUuid == MeshManagerApi.MESH_PROVISIONING_UUID) {
                 Log.v(tag, "Unprovisioned device discovered: ${result.device.address}")
                 unprovDeviceDiscovered(result)
@@ -56,7 +56,7 @@ class ScannerRepository(
         }
 
         override fun onBatchScanResults(results: List<ScanResult>) {
-            // Batch scan is disabled (report delay = 0)
+
         }
 
         override fun onScanFailed(errorCode: Int) {
@@ -99,6 +99,7 @@ class ScannerRepository(
                     Log.d(tag, "Provisioned device discovered: ${result.device.address} ")
                     synchronized(provisionedDevices) {
                         provisionedDevices.add(device)
+                        this.meshProxyScannedCallback?.invoke(device)
                         // Notify about the scanned device
                         this.notifyMeshDeviceScanned()
                     }
@@ -134,6 +135,16 @@ class ScannerRepository(
         // Notify the listeners
         NotificationManager.getInstance().sendNotification(NrfMeshPlugin.MESH_DEVICE_SCAN_EVENT, scanNotification)
     }
+
+    /**
+     * Set the callback to be called when a mesh device is scanned
+     *
+     * @param callback the callback to be called
+     */
+    fun setMeshProxyScannedCallback(callback: (proxy: ExtendedBluetoothDevice) -> Unit) {
+        this.meshProxyScannedCallback = callback
+    }
+
 
     /**
      * Start scanning for bluetooth devices that are advertising with the Mesh Provisioning or Mesh Proxy service UUIDs.

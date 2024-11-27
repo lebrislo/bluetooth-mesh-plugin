@@ -24,6 +24,7 @@ npx cap sync
 * [`importMeshNetwork(...)`](#importmeshnetwork)
 * [`scanMeshDevices(...)`](#scanmeshdevices)
 * [`clearMeshDevicesScan()`](#clearmeshdevicesscan)
+* [`getNodesOnlineStates()`](#getnodesonlinestates)
 * [`getProvisioningCapabilities(...)`](#getprovisioningcapabilities)
 * [`provisionDevice(...)`](#provisiondevice)
 * [`unprovisionDevice(...)`](#unprovisiondevice)
@@ -177,6 +178,17 @@ scanMeshDevices(options: { timeout: number; }) => Promise<ScanMeshDevices>
 ```typescript
 clearMeshDevicesScan() => Promise<void>
 ```
+
+--------------------
+
+
+### getNodesOnlineStates()
+
+```typescript
+getNodesOnlineStates() => Promise<NodesOnlineStates>
+```
+
+**Returns:** <code>Promise&lt;<a href="#nodesonlinestates">NodesOnlineStates</a>&gt;</code>
 
 --------------------
 
@@ -544,6 +556,21 @@ removeAllListeners() => Promise<void>
 | **`uuid`**       | <code>string</code> |
 | **`rssi`**       | <code>number</code> |
 | **`macAddress`** | <code>string</code> |
+
+
+#### NodesOnlineStates
+
+| Prop         | Type                       |
+| ------------ | -------------------------- |
+| **`states`** | <code>OnlineState[]</code> |
+
+
+#### OnlineState
+
+| Prop                 | Type                 |
+| -------------------- | -------------------- |
+| **`unicastAddress`** | <code>number</code>  |
+| **`isOnline`**       | <code>boolean</code> |
 
 
 #### ProvisioningCapabilities

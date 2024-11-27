@@ -74,6 +74,15 @@ export interface ConfigHeartbeatPublicationSet {
   netKeyIndex: number;
 }
 
+export interface OnlineState {
+  unicastAddress: number;
+  isOnline: boolean;
+}
+
+export interface NodesOnlineStates {
+  states: OnlineState[];
+}
+
 export enum NrfMeshPluginEvents {
   MeshModelMessageEvent = 'meshModelMessageEvent', /* Mesh model message received */
   BluetoothAdapterEvent = 'bluetoothAdapterEvent', /* Bluetooth adapter state change */
@@ -95,6 +104,7 @@ export interface NrfMeshPlugin {
     timeout: number;
   }): Promise<ScanMeshDevices>;
   clearMeshDevicesScan(): Promise<void>;
+  getNodesOnlineStates(): Promise<NodesOnlineStates>;
   getProvisioningCapabilities(options: {
     macAddress: string;
     uuid: string;

@@ -18,7 +18,7 @@ class BluetoothStateReceiver(private val plugin: NrfMeshPlugin) : BroadcastRecei
             BluetoothAdapter.STATE_ON -> {
                 NotificationManager.getInstance()
                     .sendNotification(BLUETOOTH_ADAPTER_EVENT_STRING, JSObject().put("enabled", true))
-                plugin.startScan()
+                plugin.restartScan()
             }
 
             BluetoothAdapter.STATE_OFF -> {

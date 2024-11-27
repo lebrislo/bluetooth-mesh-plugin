@@ -1,5 +1,6 @@
 package com.lebrislo.bluetooth.mesh.utils
 
+import android.util.Log
 import com.getcapacitor.JSObject
 import com.lebrislo.bluetooth.mesh.NrfMeshPlugin
 import kotlinx.coroutines.CoroutineScope
@@ -12,8 +13,10 @@ import org.json.JSONArray
 import java.util.concurrent.ConcurrentHashMap
 
 class NodesOnlineStateManager(
-    private val offlineTimeout: Long = 10_000L, // Timeout in milliseconds
+    private val offlineTimeout: Long = 5_000L, // Timeout in milliseconds
 ) {
+    private val tag: String = NodesOnlineStateManager::class.java.simpleName
+
     private val nodes = ConcurrentHashMap<Int, Boolean>() // Tracks node states (online/offline)
     private val heartbeatTimestamps = ConcurrentHashMap<Int, Long>() // Tracks last heartbeat timestamps
     private var monitoringJob: Job? = null
@@ -31,6 +34,7 @@ class NodesOnlineStateManager(
     // Add a new node to the network
     fun addNode(unicastAddress: Int) {
         if (!nodes.containsKey(unicastAddress)) {
+            Log.i(tag, "add node to online state manager: $unicastAddress")
             nodes[unicastAddress] = false // Initialize as offline
             heartbeatTimestamps[unicastAddress] = 0L
         }
@@ -38,13 +42,21 @@ class NodesOnlineStateManager(
 
     // Remove a node from the network
     fun removeNode(unicastAddress: Int) {
+        Log.i(tag, "remove node from online state manager: $unicastAddress")
         nodes.remove(unicastAddress)
         heartbeatTimestamps.remove(unicastAddress)
     }
 
     fun clearNodes() {
+        Log.i(tag, "clear nodes from online state manager")
         nodes.clear()
         heartbeatTimestamps.clear()
+    }
+
+    fun resetStatus() {
+        nodes.keys.forEach { unicastAddress ->
+            nodes[unicastAddress] = false
+        }
     }
 
     // Record a heartbeat for a node
@@ -88,9 +100,8 @@ class NodesOnlineStateManager(
         monitoringJob?.cancel()
     }
 
-
-    fun notifyNetwork() {
-        val notification = JSObject()
+    fun getNodesOnlineStates(): JSObject {
+        val result = JSObject()
         val states = JSONArray()
         nodes.forEach { nodeState ->
             val state = JSObject()
@@ -98,7 +109,13 @@ class NodesOnlineStateManager(
             state.put("isOnline", nodeState.value)
             states.put(state)
         }
-        notification.put("nodesStates", states)
+        result.put("states", states)
+
+        return result
+    }
+
+    fun notifyNetwork() {
+        val notification = getNodesOnlineStates()
         NotificationManager.getInstance().sendNotification(NrfMeshPlugin.MESH_NODE_ONLINE_STATE_EVENT, notification)
     }
 }

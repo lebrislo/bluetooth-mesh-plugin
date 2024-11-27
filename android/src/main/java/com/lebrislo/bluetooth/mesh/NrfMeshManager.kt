@@ -69,8 +69,14 @@ class NrfMeshManager(context: Context) {
         meshProvisioningCallbacksManager =
             MeshProvisioningCallbacksManager(unprovisionedMeshNodes, this)
         meshStatusCallbacksManager = MeshStatusCallbacksManager()
+
         bleCallbacksManager = BleCallbacksManager(meshManagerApi)
+        bleCallbacksManager.setDisconnectionCallback { onBluetoothDeviceDisconnected() }
+
         scannerRepository = ScannerRepository(meshManagerApi)
+        scannerRepository.setMeshProxyScannedCallback { proxy ->
+            onMeshProxyScanned(proxy)
+        }
 
         meshManagerApi.setMeshManagerCallbacks(meshCallbacksManager)
         meshManagerApi.setProvisioningStatusCallbacks(meshProvisioningCallbacksManager)
@@ -78,6 +84,21 @@ class NrfMeshManager(context: Context) {
         bleMeshManager.setGattCallbacks(bleCallbacksManager)
 
         meshManagerApi.loadMeshNetwork()
+    }
+
+    private fun onBluetoothDeviceDisconnected() {
+        Log.i(tag, "bluetooth is disconnected, restarting scan")
+        this.restartMeshDevicesScan()
+    }
+
+    private fun onMeshProxyScanned(proxy: ExtendedBluetoothDevice) {
+        if (!bleMeshManager.isConnected && proxy.device != null) {
+            Log.i(tag, "Bluetooth disconnected : Connecting to mesh proxy ${proxy.device.address}")
+            CoroutineScope(Dispatchers.IO).launch {
+                connectBle(proxy.device)
+                sendGenericOnOffGet(0xFFFF, 0)
+            }
+        }
     }
 
     /**
@@ -127,6 +148,13 @@ class NrfMeshManager(context: Context) {
      */
     fun disconnectBle() {
         bleMeshManager.disconnect().await()
+    }
+
+    /**
+     * Disconnect from a Bluetooth device
+     */
+    fun disconnectBleAsync() {
+        bleMeshManager.disconnect().enqueue()
     }
 
     fun isBleConnected(): Boolean {

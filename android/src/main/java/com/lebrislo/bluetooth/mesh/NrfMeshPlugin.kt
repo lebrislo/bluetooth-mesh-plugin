@@ -77,7 +77,12 @@ class NrfMeshPlugin : Plugin() {
         bluetoothStateReceiver = BluetoothStateReceiver(this)
         context.registerReceiver(bluetoothStateReceiver, filter)
 
-        this.startScan()
+        this.restartScan()
+        CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(null)) return@launch
+            connectionToProvisionedDevice()
+        }
+        NodesOnlineStateManager.getInstance().resetStatus()
         NodesOnlineStateManager.getInstance().startMonitoring()
     }
 
@@ -91,14 +96,14 @@ class NrfMeshPlugin : Plugin() {
             Log.e(tag, "handleOnStop : Receiver not registered")
         }
 
+        this.stopScan()
+        NodesOnlineStateManager.getInstance().stopMonitoring()
+
         if (implementation.isBleConnected()) {
             CoroutineScope(Dispatchers.IO).launch {
                 implementation.disconnectBle()
             }
         }
-
-        this.stopScan()
-        NodesOnlineStateManager.getInstance().stopMonitoring()
     }
 
     override fun handleOnDestroy() {
@@ -135,9 +140,9 @@ class NrfMeshPlugin : Plugin() {
         return true
     }
 
-    fun startScan() {
+    fun restartScan() {
         if (!assertBluetoothEnabled(null)) return
-        implementation.startScan()
+        implementation.restartMeshDevicesScan()
     }
 
     fun stopScan() {
@@ -280,6 +285,13 @@ class NrfMeshPlugin : Plugin() {
         implementation.restartMeshDevicesScan()
 
         return call.resolve()
+    }
+
+    @PluginMethod
+    fun getNodesOnlineStates(call: PluginCall) {
+        val nodesOnlineStates = NodesOnlineStateManager.getInstance().getNodesOnlineStates()
+
+        return call.resolve(nodesOnlineStates)
     }
 
     private fun connectedToUnprovisionedDestinations(destinationMacAddress: String): Boolean {

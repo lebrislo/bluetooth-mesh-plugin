@@ -1,6 +1,6 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { BluetoothConnectionStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NrfMeshPlugin, Permissions, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices, UnprovisionStatus } from './definitions';
+import type { BluetoothConnectionStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NodesOnlineStates, NrfMeshPlugin, Permissions, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices, UnprovisionStatus } from './definitions';
 
 export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
 
@@ -40,6 +40,11 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
 
   async clearMeshDevicesScan(): Promise<void> {
     console.log('clearMeshDevicesScan');
+  }
+
+  async getNodesOnlineStates(): Promise<NodesOnlineStates> {
+    console.log('getNodesOnlineStates');
+    return { states: [] };
   }
 
   async getProvisioningCapabilities(): Promise<ProvisioningCapabilities> {
