@@ -37,11 +37,12 @@ import no.nordicsemi.android.mesh.transport.VendorModelMessageUnacked
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-class MeshController(bleMeshManager: BleMeshManager, private val meshManagerApi: MeshManagerApi) {
+class MeshController(
+    bleMeshManager: BleMeshManager,
+    private val meshManagerApi: MeshManagerApi,
+    pluginCallsManager: PluginCallManager
+) {
     private val tag: String = MeshController::class.java.simpleName
-
-
-    private val pluginCallsManager = PluginCallManager()
 
     private val unprovisionedMeshNodes: ArrayList<UnprovisionedMeshNode> = ArrayList()
     private val provisioningCapabilitiesMap = ConcurrentHashMap<UUID, CompletableDeferred<UnprovisionedMeshNode?>>()

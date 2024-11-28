@@ -7,8 +7,10 @@ import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
 import com.lebrislo.bluetooth.mesh.utils.Utils
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import no.nordicsemi.android.mesh.MeshManagerApi
 
@@ -22,6 +24,23 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
 
     init {
         bleMeshManager.setGattCallbacks(bleCallbacksManager)
+
+        bleCallbacksManager.setDisconnectionCallback { onBluetoothDeviceDisconnected() }
+        scannerRepository.setMeshProxyScannedCallback { onMeshProxyScanned(it) }
+    }
+
+    private fun onBluetoothDeviceDisconnected() {
+        Log.i(tag, "Bluetooth is disconnected, restarting scan ${this.autoReconnect}")
+        if (this.autoReconnect) this.restartMeshDevicesScan()
+    }
+
+    private fun onMeshProxyScanned(proxy: ExtendedBluetoothDevice) {
+        if (!bleMeshManager.isConnected && proxy.device != null && this.autoReconnect) {
+            Log.i(tag, "Bluetooth disconnected : Connecting to mesh proxy ${proxy.device.address}")
+            CoroutineScope(Dispatchers.IO).launch {
+                connectBle(proxy.device)
+            }
+        }
     }
 
     /**

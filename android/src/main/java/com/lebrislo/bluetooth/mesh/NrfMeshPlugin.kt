@@ -53,6 +53,7 @@ class NrfMeshPlugin : Plugin() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var bluetoothStateReceiver: BroadcastReceiver
 
+    private lateinit var pluginCallManager: PluginCallManager
     private lateinit var bleController: BleController
     private lateinit var meshController: MeshController
 
@@ -63,8 +64,9 @@ class NrfMeshPlugin : Plugin() {
 
         val meshApiManager = MeshManagerApi(context)
         val bleMeshManager = BleMeshManager(context)
+        pluginCallManager = PluginCallManager()
         bleController = BleController(bleMeshManager, meshApiManager)
-        meshController = MeshController(bleMeshManager, meshApiManager)
+        meshController = MeshController(bleMeshManager, meshApiManager, pluginCallManager)
 
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
@@ -448,7 +450,7 @@ class NrfMeshPlugin : Plugin() {
                 return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            PluginCallManager.getInstance()
+            pluginCallManager
                 .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_NODE_RESET, unicastAddress, call)
 
             meshController.unprovisionDevice(unicastAddress)
@@ -493,7 +495,7 @@ class NrfMeshPlugin : Plugin() {
             }
 
             if (acknowledgement) {
-                PluginCallManager.getInstance()
+                pluginCallManager
                     .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
             }
 
@@ -519,7 +521,7 @@ class NrfMeshPlugin : Plugin() {
             }
 
             if (acknowledgement) {
-                PluginCallManager.getInstance()
+                pluginCallManager
                     .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_MODEL_APP_BIND, unicastAddress, call)
             }
 
@@ -542,7 +544,7 @@ class NrfMeshPlugin : Plugin() {
                 return@launch
             }
 
-            PluginCallManager.getInstance()
+            pluginCallManager
                 .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_COMPOSITION_DATA_GET, unicastAddress, call)
 
             val result = meshController.compositionDataGet(unicastAddress)
@@ -566,7 +568,7 @@ class NrfMeshPlugin : Plugin() {
             }
 
             if (acknowledgement) {
-                PluginCallManager.getInstance()
+                pluginCallManager
                     .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_SET, unicastAddress, call)
             }
 
@@ -594,7 +596,7 @@ class NrfMeshPlugin : Plugin() {
 
             }
 
-            PluginCallManager.getInstance()
+            pluginCallManager
                 .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_GET, unicastAddress, call)
 
             val result = meshController.sendGenericOnOffGet(
@@ -621,7 +623,7 @@ class NrfMeshPlugin : Plugin() {
             }
 
             if (acknowledgement) {
-                PluginCallManager.getInstance()
+                pluginCallManager
                     .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET, unicastAddress, call)
             }
 
@@ -648,7 +650,7 @@ class NrfMeshPlugin : Plugin() {
                 return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            PluginCallManager.getInstance()
+            pluginCallManager
                 .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_GET, unicastAddress, call)
 
             val result = meshController.sendGenericPowerLevelGet(
@@ -677,7 +679,7 @@ class NrfMeshPlugin : Plugin() {
             }
 
             if (acknowledgement) {
-                PluginCallManager.getInstance()
+                pluginCallManager
                     .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_SET, unicastAddress, call)
             }
 
@@ -706,7 +708,7 @@ class NrfMeshPlugin : Plugin() {
                 return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            PluginCallManager.getInstance()
+            pluginCallManager
                 .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_GET, unicastAddress, call)
 
             val result = meshController.sendLightHslGet(
@@ -735,7 +737,7 @@ class NrfMeshPlugin : Plugin() {
             }
 
             if (acknowledgement) {
-                PluginCallManager.getInstance()
+                pluginCallManager
                     .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_SET, unicastAddress, call)
             }
 
@@ -764,7 +766,7 @@ class NrfMeshPlugin : Plugin() {
                 return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            PluginCallManager.getInstance()
+            pluginCallManager
                 .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_GET, unicastAddress, call)
 
             val result = meshController.sendLightCtlGet(
@@ -792,7 +794,7 @@ class NrfMeshPlugin : Plugin() {
             }
 
             if (acknowledgement) {
-                PluginCallManager.getInstance()
+                pluginCallManager
                     .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_SET, unicastAddress, call)
             }
 
@@ -820,7 +822,7 @@ class NrfMeshPlugin : Plugin() {
                 return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            PluginCallManager.getInstance()
+            pluginCallManager
                 .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_GET, unicastAddress, call)
 
             val result = meshController.sendLightCtlTemperatureRangeGet(
@@ -860,7 +862,7 @@ class NrfMeshPlugin : Plugin() {
             }
 
             if (opPairCode != null) {
-                PluginCallManager.getInstance()
+                pluginCallManager
                     .addVendorPluginCall(modelId, opcode, opPairCode, unicastAddress, call)
             }
 

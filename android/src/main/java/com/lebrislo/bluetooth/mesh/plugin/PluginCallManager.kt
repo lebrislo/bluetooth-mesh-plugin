@@ -20,17 +20,6 @@ class PluginCallManager() {
 
     private val pluginCalls: MutableList<BasePluginCall> = mutableListOf()
 
-    companion object {
-
-        @Volatile
-        private var instance: PluginCallManager? = null
-
-        fun getInstance() =
-            instance ?: synchronized(this) {
-                instance ?: PluginCallManager().also { instance = it }
-            }
-    }
-
     /**
      * Remove a plugin call from the list of plugin calls.
      *
