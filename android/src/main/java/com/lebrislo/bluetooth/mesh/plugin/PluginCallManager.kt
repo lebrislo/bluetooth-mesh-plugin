@@ -15,7 +15,7 @@ import no.nordicsemi.android.mesh.utils.MeshAddress
 /**
  * This class is used to manage plugin calls.
  */
-class PluginCallManager private constructor() {
+class PluginCallManager() {
     private val tag: String = PluginCallManager::class.java.simpleName
 
     private val pluginCalls: MutableList<BasePluginCall> = mutableListOf()

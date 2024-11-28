@@ -18,13 +18,13 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
+import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
 import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import com.lebrislo.bluetooth.mesh.utils.BluetoothStateReceiver
 import com.lebrislo.bluetooth.mesh.utils.NodesOnlineStateManager
 import com.lebrislo.bluetooth.mesh.utils.NotificationManager
 import com.lebrislo.bluetooth.mesh.utils.PermissionsManager
-import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -50,15 +50,21 @@ class NrfMeshPlugin : Plugin() {
         const val MESH_NODE_ONLINE_STATE_EVENT: String = "meshNodeOnlineStateEvent"
     }
 
-    private lateinit var implementation: NrfMeshManager
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var bluetoothStateReceiver: BroadcastReceiver
 
+    private lateinit var bleController: BleController
+    private lateinit var meshController: MeshController
+
     override fun load() {
-        this.implementation = NrfMeshManager(this.context)
         NotificationManager.getInstance().setPlugin(this)
         PermissionsManager.getInstance().setActivity(activity)
         PermissionsManager.getInstance().setContext(context)
+
+        val meshApiManager = MeshManagerApi(context)
+        val bleMeshManager = BleMeshManager(context)
+        bleController = BleController(bleMeshManager, meshApiManager)
+        meshController = MeshController(bleMeshManager, meshApiManager)
 
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothAdapter = bluetoothManager.adapter
@@ -99,9 +105,9 @@ class NrfMeshPlugin : Plugin() {
         this.stopScan()
         NodesOnlineStateManager.getInstance().stopMonitoring()
 
-        if (implementation.isBleConnected()) {
+        if (bleController.isBleConnected()) {
             CoroutineScope(Dispatchers.IO).launch {
-                implementation.disconnectBle()
+                bleController.disconnectBle()
             }
         }
     }
@@ -115,9 +121,9 @@ class NrfMeshPlugin : Plugin() {
             Log.e(tag, "handleOnDestroy : Receiver not registered")
         }
 
-        if (implementation.isBleConnected()) {
+        if (bleController.isBleConnected()) {
             CoroutineScope(Dispatchers.IO).launch {
-                implementation.disconnectBle()
+                bleController.disconnectBle()
             }
         }
         this.stopScan()
@@ -142,12 +148,12 @@ class NrfMeshPlugin : Plugin() {
 
     fun restartScan() {
         if (!assertBluetoothEnabled(null)) return
-        implementation.restartMeshDevicesScan()
+        bleController.restartMeshDevicesScan()
     }
 
     fun stopScan() {
         if (!assertBluetoothEnabled(null)) return
-        implementation.stopScan()
+        bleController.stopScan()
     }
 
     @PluginMethod
@@ -171,8 +177,8 @@ class NrfMeshPlugin : Plugin() {
     @PluginMethod
     fun isBluetoothConnected(call: PluginCall) {
         if (!assertBluetoothEnabled(null)) return
-        val connected = implementation.isBleConnected()
-        implementation.connectedDevice()?.let {
+        val connected = bleController.isBleConnected()
+        bleController.connectedDevice()?.let {
             return call.resolve(JSObject().put("connected", connected).put("macAddress", it.address))
         } ?: return call.resolve(JSObject().put("connected", connected))
     }
@@ -180,11 +186,11 @@ class NrfMeshPlugin : Plugin() {
     @PluginMethod
     fun disconnectBle(call: PluginCall) {
         if (!assertBluetoothEnabled(null)) return
-        if (!implementation.isBleConnected()) {
+        if (!bleController.isBleConnected()) {
             return call.resolve()
         }
         CoroutineScope(Dispatchers.IO).launch {
-            implementation.disconnectBle()
+            bleController.disconnectBle()
             return@launch call.resolve()
         }
     }
@@ -193,9 +199,9 @@ class NrfMeshPlugin : Plugin() {
     fun initMeshNetwork(call: PluginCall) {
         val networkName = call.getString("networkName") ?: return call.reject("networkName is required")
 
-        implementation.initMeshNetwork(networkName)
+        meshController.initMeshNetwork(networkName)
 
-        val network = implementation.exportMeshNetwork()
+        val network = meshController.exportMeshNetwork()
 
         return if (network != null) {
             call.resolve(JSObject().put("meshNetwork", network))
@@ -206,7 +212,7 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun exportMeshNetwork(call: PluginCall) {
-        val result = implementation.exportMeshNetwork()
+        val result = meshController.exportMeshNetwork()
 
         return if (result != null) {
             call.resolve(JSObject().put("meshNetwork", result))
@@ -219,7 +225,7 @@ class NrfMeshPlugin : Plugin() {
     fun importMeshNetwork(call: PluginCall) {
         val meshNetwork = call.getString("meshNetwork") ?: return call.reject("meshNetwork is required")
 
-        implementation.importMeshNetwork(meshNetwork)
+        meshController.importMeshNetwork(meshNetwork)
 
         return call.resolve()
     }
@@ -231,23 +237,16 @@ class NrfMeshPlugin : Plugin() {
         if (!assertBluetoothEnabled(call)) return
 
         CoroutineScope(Dispatchers.IO).launch {
-            val devices = implementation.getMeshDevices(scanDuration)
+            val devices = bleController.getMeshDevices(scanDuration)
 
             // return a dict of devices, unprovisioned and provisioned
             val result = JSObject().apply {
                 put("unprovisioned", JSArray().apply {
                     devices.forEach {
-                        val serviceData = Utils.getServiceData(
-                            it.scanResult!!,
-                            MeshManagerApi.MESH_PROVISIONING_UUID
-                        )
-
-                        if (serviceData == null || serviceData.size < 18) return@forEach
-
-                        val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData)
+                        if (it.scanResult == null) return@forEach
 
                         put(JSObject().apply {
-                            put("uuid", uuid.toString())
+                            put("uuid", it.getDeviceUuid().toString())
                             put("macAddress", it.scanResult.device.address)
                             put("rssi", it.rssi)
                             put("name", it.name)
@@ -256,17 +255,10 @@ class NrfMeshPlugin : Plugin() {
                 })
                 put("provisioned", JSArray().apply {
                     devices.forEach {
-                        val serviceData = Utils.getServiceData(
-                            it.scanResult!!,
-                            MeshManagerApi.MESH_PROXY_UUID
-                        )
-
-                        if (serviceData == null || serviceData.size < 18) return@forEach
-
-                        val uuid: UUID = implementation.meshManagerApi.getDeviceUuid(serviceData)
+                        if (it.scanResult == null) return@forEach
 
                         put(JSObject().apply {
-                            put("uuid", uuid.toString())
+                            put("uuid", it.getDeviceUuid().toString())
                             put("macAddress", it.scanResult.device.address)
                             put("rssi", it.rssi)
                             put("name", it.name)
@@ -282,7 +274,7 @@ class NrfMeshPlugin : Plugin() {
     fun clearMeshDevicesScan(call: PluginCall) {
         if (!assertBluetoothEnabled(call)) return
 
-        implementation.restartMeshDevicesScan()
+        bleController.restartMeshDevicesScan()
 
         return call.resolve()
     }
@@ -295,7 +287,7 @@ class NrfMeshPlugin : Plugin() {
     }
 
     private fun connectedToUnprovisionedDestinations(destinationMacAddress: String): Boolean {
-        return implementation.isBleConnected() && implementation.connectedDevice()?.address == destinationMacAddress
+        return bleController.isBleConnected() && bleController.connectedDevice()?.address == destinationMacAddress
     }
 
     private suspend fun connectionToUnprovisionedDevice(
@@ -305,14 +297,14 @@ class NrfMeshPlugin : Plugin() {
         return withContext(Dispatchers.IO) {
 
             if (!connectedToUnprovisionedDestinations(destinationMacAddress)) {
-                if (implementation.isBleConnected()) {
+                if (bleController.isBleConnected()) {
                     withContext(Dispatchers.IO) {
-                        implementation.disconnectBle(false)
+                        bleController.disconnectBle(false)
                     }
                 }
 
                 val bluetoothDevice = withContext(Dispatchers.IO) {
-                    implementation.searchUnprovisionedBluetoothDevice(destinationUuid)
+                    bleController.searchUnprovisionedBluetoothDevice(destinationUuid)
                 }
 
                 if (bluetoothDevice == null) {
@@ -321,7 +313,7 @@ class NrfMeshPlugin : Plugin() {
                 }
 
                 withContext(Dispatchers.IO) {
-                    implementation.connectBle(bluetoothDevice, false)
+                    bleController.connectBle(bluetoothDevice, false)
                 }
             }
             return@withContext true
@@ -338,7 +330,7 @@ class NrfMeshPlugin : Plugin() {
             while (System.currentTimeMillis() - startTime < timeoutMillis) {
                 // Attempt to find the proxy
                 proxy = withContext(Dispatchers.IO) {
-                    implementation.searchProxyMesh()
+                    bleController.searchProxyMesh()
                 }
 
                 // If proxy is found, break out of the loop
@@ -356,7 +348,7 @@ class NrfMeshPlugin : Plugin() {
             }
 
             withContext(Dispatchers.IO) {
-                implementation.connectBle(proxy)
+                bleController.connectBle(proxy)
             }
             return@withContext true
         }
@@ -376,7 +368,7 @@ class NrfMeshPlugin : Plugin() {
                 return@launch call.reject("Failed to connect to device : $macAddress $uuid")
             }
 
-            val deferred = implementation.getProvisioningCapabilities(UUID.fromString(uuid))
+            val deferred = meshController.getProvisioningCapabilities(UUID.fromString(uuid))
 
             val unprovisionedDevice = deferred.await()
             if (unprovisionedDevice != null) {
@@ -416,12 +408,12 @@ class NrfMeshPlugin : Plugin() {
                 return@launch call.reject("Failed to connect to device : $macAddress $uuid")
             }
 
-            val deferred = implementation.provisionDevice(UUID.fromString(uuid))
+            val deferred = meshController.provisionDevice(UUID.fromString(uuid))
 
             val meshDevice = deferred.await() ?: return@launch call.reject("Failed to provision device")
 
             withContext(Dispatchers.IO) {
-                implementation.disconnectBle()
+                bleController.disconnectBle()
             }
 
             when (meshDevice) {
@@ -459,13 +451,13 @@ class NrfMeshPlugin : Plugin() {
             PluginCallManager.getInstance()
                 .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_NODE_RESET, unicastAddress, call)
 
-            implementation.unprovisionDevice(unicastAddress)
+            meshController.unprovisionDevice(unicastAddress)
         }
     }
 
     @PluginMethod
     fun createApplicationKey(call: PluginCall) {
-        val result = implementation.createApplicationKey()
+        val result = meshController.createApplicationKey()
 
         return if (result) {
             call.resolve()
@@ -478,7 +470,7 @@ class NrfMeshPlugin : Plugin() {
     fun removeApplicationKey(call: PluginCall) {
         val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
 
-        val result = implementation.removeApplicationKey(appKeyIndex)
+        val result = meshController.removeApplicationKey(appKeyIndex)
 
         return if (result) {
             call.resolve()
@@ -505,7 +497,7 @@ class NrfMeshPlugin : Plugin() {
                     .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
             }
 
-            val result = implementation.addApplicationKeyToNode(unicastAddress, appKeyIndex)
+            val result = meshController.addApplicationKeyToNode(unicastAddress, appKeyIndex)
 
             if (!result) return@launch call.reject("Failed to add application key to node")
             if (!acknowledgement) return@launch call.resolve()
@@ -531,7 +523,7 @@ class NrfMeshPlugin : Plugin() {
                     .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_MODEL_APP_BIND, unicastAddress, call)
             }
 
-            val result = implementation.bindApplicationKeyToModel(unicastAddress, appKeyIndex, modelId)
+            val result = meshController.bindApplicationKeyToModel(unicastAddress, appKeyIndex, modelId)
 
             if (!result) return@launch call.reject("Failed to bind application key")
             if (!acknowledgement) return@launch call.resolve()
@@ -553,7 +545,7 @@ class NrfMeshPlugin : Plugin() {
             PluginCallManager.getInstance()
                 .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_COMPOSITION_DATA_GET, unicastAddress, call)
 
-            val result = implementation.compositionDataGet(unicastAddress)
+            val result = meshController.compositionDataGet(unicastAddress)
 
             if (!result) call.reject("Failed to get composition data")
         }
@@ -578,7 +570,7 @@ class NrfMeshPlugin : Plugin() {
                     .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_SET, unicastAddress, call)
             }
 
-            val result = implementation.sendGenericOnOffSet(
+            val result = meshController.sendGenericOnOffSet(
                 unicastAddress,
                 appKeyIndex,
                 onOff
@@ -605,7 +597,7 @@ class NrfMeshPlugin : Plugin() {
             PluginCallManager.getInstance()
                 .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_ON_OFF_GET, unicastAddress, call)
 
-            val result = implementation.sendGenericOnOffGet(
+            val result = meshController.sendGenericOnOffGet(
                 unicastAddress,
                 appKeyIndex,
             )
@@ -633,7 +625,7 @@ class NrfMeshPlugin : Plugin() {
                     .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET, unicastAddress, call)
             }
 
-            val result = implementation.sendGenericPowerLevelSet(
+            val result = meshController.sendGenericPowerLevelSet(
                 unicastAddress,
                 appKeyIndex,
                 powerLevel
@@ -659,7 +651,7 @@ class NrfMeshPlugin : Plugin() {
             PluginCallManager.getInstance()
                 .addSigPluginCall(ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_GET, unicastAddress, call)
 
-            val result = implementation.sendGenericPowerLevelGet(
+            val result = meshController.sendGenericPowerLevelGet(
                 unicastAddress,
                 appKeyIndex,
             )
@@ -689,7 +681,7 @@ class NrfMeshPlugin : Plugin() {
                     .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_SET, unicastAddress, call)
             }
 
-            val result = implementation.sendLightHslSet(
+            val result = meshController.sendLightHslSet(
                 unicastAddress,
                 appKeyIndex,
                 hue,
@@ -717,7 +709,7 @@ class NrfMeshPlugin : Plugin() {
             PluginCallManager.getInstance()
                 .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_HSL_GET, unicastAddress, call)
 
-            val result = implementation.sendLightHslGet(
+            val result = meshController.sendLightHslGet(
                 unicastAddress,
                 appKeyIndex,
             )
@@ -747,7 +739,7 @@ class NrfMeshPlugin : Plugin() {
                     .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_SET, unicastAddress, call)
             }
 
-            val result = implementation.sendLightCtlSet(
+            val result = meshController.sendLightCtlSet(
                 unicastAddress,
                 appKeyIndex,
                 lightness,
@@ -775,7 +767,7 @@ class NrfMeshPlugin : Plugin() {
             PluginCallManager.getInstance()
                 .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_GET, unicastAddress, call)
 
-            val result = implementation.sendLightCtlGet(
+            val result = meshController.sendLightCtlGet(
                 unicastAddress,
                 appKeyIndex,
             )
@@ -804,7 +796,7 @@ class NrfMeshPlugin : Plugin() {
                     .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_SET, unicastAddress, call)
             }
 
-            val result = implementation.sendLightCtlTemperatureRangeSet(
+            val result = meshController.sendLightCtlTemperatureRangeSet(
                 unicastAddress,
                 appKeyIndex,
                 rangeMin,
@@ -831,7 +823,7 @@ class NrfMeshPlugin : Plugin() {
             PluginCallManager.getInstance()
                 .addSigPluginCall(ApplicationMessageOpCodes.LIGHT_CTL_TEMPERATURE_RANGE_GET, unicastAddress, call)
 
-            val result = implementation.sendLightCtlTemperatureRangeGet(
+            val result = meshController.sendLightCtlTemperatureRangeGet(
                 unicastAddress,
                 appKeyIndex,
             )
@@ -872,7 +864,7 @@ class NrfMeshPlugin : Plugin() {
                     .addVendorPluginCall(modelId, opcode, opPairCode, unicastAddress, call)
             }
 
-            val result = implementation.sendVendorModelMessage(
+            val result = meshController.sendVendorModelMessage(
                 unicastAddress,
                 appKeyIndex,
                 modelId,
@@ -903,7 +895,7 @@ class NrfMeshPlugin : Plugin() {
                 return@launch call.reject("Failed to connect to Mesh proxy")
             }
 
-            val result = implementation.sendConfigHeartbeatPublicationSet(
+            val result = meshController.sendConfigHeartbeatPublicationSet(
                 unicastAddress,
                 destinationAddress,
                 count,

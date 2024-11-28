@@ -1,0 +1,29 @@
+@startuml Android Plugin Class Diagram
+class BluetoothMeshPlugin {
+    - meshController: MeshController
+    - bleController: BleController
+}
+class MeshController {
+    - meshApi: MeshManagerApi
+    - pluginCallsManager: PluginCallsManager
+}
+class BleController {
+    - deviceScanner: DeviceScanner
+}
+class MeshManagerApi
+class DeviceScanner
+class MeshCallbacksManager implements MeshManagerCallbacks, MeshProvisioningStatusCallbacks, MeshStatusCallbacks
+class PluginCallsManager
+
+interface MeshManagerCallbacks
+interface MeshProvisioningStatusCallbacks
+interface MeshStatusCallbacks
+
+BluetoothMeshPlugin --> MeshController
+BluetoothMeshPlugin --> BleController
+MeshController --> MeshManagerApi
+MeshController --> PluginCallsManager
+BleController --> DeviceScanner
+MeshCallbacksManager *-- PluginCallsManager
+MeshManagerApi --> MeshCallbacksManager
+@enduml
