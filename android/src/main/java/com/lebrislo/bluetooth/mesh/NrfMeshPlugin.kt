@@ -307,7 +307,7 @@ class NrfMeshPlugin : Plugin() {
             if (!connectedToUnprovisionedDestinations(destinationMacAddress)) {
                 if (implementation.isBleConnected()) {
                     withContext(Dispatchers.IO) {
-                        implementation.disconnectBle()
+                        implementation.disconnectBle(false)
                     }
                 }
 
@@ -321,7 +321,7 @@ class NrfMeshPlugin : Plugin() {
                 }
 
                 withContext(Dispatchers.IO) {
-                    implementation.connectBle(bluetoothDevice)
+                    implementation.connectBle(bluetoothDevice, false)
                 }
             }
             return@withContext true
@@ -351,7 +351,7 @@ class NrfMeshPlugin : Plugin() {
             }
 
             if (proxy == null) {
-                Log.d(tag, "connectionToProvisionedDevice : Failed to find proxy node")
+                Log.e(tag, "connectionToProvisionedDevice : Failed to find proxy node")
                 return@withContext false
             }
 

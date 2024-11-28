@@ -56,6 +56,7 @@ class NrfMeshManager(context: Context) {
     private val bleCallbacksManager: BleCallbacksManager
     private val scannerRepository: ScannerRepository
 
+    private var autoReconnect: Boolean = true
     private val unprovisionedMeshNodes: ArrayList<UnprovisionedMeshNode> = ArrayList()
 
     private var bleMeshManager: BleMeshManager = BleMeshManager(context)
@@ -87,12 +88,12 @@ class NrfMeshManager(context: Context) {
     }
 
     private fun onBluetoothDeviceDisconnected() {
-        Log.i(tag, "bluetooth is disconnected, restarting scan")
-        this.restartMeshDevicesScan()
+        Log.i(tag, "Bluetooth is disconnected, restarting scan ${this.autoReconnect}")
+        if (this.autoReconnect) this.restartMeshDevicesScan()
     }
 
     private fun onMeshProxyScanned(proxy: ExtendedBluetoothDevice) {
-        if (!bleMeshManager.isConnected && proxy.device != null) {
+        if (!bleMeshManager.isConnected && proxy.device != null && this.autoReconnect) {
             Log.i(tag, "Bluetooth disconnected : Connecting to mesh proxy ${proxy.device.address}")
             CoroutineScope(Dispatchers.IO).launch {
                 connectBle(proxy.device)
@@ -135,42 +136,84 @@ class NrfMeshManager(context: Context) {
      * Connect to a Bluetooth device
      *
      * @param bluetoothDevice BluetoothDevice to connect to
+     * @param autoReconnect whether to auto reconnect
      *
      * @return Boolean whether the connection was successful
      */
-    fun connectBle(bluetoothDevice: BluetoothDevice): Boolean {
-        bleMeshManager.connect(bluetoothDevice).retry(3, 200).await()
-        return bleMeshManager.isConnected
+    fun connectBle(bluetoothDevice: BluetoothDevice, autoReconnect: Boolean = true): Boolean {
+        try {
+            this.autoReconnect = autoReconnect
+            bleMeshManager.connect(bluetoothDevice).retry(3, 1000).await()
+            return bleMeshManager.isConnected
+        } catch (e: Exception) {
+            Log.e(tag, "Failed to connect to bluetooth device ${bluetoothDevice.address}")
+            return false
+        }
     }
 
     /**
      * Disconnect from a Bluetooth device
+     *
+     * @param autoReconnect whether to auto reconnect
      */
-    fun disconnectBle() {
-        bleMeshManager.disconnect().await()
+    fun disconnectBle(autoReconnect: Boolean = true) {
+        try {
+            this.autoReconnect = autoReconnect
+            bleMeshManager.disconnect().await()
+        } catch (e: Exception) {
+            Log.e(tag, "Failed to disconnect from bluetooth device")
+        }
     }
 
     /**
-     * Disconnect from a Bluetooth device
+     * Check if the application is connected to a Bluetooth device
+     *
+     * @return Boolean
      */
-    fun disconnectBleAsync() {
-        bleMeshManager.disconnect().enqueue()
-    }
-
     fun isBleConnected(): Boolean {
         return bleMeshManager.isConnected
     }
 
+    /**
+     * Get the connected Bluetooth device
+     *
+     * @return BluetoothDevice?
+     */
     fun connectedDevice(): BluetoothDevice? {
         return bleMeshManager.bluetoothDevice
     }
 
-    fun startScan() {
-        scannerRepository.startScanDevices()
-    }
-
+    /**
+     * Stop scanning for mesh devices
+     */
     fun stopScan() {
         scannerRepository.stopScanDevices()
+    }
+
+    /**
+     * Scan for mesh devices and return a list of freshly scanned devices
+     *
+     * @param scanDurationMs duration of the scan in milliseconds
+     *
+     * @return List<ExtendedBluetoothDevice>
+     */
+    suspend fun getMeshDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
+        scannerRepository.unprovisionedDevices.clear()
+        scannerRepository.provisionedDevices.clear()
+        scannerRepository.stopScanDevices()
+        scannerRepository.startScanDevices()
+        delay(scanDurationMs.toLong())
+        return scannerRepository.unprovisionedDevices + scannerRepository.provisionedDevices
+    }
+
+    /**
+     * Restart scanning for mesh devices
+     */
+    fun restartMeshDevicesScan() {
+        scannerRepository.unprovisionedDevices.clear()
+        scannerRepository.provisionedDevices.clear()
+        scannerRepository.stopScanDevices()
+        scannerRepository.startScanDevices()
     }
 
     /**
@@ -225,7 +268,7 @@ class NrfMeshManager(context: Context) {
                 return bleMeshManager.bluetoothDevice
             } else {
                 withContext(Dispatchers.IO) {
-                    disconnectBle()
+                    disconnectBle(false)
                 }
             }
         }
@@ -237,29 +280,6 @@ class NrfMeshManager(context: Context) {
                 deviceUuid.toString() == uuid
             } ?: false
         }?.device
-    }
-
-    /**
-     * Scan for mesh devices
-     *
-     * @param scanDurationMs duration of the scan in milliseconds
-     *
-     * @return List<ExtendedBluetoothDevice>
-     */
-    suspend fun getMeshDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
-        scannerRepository.unprovisionedDevices.clear()
-        scannerRepository.provisionedDevices.clear()
-        scannerRepository.stopScanDevices()
-        scannerRepository.startScanDevices()
-        delay(scanDurationMs.toLong())
-        return scannerRepository.unprovisionedDevices + scannerRepository.provisionedDevices
-    }
-
-    fun restartMeshDevicesScan() {
-        scannerRepository.unprovisionedDevices.clear()
-        scannerRepository.provisionedDevices.clear()
-        scannerRepository.stopScanDevices()
-        scannerRepository.startScanDevices()
     }
 
     /**
