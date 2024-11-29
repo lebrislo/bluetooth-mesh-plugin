@@ -53,6 +53,7 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
      * @return Boolean whether the connection was successful
      */
     fun connectBle(bluetoothDevice: BluetoothDevice, autoReconnect: Boolean = true): Boolean {
+        Log.i(tag, "Connecting to bluetooth device ${bluetoothDevice.address} with autoReconnect $autoReconnect")
         try {
             this.autoReconnect = autoReconnect
             bleMeshManager.connect(bluetoothDevice).retry(3, 1000).await()
@@ -69,6 +70,7 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
      * @param autoReconnect whether to auto reconnect
      */
     fun disconnectBle(autoReconnect: Boolean = true) {
+        Log.i(tag, "Disconnecting from bluetooth device with autoReconnect $autoReconnect")
         try {
             this.autoReconnect = autoReconnect
             bleMeshManager.disconnect().await()

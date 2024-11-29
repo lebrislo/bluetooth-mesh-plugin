@@ -94,7 +94,7 @@ export interface BluetoothMeshPlugin {
   isBluetoothEnabled(): Promise<BluetoothState>;
   requestBluetoothEnable(): Promise<BluetoothState>;
   isBluetoothConnected(): Promise<BluetoothConnectionStatus>;
-  disconnectBle(): Promise<void>;
+  disconnectBle(options: { autoReconnect?: boolean }): Promise<void>;
   checkPermissions(): Promise<Permissions>
   requestPermissions(): Promise<any>
   initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject>;

@@ -185,12 +185,13 @@ class BluetoothMeshPlugin : Plugin() {
 
     @PluginMethod
     fun disconnectBle(call: PluginCall) {
+        val autoReconnect = call.getBoolean("autoReconnect") ?: true
         if (!assertBluetoothEnabled(null)) return
         if (!bleController.isBleConnected()) {
             return call.resolve()
         }
         CoroutineScope(Dispatchers.IO).launch {
-            bleController.disconnectBle()
+            bleController.disconnectBle(autoReconnect)
             return@launch call.resolve()
         }
     }
@@ -359,7 +360,6 @@ class BluetoothMeshPlugin : Plugin() {
     fun getProvisioningCapabilities(call: PluginCall) {
         val macAddress = call.getString("macAddress") ?: return call.reject("macAddress is required")
         val uuid = call.getString("uuid") ?: return call.reject("uuid is required")
-
 
         CoroutineScope(Dispatchers.Main).launch {
             if (!assertBluetoothEnabled(call)) return@launch

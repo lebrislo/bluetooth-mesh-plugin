@@ -16,7 +16,7 @@ npx cap sync
 * [`isBluetoothEnabled()`](#isbluetoothenabled)
 * [`requestBluetoothEnable()`](#requestbluetoothenable)
 * [`isBluetoothConnected()`](#isbluetoothconnected)
-* [`disconnectBle()`](#disconnectble)
+* [`disconnectBle(...)`](#disconnectble)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`initMeshNetwork(...)`](#initmeshnetwork)
@@ -88,11 +88,15 @@ isBluetoothConnected() => Promise<BluetoothConnectionStatus>
 --------------------
 
 
-### disconnectBle()
+### disconnectBle(...)
 
 ```typescript
-disconnectBle() => Promise<void>
+disconnectBle(options: { autoReconnect?: boolean; }) => Promise<void>
 ```
+
+| Param         | Type                                      |
+| ------------- | ----------------------------------------- |
+| **`options`** | <code>{ autoReconnect?: boolean; }</code> |
 
 --------------------
 
