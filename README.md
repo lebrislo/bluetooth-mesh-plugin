@@ -1,11 +1,11 @@
-# nrf-bluetooth-mesh
+# bluetooth-mesh-plugin
 
 Capacitor plugin for Bluetooth Mesh, based on nRF Mesh Libraries
 
 ## Install
 
 ```bash
-npm install nrf-bluetooth-mesh
+npm install bluetooth-mesh-plugin
 npx cap sync
 ```
 

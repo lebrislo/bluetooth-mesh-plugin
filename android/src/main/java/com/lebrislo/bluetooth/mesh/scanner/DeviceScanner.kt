@@ -5,7 +5,7 @@ import android.os.ParcelUuid
 import android.util.Log
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
-import com.lebrislo.bluetooth.mesh.NrfMeshPlugin
+import com.lebrislo.bluetooth.mesh.BluetoothMeshPlugin
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.utils.NotificationManager
 import com.lebrislo.bluetooth.mesh.utils.PermissionsManager
@@ -134,7 +134,7 @@ class DeviceScanner(
         }
 
         // Notify the listeners
-        NotificationManager.getInstance().sendNotification(NrfMeshPlugin.MESH_DEVICE_SCAN_EVENT, scanNotification)
+        NotificationManager.getInstance().sendNotification(BluetoothMeshPlugin.MESH_DEVICE_SCAN_EVENT, scanNotification)
     }
 
     /**

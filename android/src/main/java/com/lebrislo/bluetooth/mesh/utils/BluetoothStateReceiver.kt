@@ -6,11 +6,11 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.getcapacitor.JSObject
-import com.lebrislo.bluetooth.mesh.NrfMeshPlugin
-import com.lebrislo.bluetooth.mesh.NrfMeshPlugin.Companion.BLUETOOTH_ADAPTER_EVENT_STRING
-import com.lebrislo.bluetooth.mesh.NrfMeshPlugin.Companion.BLUETOOTH_CONNECTION_EVENT_STRING
+import com.lebrislo.bluetooth.mesh.BluetoothMeshPlugin
+import com.lebrislo.bluetooth.mesh.BluetoothMeshPlugin.Companion.BLUETOOTH_ADAPTER_EVENT_STRING
+import com.lebrislo.bluetooth.mesh.BluetoothMeshPlugin.Companion.BLUETOOTH_CONNECTION_EVENT_STRING
 
-class BluetoothStateReceiver(private val plugin: NrfMeshPlugin) : BroadcastReceiver() {
+class BluetoothStateReceiver(private val plugin: BluetoothMeshPlugin) : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)

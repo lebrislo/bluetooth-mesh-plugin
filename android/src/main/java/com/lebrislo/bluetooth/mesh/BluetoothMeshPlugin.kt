@@ -37,10 +37,10 @@ import java.util.UUID
 
 
 @CapacitorPlugin(
-    name = "NrfMesh",
+    name = "BluetoothMesh",
 )
-class NrfMeshPlugin : Plugin() {
-    private val tag: String = NrfMeshPlugin::class.java.simpleName
+class BluetoothMeshPlugin : Plugin() {
+    private val tag: String = BluetoothMeshPlugin::class.java.simpleName
 
     companion object {
         const val MESH_MODEL_MESSAGE_EVENT_STRING: String = "meshModelMessageEvent"

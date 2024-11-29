@@ -1,11 +1,11 @@
 package com.lebrislo.bluetooth.mesh.utils
 
 import com.getcapacitor.JSObject
-import com.lebrislo.bluetooth.mesh.NrfMeshPlugin
+import com.lebrislo.bluetooth.mesh.BluetoothMeshPlugin
 
 class NotificationManager() {
 
-    private lateinit var plugin: NrfMeshPlugin
+    private lateinit var plugin: BluetoothMeshPlugin
 
     companion object {
         @Volatile
@@ -29,7 +29,7 @@ class NotificationManager() {
      *
      * @param plugin Plugin.
      */
-    fun setPlugin(plugin: NrfMeshPlugin) {
+    fun setPlugin(plugin: BluetoothMeshPlugin) {
         this.plugin = plugin
     }
 

@@ -2,7 +2,7 @@ package com.lebrislo.bluetooth.mesh.utils
 
 import android.util.Log
 import com.getcapacitor.JSObject
-import com.lebrislo.bluetooth.mesh.NrfMeshPlugin
+import com.lebrislo.bluetooth.mesh.BluetoothMeshPlugin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -116,6 +116,7 @@ class NodesOnlineStateManager(
 
     fun notifyNetwork() {
         val notification = getNodesOnlineStates()
-        NotificationManager.getInstance().sendNotification(NrfMeshPlugin.MESH_NODE_ONLINE_STATE_EVENT, notification)
+        NotificationManager.getInstance()
+            .sendNotification(BluetoothMeshPlugin.MESH_NODE_ONLINE_STATE_EVENT, notification)
     }
 }

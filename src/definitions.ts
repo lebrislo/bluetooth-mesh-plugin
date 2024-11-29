@@ -83,14 +83,14 @@ export interface NodesOnlineStates {
   states: OnlineState[];
 }
 
-export enum NrfMeshPluginEvents {
+export enum BluetoothMeshPluginEvents {
   MeshModelMessageEvent = 'meshModelMessageEvent', /* Mesh model message received */
   BluetoothAdapterEvent = 'bluetoothAdapterEvent', /* Bluetooth adapter state change */
   BluetoothConnectionEvent = 'bluetoothConnectionEvent', /* Bluetooth connection state change */
   MeshDeviceScanEvent = 'meshDeviceScanEvent', /* Mesh device scan event */
 }
 
-export interface NrfMeshPlugin {
+export interface BluetoothMeshPlugin {
   isBluetoothEnabled(): Promise<BluetoothState>;
   requestBluetoothEnable(): Promise<BluetoothState>;
   isBluetoothConnected(): Promise<BluetoothConnectionStatus>;

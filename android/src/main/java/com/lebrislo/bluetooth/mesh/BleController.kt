@@ -39,6 +39,7 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
             Log.i(tag, "Bluetooth disconnected : Connecting to mesh proxy ${proxy.device.address}")
             CoroutineScope(Dispatchers.IO).launch {
                 connectBle(proxy.device)
+//                meshManagerApi.createMeshPdu(0xFFFF, GenericOnOffGet(meshManagerApi.meshNetwork!!.getAppKey(0)))
             }
         }
     }

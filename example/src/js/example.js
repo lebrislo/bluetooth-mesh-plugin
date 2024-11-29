@@ -1,6 +1,6 @@
-import { NrfMesh } from 'nrf-bluetooth-mesh';
+import { BluetoothMesh } from 'bluetooth-mesh-plugin';
 
 window.testEcho = () => {
     const inputValue = document.getElementById("echoInput").value;
-    NrfMesh.echo({ value: inputValue })
+    BluetoothMesh.echo({ value: inputValue })
 }
