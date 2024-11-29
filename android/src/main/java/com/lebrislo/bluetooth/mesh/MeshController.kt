@@ -1,21 +1,10 @@
 package com.lebrislo.bluetooth.mesh
 
-import android.bluetooth.BluetoothDevice
-import android.content.Context
 import android.util.Log
-import com.lebrislo.bluetooth.mesh.ble.BleCallbacksManager
 import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
-import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
-import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
 import com.lebrislo.bluetooth.mesh.utils.NodesOnlineStateManager
-import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import no.nordicsemi.android.mesh.Features
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
@@ -47,59 +36,31 @@ import no.nordicsemi.android.mesh.transport.VendorModelMessageUnacked
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-class NrfMeshManager(context: Context) {
-    private val tag: String = NrfMeshManager::class.java.simpleName
+class MeshController(
+    bleMeshManager: BleMeshManager,
+    private val meshManagerApi: MeshManagerApi
+) {
+    private val tag: String = MeshController::class.java.simpleName
 
-    private val meshCallbacksManager: MeshCallbacksManager
-    private val meshProvisioningCallbacksManager: MeshProvisioningCallbacksManager
-    private val meshStatusCallbacksManager: MeshStatusCallbacksManager
-    private val bleCallbacksManager: BleCallbacksManager
-    private val scannerRepository: ScannerRepository
-
-    private var autoReconnect: Boolean = true
     private val unprovisionedMeshNodes: ArrayList<UnprovisionedMeshNode> = ArrayList()
-
-    private var bleMeshManager: BleMeshManager = BleMeshManager(context)
-    var meshManagerApi: MeshManagerApi = MeshManagerApi(context)
-
     private val provisioningCapabilitiesMap = ConcurrentHashMap<UUID, CompletableDeferred<UnprovisionedMeshNode?>>()
     private val provisioningStatusMap = ConcurrentHashMap<String, CompletableDeferred<BleMeshDevice?>>()
 
+
     init {
-        meshCallbacksManager = MeshCallbacksManager(bleMeshManager)
-        meshProvisioningCallbacksManager =
-            MeshProvisioningCallbacksManager(unprovisionedMeshNodes, this)
-        meshStatusCallbacksManager = MeshStatusCallbacksManager()
-
-        bleCallbacksManager = BleCallbacksManager(meshManagerApi)
-        bleCallbacksManager.setDisconnectionCallback { onBluetoothDeviceDisconnected() }
-
-        scannerRepository = ScannerRepository(meshManagerApi)
-        scannerRepository.setMeshProxyScannedCallback { proxy ->
-            onMeshProxyScanned(proxy)
-        }
-
+        val meshCallbacksManager = MeshCallbacksManager(bleMeshManager)
+        meshManagerApi.setMeshStatusCallbacks(meshCallbacksManager)
+        meshManagerApi.setProvisioningStatusCallbacks(meshCallbacksManager)
         meshManagerApi.setMeshManagerCallbacks(meshCallbacksManager)
-        meshManagerApi.setProvisioningStatusCallbacks(meshProvisioningCallbacksManager)
-        meshManagerApi.setMeshStatusCallbacks(meshStatusCallbacksManager)
-        bleMeshManager.setGattCallbacks(bleCallbacksManager)
+
+        meshCallbacksManager.setProvisioningCapabilitiesReceivedCallback { node ->
+            onProvisioningCapabilitiesReceived(node)
+        }
+        meshCallbacksManager.setProvisioningFinishCallback { bleMeshDevice ->
+            onProvisioningFinish(bleMeshDevice)
+        }
 
         meshManagerApi.loadMeshNetwork()
-    }
-
-    private fun onBluetoothDeviceDisconnected() {
-        Log.i(tag, "Bluetooth is disconnected, restarting scan ${this.autoReconnect}")
-        if (this.autoReconnect) this.restartMeshDevicesScan()
-    }
-
-    private fun onMeshProxyScanned(proxy: ExtendedBluetoothDevice) {
-        if (!bleMeshManager.isConnected && proxy.device != null && this.autoReconnect) {
-            Log.i(tag, "Bluetooth disconnected : Connecting to mesh proxy ${proxy.device.address}")
-            CoroutineScope(Dispatchers.IO).launch {
-                connectBle(proxy.device)
-                sendGenericOnOffGet(0xFFFF, 0)
-            }
-        }
     }
 
     /**
@@ -133,156 +94,6 @@ class NrfMeshManager(context: Context) {
     }
 
     /**
-     * Connect to a Bluetooth device
-     *
-     * @param bluetoothDevice BluetoothDevice to connect to
-     * @param autoReconnect whether to auto reconnect
-     *
-     * @return Boolean whether the connection was successful
-     */
-    fun connectBle(bluetoothDevice: BluetoothDevice, autoReconnect: Boolean = true): Boolean {
-        try {
-            this.autoReconnect = autoReconnect
-            bleMeshManager.connect(bluetoothDevice).retry(3, 1000).await()
-            return bleMeshManager.isConnected
-        } catch (e: Exception) {
-            Log.e(tag, "Failed to connect to bluetooth device ${bluetoothDevice.address}")
-            return false
-        }
-    }
-
-    /**
-     * Disconnect from a Bluetooth device
-     *
-     * @param autoReconnect whether to auto reconnect
-     */
-    fun disconnectBle(autoReconnect: Boolean = true) {
-        try {
-            this.autoReconnect = autoReconnect
-            bleMeshManager.disconnect().await()
-        } catch (e: Exception) {
-            Log.e(tag, "Failed to disconnect from bluetooth device")
-        }
-    }
-
-    /**
-     * Check if the application is connected to a Bluetooth device
-     *
-     * @return Boolean
-     */
-    fun isBleConnected(): Boolean {
-        return bleMeshManager.isConnected
-    }
-
-    /**
-     * Get the connected Bluetooth device
-     *
-     * @return BluetoothDevice?
-     */
-    fun connectedDevice(): BluetoothDevice? {
-        return bleMeshManager.bluetoothDevice
-    }
-
-    /**
-     * Stop scanning for mesh devices
-     */
-    fun stopScan() {
-        scannerRepository.stopScanDevices()
-    }
-
-    /**
-     * Scan for mesh devices and return a list of freshly scanned devices
-     *
-     * @param scanDurationMs duration of the scan in milliseconds
-     *
-     * @return List<ExtendedBluetoothDevice>
-     */
-    suspend fun getMeshDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
-        scannerRepository.unprovisionedDevices.clear()
-        scannerRepository.provisionedDevices.clear()
-        scannerRepository.stopScanDevices()
-        scannerRepository.startScanDevices()
-        delay(scanDurationMs.toLong())
-        return scannerRepository.unprovisionedDevices + scannerRepository.provisionedDevices
-    }
-
-    /**
-     * Restart scanning for mesh devices
-     */
-    fun restartMeshDevicesScan() {
-        scannerRepository.unprovisionedDevices.clear()
-        scannerRepository.provisionedDevices.clear()
-        scannerRepository.stopScanDevices()
-        scannerRepository.startScanDevices()
-    }
-
-    /**
-     * Search for a mesh proxy to connect to
-     *
-     * @return BluetoothDevice?
-     */
-    suspend fun searchProxyMesh(): BluetoothDevice? {
-        if (bleMeshManager.isConnected) {
-            Log.d(tag, "searchProxyMesh : Connected to a bluetooth device")
-
-            val isMeshProxy = scannerRepository.provisionedDevices.any() { device ->
-                device.scanResult?.device?.address == bleMeshManager.bluetoothDevice?.address
-            }
-
-            Log.d(tag, "searchProxyMesh : Is mesh proxy: $isMeshProxy")
-
-            if (isMeshProxy) {
-                Log.i(tag, "searchProxyMesh : Connected to a mesh proxy ${bleMeshManager.bluetoothDevice?.address}")
-                return bleMeshManager.bluetoothDevice
-            } else {
-                withContext(Dispatchers.IO) {
-                    disconnectBle()
-                }
-            }
-        }
-
-        Log.d(tag, "searchProxyMesh : Provisioned devices: ${scannerRepository.provisionedDevices.size}")
-
-        if (scannerRepository.provisionedDevices.isNotEmpty()) {
-            synchronized(scannerRepository.provisionedDevices) {
-                scannerRepository.provisionedDevices.sortBy { device -> device.scanResult?.rssi }
-            }
-            val device = scannerRepository.provisionedDevices.first().device
-            Log.i(tag, "searchProxyMesh : Found a mesh proxy ${device!!.address}")
-            return device
-        }
-        return null
-    }
-
-    /**
-     * Search for an unprovisioned device to connect to
-     *
-     * @param uuid uuid of the device
-     *
-     * @return BluetoothDevice?
-     */
-    suspend fun searchUnprovisionedBluetoothDevice(uuid: String): BluetoothDevice? {
-        if (bleMeshManager.isConnected) {
-            val macAddress = bleMeshManager.bluetoothDevice!!.address
-            if (scannerRepository.unprovisionedDevices.any { device -> device.scanResult?.device?.address == macAddress }) {
-                return bleMeshManager.bluetoothDevice
-            } else {
-                withContext(Dispatchers.IO) {
-                    disconnectBle(false)
-                }
-            }
-        }
-
-        return scannerRepository.unprovisionedDevices.firstOrNull { device ->
-            device.scanResult?.let {
-                val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
-                val deviceUuid = meshManagerApi.getDeviceUuid(serviceData!!)
-                deviceUuid.toString() == uuid
-            } ?: false
-        }?.device
-    }
-
-    /**
      * Get the provisioning capabilities of a device
      *
      * Note: The application must be connected to the concerned device before sending messages
@@ -294,22 +105,14 @@ class NrfMeshManager(context: Context) {
     fun getProvisioningCapabilities(uuid: UUID): CompletableDeferred<UnprovisionedMeshNode?> {
         val deferred = CompletableDeferred<UnprovisionedMeshNode?>()
         provisioningCapabilitiesMap[uuid] = deferred
-
         unprovisionedMeshNodes.clear()
-
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Failed to connect to unprovisioned device")
-            deferred.cancel()
-            return deferred
-        } else {
-            meshManagerApi.identifyNode(uuid)
-        }
-
+        meshManagerApi.identifyNode(uuid)
         return deferred
     }
 
-    fun onProvisioningCapabilitiesReceived(meshNode: UnprovisionedMeshNode?) {
-        val uuid = meshNode?.deviceUuid
+    private fun onProvisioningCapabilitiesReceived(meshNode: UnprovisionedMeshNode) {
+        unprovisionedMeshNodes.add(meshNode)
+        val uuid = meshNode.deviceUuid
         if (uuid != null) {
             provisioningCapabilitiesMap[uuid]?.complete(meshNode)
             provisioningCapabilitiesMap.remove(uuid)
@@ -346,18 +149,12 @@ class NrfMeshManager(context: Context) {
         )
         meshManagerApi.meshNetwork?.assignUnicastAddress(unicastAddress!!)
 
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Failed to connect to unprovisioned device")
-            deferred.cancel()
-            return deferred
-        } else {
-            meshManagerApi.startProvisioning(unprovisionedMeshNode)
-        }
+        meshManagerApi.startProvisioning(unprovisionedMeshNode)
 
         return deferred
     }
 
-    fun onProvisioningFinish(bleMeshDevice: BleMeshDevice?) {
+    private fun onProvisioningFinish(bleMeshDevice: BleMeshDevice) {
         when (bleMeshDevice) {
             is BleMeshDevice.Provisioned -> {
                 val uuid = bleMeshDevice.node.uuid
@@ -372,10 +169,6 @@ class NrfMeshManager(context: Context) {
                 provisioningStatusMap[uuid.toString()]?.complete(bleMeshDevice)
                 provisioningStatusMap.remove(uuid.toString())
             }
-
-            null -> {
-                Log.e(tag, "Unknown provisioning state")
-            }
         }
     }
 
@@ -389,18 +182,8 @@ class NrfMeshManager(context: Context) {
      * @return Boolean whether the message was sent successfully
      */
     fun unprovisionDevice(unicastAddress: Int): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Failed to connect to provisioned device")
-            return false
-        } else {
-            val configNodeReset = ConfigNodeReset()
-            meshManagerApi.createMeshPdu(unicastAddress, configNodeReset)
-        }
-
-        CoroutineScope(Dispatchers.IO).launch {
-            getMeshDevices(1000)
-        }
-
+        val configNodeReset = ConfigNodeReset()
+        meshManagerApi.createMeshPdu(unicastAddress, configNodeReset)
         return true
     }
 
@@ -438,11 +221,6 @@ class NrfMeshManager(context: Context) {
      * @return Boolean whether the message was sent successfully
      */
     fun addApplicationKeyToNode(elementAddress: Int, appKeyIndex: Int): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         val netKey = meshManagerApi.meshNetwork?.primaryNetworkKey
         val appKey = meshManagerApi.meshNetwork?.getAppKey(appKeyIndex)
 
@@ -464,11 +242,6 @@ class NrfMeshManager(context: Context) {
      * @return Boolean whether the message was sent successfully
      */
     fun bindApplicationKeyToModel(elementAddress: Int, appKeyIndex: Int, modelId: Int): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         val configModelAppBind = ConfigModelAppBind(elementAddress, modelId, appKeyIndex)
         meshManagerApi.createMeshPdu(elementAddress, configModelAppBind)
 
@@ -484,11 +257,6 @@ class NrfMeshManager(context: Context) {
      * @return Boolean
      */
     fun compositionDataGet(unicastAddress: Int): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         val configCompositionDataGet = ConfigCompositionDataGet()
         meshManagerApi.createMeshPdu(unicastAddress, configCompositionDataGet)
 
@@ -521,11 +289,6 @@ class NrfMeshManager(context: Context) {
         delay: Int = 0,
         acknowledgement: Boolean = false
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         var meshMessage: MeshMessage? = null
 
         if (acknowledgement) {
@@ -566,11 +329,6 @@ class NrfMeshManager(context: Context) {
         address: Int,
         appKeyIndex: Int
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         val meshMessage = GenericOnOffGet(
             meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
         )
@@ -605,11 +363,6 @@ class NrfMeshManager(context: Context) {
         delay: Int = 0,
         acknowledgement: Boolean = false
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         var meshMessage: MeshMessage? = null
 
         if (acknowledgement) {
@@ -662,11 +415,6 @@ class NrfMeshManager(context: Context) {
         delay: Int = 0,
         acknowledgement: Boolean = false
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         var meshMessage: MeshMessage? = null
 
         if (acknowledgement) {
@@ -706,11 +454,6 @@ class NrfMeshManager(context: Context) {
         address: Int,
         appKeyIndex: Int
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         val meshMessage = GenericPowerLevelGet(
             meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
         )
@@ -749,11 +492,6 @@ class NrfMeshManager(context: Context) {
         delay: Int = 0,
         acknowledgement: Boolean = false
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         var meshMessage: MeshMessage? = null
 
         if (acknowledgement) {
@@ -787,11 +525,6 @@ class NrfMeshManager(context: Context) {
         address: Int,
         appKeyIndex: Int
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         val meshMessage = LightHslGet(
             meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
         )
@@ -830,11 +563,6 @@ class NrfMeshManager(context: Context) {
         delay: Int = 0,
         acknowledgement: Boolean = false
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         var meshMessage: MeshMessage? = null
 
         if (acknowledgement) {
@@ -878,11 +606,6 @@ class NrfMeshManager(context: Context) {
         address: Int,
         appKeyIndex: Int
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         val meshMessage = LightCtlGet(
             meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
         )
@@ -910,11 +633,6 @@ class NrfMeshManager(context: Context) {
         rangeMax: Int,
         acknowledgement: Boolean = false
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         var meshMessage: MeshMessage? = null
 
         if (acknowledgement) {
@@ -945,11 +663,6 @@ class NrfMeshManager(context: Context) {
      * @return Boolean whether the message was sent successfully
      */
     fun sendLightCtlTemperatureRangeGet(address: Int, appKeyIndex: Int): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         val meshMessage = LightCtlTemperatureRangeGet(
             meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
         )
@@ -982,11 +695,6 @@ class NrfMeshManager(context: Context) {
         payload: ByteArray = byteArrayOf(),
         acknowledgement: Boolean = false
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         var meshMessage: MeshMessage? = null
 
         if (acknowledgement) {
@@ -1018,11 +726,6 @@ class NrfMeshManager(context: Context) {
         ttl: Int,
         netKeyIndex: Int
     ): Boolean {
-        if (!bleMeshManager.isConnected) {
-            Log.e(tag, "Not connected to a mesh proxy")
-            return false
-        }
-
         val feature = Features()
         feature.proxy = Features.ENABLED
         feature.relay = Features.ENABLED
