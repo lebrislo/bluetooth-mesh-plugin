@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONArray
 import java.util.concurrent.ConcurrentHashMap
 
-class NodesOnlineStateManager(
+class NodesOnlineStateManager private constructor(
     private val offlineTimeout: Long = 5_000L, // Timeout in milliseconds
 ) {
     private val tag: String = NodesOnlineStateManager::class.java.simpleName

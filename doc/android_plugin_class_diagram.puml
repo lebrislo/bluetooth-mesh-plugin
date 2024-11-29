@@ -2,10 +2,10 @@
 class BluetoothMeshPlugin {
     - meshController: MeshController
     - bleController: BleController
+    - meshManagerApi: MeshManagerApi
 }
 class MeshController {
-    - meshApi: MeshManagerApi
-    - pluginCallsManager: PluginCallsManager
+    - meshManagerApi: MeshManagerApi
 }
 class BleController {
     - deviceScanner: DeviceScanner
@@ -14,16 +14,26 @@ class MeshManagerApi
 class DeviceScanner
 class MeshCallbacksManager implements MeshManagerCallbacks, MeshProvisioningStatusCallbacks, MeshStatusCallbacks
 class PluginCallsManager
+class NotificationManager
+class NodesOnlineStateManager
 
 interface MeshManagerCallbacks
 interface MeshProvisioningStatusCallbacks
 interface MeshStatusCallbacks
 
-BluetoothMeshPlugin --> MeshController
-BluetoothMeshPlugin --> BleController
-MeshController --> MeshManagerApi
-MeshController --> PluginCallsManager
-BleController --> DeviceScanner
-MeshCallbacksManager *-- PluginCallsManager
-MeshManagerApi --> MeshCallbacksManager
+BluetoothMeshPlugin --> MeshController: uses
+BluetoothMeshPlugin --> BleController: uses
+MeshController --> MeshManagerApi: manage mesh network
+DeviceScanner o-- BleController: meshManagerApi
+BleController --> DeviceScanner: uses
+BleController o-- BluetoothMeshPlugin: meshManagerApi
+MeshController o-- BluetoothMeshPlugin: meshManagerApi
+MeshController *-- MeshCallbacksManager: meshManagerCallbacks
+MeshManagerApi --> MeshCallbacksManager: set mesh callbacks
+MeshCallbacksManager --> PluginCallsManager: resolve plugin call
+BluetoothMeshPlugin --> PluginCallsManager: add plugin call
+PluginCallsManager --> NotificationManager: send notification
+DeviceScanner --> NotificationManager: send notification
+MeshCallbacksManager --> NodesOnlineStateManager: add/remove node
+BluetoothMeshPlugin --> NodesOnlineStateManager: start/stop monitoring
 @enduml

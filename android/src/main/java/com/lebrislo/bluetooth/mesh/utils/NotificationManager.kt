@@ -3,7 +3,7 @@ package com.lebrislo.bluetooth.mesh.utils
 import com.getcapacitor.JSObject
 import com.lebrislo.bluetooth.mesh.BluetoothMeshPlugin
 
-class NotificationManager() {
+class NotificationManager private constructor() {
 
     private lateinit var plugin: BluetoothMeshPlugin
 
