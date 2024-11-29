@@ -25,12 +25,11 @@ import no.nordicsemi.android.mesh.transport.MeshMessage
 import no.nordicsemi.android.mesh.transport.ProvisionedMeshNode
 import no.nordicsemi.android.mesh.transport.VendorModelMessageStatus
 
-class _MeshCallbacksManager(
-    private val bleMeshManager: BleMeshManager,
-    private val pluginCallsManager: PluginCallManager
+class MeshCallbacksManager(
+    private val bleMeshManager: BleMeshManager
 ) : MeshManagerCallbacks,
     MeshProvisioningStatusCallbacks, MeshStatusCallbacks {
-    private val tag: String = _MeshCallbacksManager::class.java.simpleName
+    private val tag: String = MeshCallbacksManager::class.java.simpleName
 
     private var provisioningCapabilitiesReceivedCallback: ((node: UnprovisionedMeshNode) -> Unit)? = null
     private var provisioningFinish: ((bleMeshDevice: BleMeshDevice) -> Unit)? = null
@@ -164,15 +163,15 @@ class _MeshCallbacksManager(
         Log.d(tag, "onMeshMessageReceived ${meshMessage.javaClass.simpleName}")
         when (meshMessage) {
             is ConfigNodeResetStatus, is ConfigModelAppStatus, is ConfigAppKeyStatus, is ConfigCompositionDataStatus -> {
-                pluginCallsManager.resolveConfigPluginCall(meshMessage)
+                PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
             }
 
             is GenericOnOffStatus, is GenericPowerLevelStatus, is LightHslStatus, is LightCtlStatus, is LightCtlTemperatureRangeStatus -> {
-                pluginCallsManager.resolveSigPluginCall(meshMessage)
+                PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
             }
 
             is VendorModelMessageStatus -> {
-                pluginCallsManager.resolveVendorPluginCall(meshMessage)
+                PluginCallManager.getInstance().resolveVendorPluginCall(meshMessage)
             }
         }
 

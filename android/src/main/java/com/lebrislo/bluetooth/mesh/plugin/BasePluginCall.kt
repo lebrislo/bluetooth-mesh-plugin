@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
  * @param call The plugin call to be resolved or rejected.
  * @param timeout The time in milliseconds before the call is rejected.
  */
-abstract class BasePluginCall(val call: PluginCall, val timeout: Int = 10000) {
+abstract class BasePluginCall(val call: PluginCall, private val timeout: Int = 10000) {
 
     private var isResolved: Boolean = false
 
@@ -55,6 +55,6 @@ abstract class BasePluginCall(val call: PluginCall, val timeout: Int = 10000) {
      */
     private fun reject(message: String, data: JSObject? = null) {
         call.reject(message, data)
-//   FIXME     PluginCallManager.getInstance().removePluginCall(this)
+        PluginCallManager.getInstance().removePluginCall(this)
     }
 }

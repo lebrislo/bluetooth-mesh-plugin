@@ -5,7 +5,7 @@ import android.util.Log
 import com.lebrislo.bluetooth.mesh.ble.BleCallbacksManager
 import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
-import com.lebrislo.bluetooth.mesh.scanner.ScannerRepository
+import com.lebrislo.bluetooth.mesh.scanner.DeviceScanner
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +18,7 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
     private val tag: String = BleController::class.java.simpleName
 
     private val bleCallbacksManager: BleCallbacksManager = BleCallbacksManager(meshManagerApi)
-    private val scannerRepository: ScannerRepository = ScannerRepository(meshManagerApi)
+    private val scannerRepository: DeviceScanner = DeviceScanner(meshManagerApi)
 
     private var autoReconnect: Boolean = true
 

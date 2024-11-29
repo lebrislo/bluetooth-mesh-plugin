@@ -3,7 +3,6 @@ package com.lebrislo.bluetooth.mesh
 import android.util.Log
 import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
-import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import com.lebrislo.bluetooth.mesh.utils.NodesOnlineStateManager
 import kotlinx.coroutines.CompletableDeferred
 import no.nordicsemi.android.mesh.Features
@@ -39,8 +38,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class MeshController(
     bleMeshManager: BleMeshManager,
-    private val meshManagerApi: MeshManagerApi,
-    pluginCallsManager: PluginCallManager
+    private val meshManagerApi: MeshManagerApi
 ) {
     private val tag: String = MeshController::class.java.simpleName
 
@@ -50,7 +48,7 @@ class MeshController(
 
 
     init {
-        val meshCallbacksManager = _MeshCallbacksManager(bleMeshManager, pluginCallsManager)
+        val meshCallbacksManager = MeshCallbacksManager(bleMeshManager)
         meshManagerApi.setMeshStatusCallbacks(meshCallbacksManager)
         meshManagerApi.setProvisioningStatusCallbacks(meshCallbacksManager)
         meshManagerApi.setMeshManagerCallbacks(meshCallbacksManager)

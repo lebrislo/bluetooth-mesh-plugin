@@ -20,15 +20,16 @@ import no.nordicsemi.android.support.v18.scanner.ScanSettings
 
 
 /**
- * Repository for scanning for bluetooth mesh devices
+ * DeviceScanner is a class that provides the functionality to scan for bluetooth devices
+ * advertising with the Mesh Provisioning or Mesh Proxy service UUIDs.
  */
-class ScannerRepository(
+class DeviceScanner(
     private val meshManagerApi: MeshManagerApi
 ) {
     private val tag: String = "ScannerRepo"
 
     private var meshProxyScannedCallback: ((proxy: ExtendedBluetoothDevice) -> Unit)? = null
-    var isScanning: Boolean = false
+    private var isScanning: Boolean = false
 
     val unprovisionedDevices: MutableList<ExtendedBluetoothDevice> = mutableListOf()
     val provisionedDevices: MutableList<ExtendedBluetoothDevice> = mutableListOf()
