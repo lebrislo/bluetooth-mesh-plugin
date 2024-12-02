@@ -49,8 +49,6 @@ class PluginCallManager private constructor() {
      * @param call Plugin call.
      */
     fun addSigPluginCall(meshOperation: Int, meshAddress: Int, call: PluginCall) {
-        Log.d(tag, "addSigPluginCall: Group address $meshAddress")
-
         if (!MeshAddress.isValidUnicastAddress(meshAddress)) {
             return call.resolve()
         }

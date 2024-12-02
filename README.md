@@ -45,6 +45,7 @@ npx cap sync
 * [`sendLightCtlTemperatureRangeGet(...)`](#sendlightctltemperaturerangeget)
 * [`sendVendorModelMessage(...)`](#sendvendormodelmessage)
 * [`sendConfigHeartbeatPublicationSet(...)`](#sendconfigheartbeatpublicationset)
+* [`sendHealthFaultGet(...)`](#sendhealthfaultget)
 * [`addListener(string, ...)`](#addlistenerstring-)
 * [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
@@ -481,12 +482,27 @@ sendVendorModelMessage(options: ModelMessage & { modelId: number; opcode: number
 ### sendConfigHeartbeatPublicationSet(...)
 
 ```typescript
-sendConfigHeartbeatPublicationSet(option: ConfigHeartbeatPublicationSet) => Promise<void>
+sendConfigHeartbeatPublicationSet(options: ConfigHeartbeatPublicationSet) => Promise<void>
 ```
 
-| Param        | Type                                                                                    |
-| ------------ | --------------------------------------------------------------------------------------- |
-| **`option`** | <code><a href="#configheartbeatpublicationset">ConfigHeartbeatPublicationSet</a></code> |
+| Param         | Type                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#configheartbeatpublicationset">ConfigHeartbeatPublicationSet</a></code> |
+
+--------------------
+
+
+### sendHealthFaultGet(...)
+
+```typescript
+sendHealthFaultGet(options: ModelMessage & { companyId: number; }) => Promise<ModelMessageStatus>
+```
+
+| Param         | Type                                                                           |
+| ------------- | ------------------------------------------------------------------------------ |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { companyId: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 

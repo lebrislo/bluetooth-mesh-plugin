@@ -168,4 +168,9 @@ export class BluetoothMeshWeb extends WebPlugin implements BluetoothMeshPlugin {
   async sendConfigHeartbeatPublicationSet(): Promise<void> {
     console.log('sendConfigHeartbeatPublicationSet');
   }
+
+  async sendHealthFaultGet(): Promise<ModelMessageStatus> {
+    console.log('sendHealthFaultGet');
+    return { src: 1, dst: 2, opcode: 3, data: {} };
+  }
 }

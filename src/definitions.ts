@@ -149,7 +149,8 @@ export interface BluetoothMeshPlugin {
     payload?: Uint8Array;
     opPairCode?: number
   }): Promise<ModelMessageStatus>;
-  sendConfigHeartbeatPublicationSet(option: ConfigHeartbeatPublicationSet): Promise<void>;
+  sendConfigHeartbeatPublicationSet(options: ConfigHeartbeatPublicationSet): Promise<void>;
+  sendHealthFaultGet(options: ModelMessage & { companyId: number }): Promise<ModelMessageStatus>;
   addListener(eventName: string, listenerFunc: (event: any) => void): Promise<PluginListenerHandle>;
   removeAllListeners(): Promise<void>;
 }

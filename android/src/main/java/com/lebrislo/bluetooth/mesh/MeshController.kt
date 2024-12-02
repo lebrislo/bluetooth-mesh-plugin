@@ -21,6 +21,7 @@ import no.nordicsemi.android.mesh.transport.GenericOnOffSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelGet
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSet
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSetUnacknowledged
+import no.nordicsemi.android.mesh.transport.HealthFaultGet
 import no.nordicsemi.android.mesh.transport.LightCtlGet
 import no.nordicsemi.android.mesh.transport.LightCtlSet
 import no.nordicsemi.android.mesh.transport.LightCtlSetUnacknowledged
@@ -742,6 +743,26 @@ class MeshController(
             )
         )
 
+        return true
+    }
+
+    /**
+     * Send a Health Fault Get message to a node
+     *
+     * Note: The application must be connected to a mesh proxy before sending messages
+     *
+     * @param unicastAddress unicast address of the node
+     * @param appKeyIndex index of the application key
+     *
+     * @return Boolean whether the message was sent successfully
+     */
+    fun sendHealthFaultGet(unicastAddress: Int, appKeyIndex: Int, companyId: Int): Boolean {
+        meshManagerApi.createMeshPdu(
+            unicastAddress, HealthFaultGet(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                companyId
+            )
+        )
         return true
     }
 }
