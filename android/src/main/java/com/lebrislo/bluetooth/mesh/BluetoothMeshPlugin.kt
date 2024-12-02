@@ -413,7 +413,7 @@ class BluetoothMeshPlugin : Plugin() {
             val meshDevice = deferred.await() ?: return@launch call.reject("Failed to provision device")
 
             withContext(Dispatchers.IO) {
-                bleController.disconnectBle()
+                bleController.disconnectBle(false)
             }
 
             when (meshDevice) {

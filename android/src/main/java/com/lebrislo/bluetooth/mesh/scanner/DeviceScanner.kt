@@ -68,23 +68,30 @@ class DeviceScanner(
     private fun unprovDeviceDiscovered(result: ScanResult) {
         val device = ExtendedBluetoothDevice(result)
         synchronized(unprovisionedDevices) {
-            if (!unprovisionedDevices.contains(device)) {
-                Log.d(tag, "Unprovisioned device discovered: ${result.device.address}")
-                unprovisionedDevices.add(device)
+            if (unprovisionedDevices.any { it.address == device.address }) {
+                return
+            }
+            Log.d(tag, "Unprovisioned device discovered: ${result.device.address}")
+            unprovisionedDevices.add(device)
 
-                // Get the device UUID
-                val deviceUuid = device.getDeviceUuid() ?: return
+            // Get the device UUID
+            val deviceUuid = device.getDeviceUuid() ?: return
 
-                // Notify about the scanned device
-                this.notifyMeshDeviceScanned()
-
-                // Delete the node from the mesh network if it was previously provisioned
-                meshManagerApi.meshNetwork?.nodes?.forEach { node ->
-                    if (node.uuid == deviceUuid.toString()) {
-                        meshManagerApi.meshNetwork?.deleteNode(node)
+            // Delete the node from the mesh network if it was previously provisioned
+            synchronized(provisionedDevices) {
+                provisionedDevices.forEach { provisionedDevice ->
+                    if (provisionedDevice.address == device.address) {
+                        Log.d(tag, "Deleting provisioned device: ${provisionedDevice.address}")
+                        meshManagerApi.meshNetwork?.nodes?.forEach { node ->
+                            if (node.uuid == deviceUuid.toString()) {
+                                meshManagerApi.meshNetwork?.deleteNode(node)
+                            }
+                        }
                     }
                 }
             }
+            // Notify about the scanned device
+            this.notifyMeshDeviceScanned()
         }
     }
 
@@ -100,7 +107,24 @@ class DeviceScanner(
                     Log.d(tag, "Provisioned device discovered: ${result.device.address} ")
                     synchronized(provisionedDevices) {
                         provisionedDevices.add(device)
+
+                        // Notify the callback
                         this.meshProxyScannedCallback?.invoke(device)
+
+                        // Delete the node from the unprovisioned devices
+                        synchronized(unprovisionedDevices) {
+                            val devicesToRemove = mutableListOf<ExtendedBluetoothDevice>()
+                            unprovisionedDevices.forEach { unprovisionedDevice ->
+                                if (unprovisionedDevice.address == device.address) {
+                                    Log.d(
+                                        tag,
+                                        "Marking unprovisioned device for removal: ${unprovisionedDevice.address}"
+                                    )
+                                    devicesToRemove.add(unprovisionedDevice)
+                                }
+                            }
+                            unprovisionedDevices.removeAll(devicesToRemove)
+                        }
                         // Notify about the scanned device
                         this.notifyMeshDeviceScanned()
                     }
