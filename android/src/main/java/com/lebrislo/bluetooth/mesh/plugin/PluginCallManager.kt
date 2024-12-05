@@ -2,7 +2,7 @@ package com.lebrislo.bluetooth.mesh.plugin
 
 import android.util.Log
 import com.getcapacitor.PluginCall
-import com.lebrislo.bluetooth.mesh.NrfMeshPlugin.Companion.MESH_MODEL_MESSAGE_EVENT_STRING
+import com.lebrislo.bluetooth.mesh.BluetoothMeshPlugin.Companion.MESH_MODEL_MESSAGE_EVENT_STRING
 import com.lebrislo.bluetooth.mesh.plugin.ConfigOperationPair.Companion.getConfigOperationPair
 import com.lebrislo.bluetooth.mesh.plugin.ConfigPluginCall.Companion.generateConfigPluginCallResponse
 import com.lebrislo.bluetooth.mesh.plugin.SigOperationPair.Companion.getSigOperationPair
@@ -49,8 +49,6 @@ class PluginCallManager private constructor() {
      * @param call Plugin call.
      */
     fun addSigPluginCall(meshOperation: Int, meshAddress: Int, call: PluginCall) {
-        Log.d(tag, "addSigPluginCall: Group address $meshAddress")
-
         if (!MeshAddress.isValidUnicastAddress(meshAddress)) {
             return call.resolve()
         }

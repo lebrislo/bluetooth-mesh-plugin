@@ -6,13 +6,13 @@ import com.lebrislo.bluetooth.mesh.ble.BleCallbacksManager
 import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.scanner.DeviceScanner
-import com.lebrislo.bluetooth.mesh.utils.Utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import no.nordicsemi.android.mesh.MeshManagerApi
+import no.nordicsemi.android.mesh.transport.GenericOnOffGet
 
 class BleController(private val bleMeshManager: BleMeshManager, private val meshManagerApi: MeshManagerApi) {
     private val tag: String = BleController::class.java.simpleName
@@ -39,6 +39,7 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
             Log.i(tag, "Bluetooth disconnected : Connecting to mesh proxy ${proxy.device.address}")
             CoroutineScope(Dispatchers.IO).launch {
                 connectBle(proxy.device)
+                meshManagerApi.createMeshPdu(0xFFFF, GenericOnOffGet(meshManagerApi.meshNetwork!!.getAppKey(0)))
             }
         }
     }
@@ -52,6 +53,7 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
      * @return Boolean whether the connection was successful
      */
     fun connectBle(bluetoothDevice: BluetoothDevice, autoReconnect: Boolean = true): Boolean {
+        Log.i(tag, "Connecting to bluetooth device ${bluetoothDevice.address} with autoReconnect $autoReconnect")
         try {
             this.autoReconnect = autoReconnect
             bleMeshManager.connect(bluetoothDevice).retry(3, 1000).await()
@@ -68,6 +70,7 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
      * @param autoReconnect whether to auto reconnect
      */
     fun disconnectBle(autoReconnect: Boolean = true) {
+        Log.i(tag, "Disconnecting from bluetooth device with autoReconnect $autoReconnect")
         try {
             this.autoReconnect = autoReconnect
             bleMeshManager.disconnect().await()
@@ -186,9 +189,7 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
 
         return scannerRepository.unprovisionedDevices.firstOrNull { device ->
             device.scanResult?.let {
-                val serviceData = Utils.getServiceData(it, MeshManagerApi.MESH_PROVISIONING_UUID)
-                val deviceUuid = meshManagerApi.getDeviceUuid(serviceData!!)
-                deviceUuid.toString() == uuid
+                device.getDeviceUuid().toString() == uuid
             } ?: false
         }?.device
     }

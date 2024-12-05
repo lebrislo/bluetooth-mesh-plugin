@@ -37,10 +37,10 @@ import java.util.UUID
 
 
 @CapacitorPlugin(
-    name = "NrfMesh",
+    name = "BluetoothMesh",
 )
-class NrfMeshPlugin : Plugin() {
-    private val tag: String = NrfMeshPlugin::class.java.simpleName
+class BluetoothMeshPlugin : Plugin() {
+    private val tag: String = BluetoothMeshPlugin::class.java.simpleName
 
     companion object {
         const val MESH_MODEL_MESSAGE_EVENT_STRING: String = "meshModelMessageEvent"
@@ -185,12 +185,13 @@ class NrfMeshPlugin : Plugin() {
 
     @PluginMethod
     fun disconnectBle(call: PluginCall) {
+        val autoReconnect = call.getBoolean("autoReconnect") ?: true
         if (!assertBluetoothEnabled(null)) return
         if (!bleController.isBleConnected()) {
             return call.resolve()
         }
         CoroutineScope(Dispatchers.IO).launch {
-            bleController.disconnectBle()
+            bleController.disconnectBle(autoReconnect)
             return@launch call.resolve()
         }
     }
@@ -360,7 +361,6 @@ class NrfMeshPlugin : Plugin() {
         val macAddress = call.getString("macAddress") ?: return call.reject("macAddress is required")
         val uuid = call.getString("uuid") ?: return call.reject("uuid is required")
 
-
         CoroutineScope(Dispatchers.Main).launch {
             if (!assertBluetoothEnabled(call)) return@launch
             val connected = connectionToUnprovisionedDevice(macAddress, uuid)
@@ -413,7 +413,7 @@ class NrfMeshPlugin : Plugin() {
             val meshDevice = deferred.await() ?: return@launch call.reject("Failed to provision device")
 
             withContext(Dispatchers.IO) {
-                bleController.disconnectBle()
+                bleController.disconnectBle(false)
             }
 
             when (meshDevice) {
@@ -842,15 +842,13 @@ class NrfMeshPlugin : Plugin() {
         val opPairCode = call.getInt("opPairCode")
         val companyIdentifier = modelId.shr(16)
 
-        var payloadData = byteArrayOf()
         // Convert the payload object into a ByteArray
-        payloadData = payload.keys()
+        val payloadData: ByteArray = payload.keys()
             .asSequence()
             .mapNotNull { key -> payload.getInt(key) } // Convert each value to an Int, ignoring nulls
             .map { it.toByte() } // Convert each Int to a Byte
             .toList()
             .toByteArray()
-
 
         CoroutineScope(Dispatchers.Main).launch {
             if (!assertBluetoothEnabled(call)) return@launch
@@ -905,6 +903,32 @@ class NrfMeshPlugin : Plugin() {
             )
 
             if (!result) return@launch call.reject("Failed to send Heartbeat Publication")
+        }
+    }
+
+    @PluginMethod
+    fun sendHealthFaultGet(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
+        val companyId = call.getInt("companyId") ?: return call.reject("companyId is required")
+
+        CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                return@launch call.reject("Failed to connect to Mesh proxy")
+            }
+
+            PluginCallManager.getInstance()
+                .addSigPluginCall(ApplicationMessageOpCodes.HEALTH_FAULT_GET, unicastAddress, call)
+
+            val result = meshController.sendHealthFaultGet(
+                unicastAddress,
+                appKeyIndex,
+                companyId
+            )
+
+            if (!result) return@launch call.reject("Failed to send Health Fault Get")
         }
     }
 

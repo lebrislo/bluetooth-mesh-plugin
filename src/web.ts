@@ -1,8 +1,8 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { BluetoothConnectionStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NodesOnlineStates, NrfMeshPlugin, Permissions, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices, UnprovisionStatus } from './definitions';
+import type { BluetoothConnectionStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NodesOnlineStates, BluetoothMeshPlugin, Permissions, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices, UnprovisionStatus } from './definitions';
 
-export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
+export class BluetoothMeshWeb extends WebPlugin implements BluetoothMeshPlugin {
 
   async isBluetoothEnabled(): Promise<BluetoothState> {
     console.log('isBluetoothEnabled');
@@ -167,5 +167,10 @@ export class NrfMeshWeb extends WebPlugin implements NrfMeshPlugin {
 
   async sendConfigHeartbeatPublicationSet(): Promise<void> {
     console.log('sendConfigHeartbeatPublicationSet');
+  }
+
+  async sendHealthFaultGet(): Promise<ModelMessageStatus> {
+    console.log('sendHealthFaultGet');
+    return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 }

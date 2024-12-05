@@ -1,11 +1,14 @@
 package com.lebrislo.bluetooth.mesh.plugin
 
 import android.util.Log
+import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
 import com.getcapacitor.PluginCall
 import no.nordicsemi.android.mesh.transport.GenericLevelStatus
 import no.nordicsemi.android.mesh.transport.GenericOnOffStatus
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelStatus
+import no.nordicsemi.android.mesh.transport.HealthCurrentStatus
+import no.nordicsemi.android.mesh.transport.HealthFaultStatus
 import no.nordicsemi.android.mesh.transport.LightCtlStatus
 import no.nordicsemi.android.mesh.transport.LightCtlTemperatureRangeStatus
 import no.nordicsemi.android.mesh.transport.LightHslStatus
@@ -37,6 +40,8 @@ class SigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, call: 
                     is LightHslStatus -> lightHslStatusResponse(meshMessage)
                     is LightCtlStatus -> lightCtlStatusResponse(meshMessage)
                     is LightCtlTemperatureRangeStatus -> lightCtlTemperatureRangeStatusResponse(meshMessage)
+                    is HealthFaultStatus -> healthFaultStatusResponse(meshMessage)
+                    is HealthCurrentStatus -> healthCurrentStatusResponse(meshMessage)
                     else -> JSObject()
                 }
             )
@@ -82,6 +87,30 @@ class SigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, call: 
             data.put("status", meshMessage.statusCode.toUShort().toInt())
             data.put("min", meshMessage.rangeMin.toUShort().toInt())
             data.put("max", meshMessage.rangeMax.toUShort().toInt())
+            return data
+        }
+
+        private fun healthFaultStatusResponse(meshMessage: HealthFaultStatus): JSObject {
+            val data = JSObject()
+            data.put("testId", meshMessage.testId)
+            data.put("companyId", meshMessage.companyId)
+            val faults = JSArray()
+            if (meshMessage.faultArray != null) {
+                meshMessage.faultArray.forEach { faults.put(it) }
+            }
+            data.put("faults", faults)
+            return data
+        }
+
+        private fun healthCurrentStatusResponse(meshMessage: HealthCurrentStatus): JSObject {
+            val data = JSObject()
+            data.put("testId", meshMessage.testId)
+            data.put("companyId", meshMessage.companyId)
+            val faults = JSArray()
+            if (meshMessage.faultArray != null) {
+                meshMessage.faultArray.forEach { faults.put(it) }
+            }
+            data.put("faults", faults)
             return data
         }
     }

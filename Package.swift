@@ -2,27 +2,27 @@
 import PackageDescription
 
 let package = Package(
-    name: "NrfBluetoothMesh",
+    name: "BluetoothMeshPlugin",
     platforms: [.iOS(.v13)],
     products: [
         .library(
-            name: "NrfBluetoothMesh",
-            targets: ["NrfMeshPlugin"])
+            name: "BluetoothMeshPlugin",
+            targets: ["BluetoothMeshPlugin"])
     ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", branch: "main")
     ],
     targets: [
         .target(
-            name: "NrfMeshPlugin",
+            name: "BluetoothMeshPlugin",
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm")
             ],
-            path: "ios/Sources/NrfMeshPlugin"),
+            path: "ios/Sources/BluetoothMeshPlugin"),
         .testTarget(
-            name: "NrfMeshPluginTests",
-            dependencies: ["NrfMeshPlugin"],
-            path: "ios/Tests/NrfMeshPluginTests")
+            name: "BluetoothMeshPluginTests",
+            dependencies: ["BluetoothMeshPlugin"],
+            path: "ios/Tests/BluetoothMeshPluginTests")
     ]
 )

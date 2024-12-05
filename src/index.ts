@@ -1,10 +1,10 @@
 import { registerPlugin } from '@capacitor/core';
 
-import type { NrfMeshPlugin } from './definitions';
+import type { BluetoothMeshPlugin } from './definitions';
 
-const NrfMesh = registerPlugin<NrfMeshPlugin>('NrfMesh', {
-  web: () => import('./web').then(m => new m.NrfMeshWeb()),
+const BluetoothMesh = registerPlugin<BluetoothMeshPlugin>('BluetoothMesh', {
+  web: () => import('./web').then(m => new m.BluetoothMeshWeb()),
 });
 
 export * from './definitions';
-export { NrfMesh };
+export { BluetoothMesh };

@@ -1,11 +1,11 @@
-# nrf-bluetooth-mesh
+# bluetooth-mesh-plugin
 
 Capacitor plugin for Bluetooth Mesh, based on nRF Mesh Libraries
 
 ## Install
 
 ```bash
-npm install nrf-bluetooth-mesh
+npm install bluetooth-mesh-plugin
 npx cap sync
 ```
 
@@ -16,7 +16,7 @@ npx cap sync
 * [`isBluetoothEnabled()`](#isbluetoothenabled)
 * [`requestBluetoothEnable()`](#requestbluetoothenable)
 * [`isBluetoothConnected()`](#isbluetoothconnected)
-* [`disconnectBle()`](#disconnectble)
+* [`disconnectBle(...)`](#disconnectble)
 * [`checkPermissions()`](#checkpermissions)
 * [`requestPermissions()`](#requestpermissions)
 * [`initMeshNetwork(...)`](#initmeshnetwork)
@@ -45,6 +45,7 @@ npx cap sync
 * [`sendLightCtlTemperatureRangeGet(...)`](#sendlightctltemperaturerangeget)
 * [`sendVendorModelMessage(...)`](#sendvendormodelmessage)
 * [`sendConfigHeartbeatPublicationSet(...)`](#sendconfigheartbeatpublicationset)
+* [`sendHealthFaultGet(...)`](#sendhealthfaultget)
 * [`addListener(string, ...)`](#addlistenerstring-)
 * [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
@@ -88,11 +89,15 @@ isBluetoothConnected() => Promise<BluetoothConnectionStatus>
 --------------------
 
 
-### disconnectBle()
+### disconnectBle(...)
 
 ```typescript
-disconnectBle() => Promise<void>
+disconnectBle(options: { autoReconnect?: boolean; }) => Promise<void>
 ```
+
+| Param         | Type                                      |
+| ------------- | ----------------------------------------- |
+| **`options`** | <code>{ autoReconnect?: boolean; }</code> |
 
 --------------------
 
@@ -477,12 +482,27 @@ sendVendorModelMessage(options: ModelMessage & { modelId: number; opcode: number
 ### sendConfigHeartbeatPublicationSet(...)
 
 ```typescript
-sendConfigHeartbeatPublicationSet(option: ConfigHeartbeatPublicationSet) => Promise<void>
+sendConfigHeartbeatPublicationSet(options: ConfigHeartbeatPublicationSet) => Promise<void>
 ```
 
-| Param        | Type                                                                                    |
-| ------------ | --------------------------------------------------------------------------------------- |
-| **`option`** | <code><a href="#configheartbeatpublicationset">ConfigHeartbeatPublicationSet</a></code> |
+| Param         | Type                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#configheartbeatpublicationset">ConfigHeartbeatPublicationSet</a></code> |
+
+--------------------
+
+
+### sendHealthFaultGet(...)
+
+```typescript
+sendHealthFaultGet(options: ModelMessage & { companyId: number; }) => Promise<ModelMessageStatus>
+```
+
+| Param         | Type                                                                           |
+| ------------- | ------------------------------------------------------------------------------ |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { companyId: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 
 --------------------
 

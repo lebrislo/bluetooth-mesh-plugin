@@ -18,6 +18,8 @@ import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
 import no.nordicsemi.android.mesh.transport.ControlMessage
 import no.nordicsemi.android.mesh.transport.GenericOnOffStatus
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelStatus
+import no.nordicsemi.android.mesh.transport.HealthCurrentStatus
+import no.nordicsemi.android.mesh.transport.HealthFaultStatus
 import no.nordicsemi.android.mesh.transport.LightCtlStatus
 import no.nordicsemi.android.mesh.transport.LightCtlTemperatureRangeStatus
 import no.nordicsemi.android.mesh.transport.LightHslStatus
@@ -166,7 +168,8 @@ class MeshCallbacksManager(
                 PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
             }
 
-            is GenericOnOffStatus, is GenericPowerLevelStatus, is LightHslStatus, is LightCtlStatus, is LightCtlTemperatureRangeStatus -> {
+            is GenericOnOffStatus, is GenericPowerLevelStatus, is LightHslStatus, is LightCtlStatus,
+            is LightCtlTemperatureRangeStatus, is HealthFaultStatus, is HealthCurrentStatus -> {
                 PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
             }
 

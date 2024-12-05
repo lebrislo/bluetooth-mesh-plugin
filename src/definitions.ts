@@ -83,18 +83,18 @@ export interface NodesOnlineStates {
   states: OnlineState[];
 }
 
-export enum NrfMeshPluginEvents {
+export enum BluetoothMeshPluginEvents {
   MeshModelMessageEvent = 'meshModelMessageEvent', /* Mesh model message received */
   BluetoothAdapterEvent = 'bluetoothAdapterEvent', /* Bluetooth adapter state change */
   BluetoothConnectionEvent = 'bluetoothConnectionEvent', /* Bluetooth connection state change */
   MeshDeviceScanEvent = 'meshDeviceScanEvent', /* Mesh device scan event */
 }
 
-export interface NrfMeshPlugin {
+export interface BluetoothMeshPlugin {
   isBluetoothEnabled(): Promise<BluetoothState>;
   requestBluetoothEnable(): Promise<BluetoothState>;
   isBluetoothConnected(): Promise<BluetoothConnectionStatus>;
-  disconnectBle(): Promise<void>;
+  disconnectBle(options: { autoReconnect?: boolean }): Promise<void>;
   checkPermissions(): Promise<Permissions>
   requestPermissions(): Promise<any>
   initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject>;
@@ -149,7 +149,8 @@ export interface NrfMeshPlugin {
     payload?: Uint8Array;
     opPairCode?: number
   }): Promise<ModelMessageStatus>;
-  sendConfigHeartbeatPublicationSet(option: ConfigHeartbeatPublicationSet): Promise<void>;
+  sendConfigHeartbeatPublicationSet(options: ConfigHeartbeatPublicationSet): Promise<void>;
+  sendHealthFaultGet(options: ModelMessage & { companyId: number }): Promise<ModelMessageStatus>;
   addListener(eventName: string, listenerFunc: (event: any) => void): Promise<PluginListenerHandle>;
   removeAllListeners(): Promise<void>;
 }
