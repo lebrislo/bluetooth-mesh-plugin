@@ -228,6 +228,8 @@ class BluetoothMeshPlugin : Plugin() {
 
         meshController.importMeshNetwork(meshNetwork)
 
+        bleController.restartMeshDevicesScan()
+
         return call.resolve()
     }
 
