@@ -8,7 +8,6 @@ import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
 import com.lebrislo.bluetooth.mesh.scanner.DeviceScanner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import no.nordicsemi.android.mesh.MeshManagerApi
@@ -105,27 +104,28 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
     }
 
     /**
-     * Scan for mesh devices and return a list of freshly scanned devices
-     *
-     * @param scanDurationMs duration of the scan in milliseconds
+     * Get the list of unprovisioned devices
      *
      * @return List<ExtendedBluetoothDevice>
      */
-    suspend fun getMeshDevices(scanDurationMs: Int = 5000): List<ExtendedBluetoothDevice> {
-        scannerRepository.unprovisionedDevices.clear()
-        scannerRepository.provisionedDevices.clear()
-        scannerRepository.stopScanDevices()
-        scannerRepository.startScanDevices()
-        delay(scanDurationMs.toLong())
-        return scannerRepository.unprovisionedDevices + scannerRepository.provisionedDevices
+    fun getUnprovisionedDevices(): List<ExtendedBluetoothDevice> {
+        return scannerRepository.getUnprovisionedDevices()
+    }
+
+    /**
+     * Get the list of provisioned devices
+     *
+     * @return List<ExtendedBluetoothDevice>
+     */
+    fun getProvisionedDevices(): List<ExtendedBluetoothDevice> {
+        return scannerRepository.getProvisionedDevices()
     }
 
     /**
      * Restart scanning for mesh devices
      */
     fun restartMeshDevicesScan() {
-        scannerRepository.unprovisionedDevices.clear()
-        scannerRepository.provisionedDevices.clear()
+        scannerRepository.clearDevices()
         scannerRepository.stopScanDevices()
         scannerRepository.startScanDevices()
     }
@@ -139,7 +139,7 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
         if (bleMeshManager.isConnected) {
             Log.d(tag, "searchProxyMesh : Connected to a bluetooth device")
 
-            val isMeshProxy = scannerRepository.provisionedDevices.any() { device ->
+            val isMeshProxy = scannerRepository.getProvisionedDevices().any() { device ->
                 device.scanResult?.device?.address == bleMeshManager.bluetoothDevice?.address
             }
 
@@ -155,14 +155,12 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
             }
         }
 
-        Log.d(tag, "searchProxyMesh : Provisioned devices: ${scannerRepository.provisionedDevices.size}")
+        Log.d(tag, "searchProxyMesh : Provisioned devices: ${scannerRepository.getProvisionedDevices().size}")
 
-        if (scannerRepository.provisionedDevices.isNotEmpty()) {
-            synchronized(scannerRepository.provisionedDevices) {
-                scannerRepository.provisionedDevices.sortBy { device -> device.scanResult?.rssi }
-            }
-            val device = scannerRepository.provisionedDevices.first().device
-            Log.i(tag, "searchProxyMesh : Found a mesh proxy ${device!!.address}")
+        if (scannerRepository.getProvisionedDevices().isNotEmpty()) {
+            val device = scannerRepository.getProvisionedDevices()
+                .maxByOrNull { device -> device.scanResult?.rssi ?: Int.MIN_VALUE }?.device
+            Log.i(tag, "searchProxyMesh : Found a mesh proxy ${device?.address}")
             return device
         }
         return null
@@ -178,7 +176,9 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
     suspend fun searchUnprovisionedBluetoothDevice(uuid: String): BluetoothDevice? {
         if (bleMeshManager.isConnected) {
             val macAddress = bleMeshManager.bluetoothDevice!!.address
-            if (scannerRepository.unprovisionedDevices.any { device -> device.scanResult?.device?.address == macAddress }) {
+            if (scannerRepository.getUnprovisionedDevices()
+                    .any { device -> device.scanResult?.device?.address == macAddress }
+            ) {
                 return bleMeshManager.bluetoothDevice
             } else {
                 withContext(Dispatchers.IO) {
@@ -187,7 +187,7 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
             }
         }
 
-        return scannerRepository.unprovisionedDevices.firstOrNull { device ->
+        return scannerRepository.getUnprovisionedDevices().firstOrNull { device ->
             device.scanResult?.let {
                 device.getDeviceUuid().toString() == uuid
             } ?: false

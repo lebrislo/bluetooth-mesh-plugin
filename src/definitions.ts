@@ -100,10 +100,8 @@ export interface BluetoothMeshPlugin {
   initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject>;
   exportMeshNetwork(): Promise<MeshNetworkObject>;
   importMeshNetwork(options: { meshNetwork: string }): Promise<void>;
-  scanMeshDevices(options: {
-    timeout: number;
-  }): Promise<ScanMeshDevices>;
-  clearMeshDevicesScan(): Promise<void>;
+  fetchMeshDevices(): Promise<ScanMeshDevices>;
+  reloadScanMeshDevices(): Promise<void>;
   getNodesOnlineStates(): Promise<NodesOnlineStates>;
   getProvisioningCapabilities(options: {
     macAddress: string;

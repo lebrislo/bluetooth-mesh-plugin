@@ -234,51 +234,44 @@ class BluetoothMeshPlugin : Plugin() {
     }
 
     @PluginMethod
-    fun scanMeshDevices(call: PluginCall) {
-        val scanDuration = call.getInt("timeout") ?: 5000
+    fun fetchMeshDevices(call: PluginCall) {
 
-        if (!assertBluetoothEnabled(call)) return
+        val unprovisionedDevices = bleController.getUnprovisionedDevices()
+        val provisionedDevices = bleController.getProvisionedDevices()
+        // return a dict of devices, unprovisioned and provisioned
+        val result = JSObject().apply {
+            put("unprovisioned", JSArray().apply {
+                unprovisionedDevices.forEach {
+                    if (it.scanResult == null) return
 
-        CoroutineScope(Dispatchers.IO).launch {
-            val devices = bleController.getMeshDevices(scanDuration)
+                    put(JSObject().apply {
+                        put("uuid", it.getDeviceUuid().toString())
+                        put("macAddress", it.scanResult.device.address)
+                        put("rssi", it.rssi)
+                        put("name", it.name)
+                    })
+                }
+            })
+            put("provisioned", JSArray().apply {
+                provisionedDevices.forEach {
+                    if (it.scanResult == null) return
 
-            // return a dict of devices, unprovisioned and provisioned
-            val result = JSObject().apply {
-                put("unprovisioned", JSArray().apply {
-                    devices.forEach {
-                        if (it.scanResult == null) return@forEach
-
-                        put(JSObject().apply {
-                            put("uuid", it.getDeviceUuid().toString())
-                            put("macAddress", it.scanResult.device.address)
-                            put("rssi", it.rssi)
-                            put("name", it.name)
-                        })
-                    }
-                })
-                put("provisioned", JSArray().apply {
-                    devices.forEach {
-                        if (it.scanResult == null) return@forEach
-
-                        put(JSObject().apply {
-                            put("uuid", it.getDeviceUuid().toString())
-                            put("macAddress", it.scanResult.device.address)
-                            put("rssi", it.rssi)
-                            put("name", it.name)
-                        })
-                    }
-                })
-            }
-            return@launch call.resolve(result)
+                    put(JSObject().apply {
+                        put("uuid", it.getDeviceUuid().toString())
+                        put("macAddress", it.scanResult.device.address)
+                        put("rssi", it.rssi)
+                        put("name", it.name)
+                    })
+                }
+            })
         }
+        return call.resolve(result)
     }
 
     @PluginMethod
-    fun clearMeshDevicesScan(call: PluginCall) {
+    fun reloadScanMeshDevices(call: PluginCall) {
         if (!assertBluetoothEnabled(call)) return
-
         bleController.restartMeshDevicesScan()
-
         return call.resolve()
     }
 

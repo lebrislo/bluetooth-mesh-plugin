@@ -22,8 +22,8 @@ npx cap sync
 * [`initMeshNetwork(...)`](#initmeshnetwork)
 * [`exportMeshNetwork()`](#exportmeshnetwork)
 * [`importMeshNetwork(...)`](#importmeshnetwork)
-* [`scanMeshDevices(...)`](#scanmeshdevices)
-* [`clearMeshDevicesScan()`](#clearmeshdevicesscan)
+* [`fetchMeshDevices()`](#fetchmeshdevices)
+* [`reloadScanMeshDevices()`](#reloadscanmeshdevices)
 * [`getNodesOnlineStates()`](#getnodesonlinestates)
 * [`getProvisioningCapabilities(...)`](#getprovisioningcapabilities)
 * [`provisionDevice(...)`](#provisiondevice)
@@ -163,25 +163,21 @@ importMeshNetwork(options: { meshNetwork: string; }) => Promise<void>
 --------------------
 
 
-### scanMeshDevices(...)
+### fetchMeshDevices()
 
 ```typescript
-scanMeshDevices(options: { timeout: number; }) => Promise<ScanMeshDevices>
+fetchMeshDevices() => Promise<ScanMeshDevices>
 ```
-
-| Param         | Type                              |
-| ------------- | --------------------------------- |
-| **`options`** | <code>{ timeout: number; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#scanmeshdevices">ScanMeshDevices</a>&gt;</code>
 
 --------------------
 
 
-### clearMeshDevicesScan()
+### reloadScanMeshDevices()
 
 ```typescript
-clearMeshDevicesScan() => Promise<void>
+reloadScanMeshDevices() => Promise<void>
 ```
 
 --------------------
