@@ -9,8 +9,8 @@ import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
 import com.lebrislo.bluetooth.mesh.BluetoothMeshPlugin
 import com.lebrislo.bluetooth.mesh.models.ExtendedBluetoothDevice
+import com.lebrislo.bluetooth.mesh.permissions.PermissionsManager
 import com.lebrislo.bluetooth.mesh.utils.NotificationManager
-import com.lebrislo.bluetooth.mesh.utils.PermissionsManager
 import com.lebrislo.bluetooth.mesh.utils.Utils
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.MeshNetwork
@@ -169,9 +169,10 @@ class DeviceScanner(
     }
 
     fun startScanDevices() {
-        val permission = PermissionsManager.getInstance().requestPermissions()
+        val permission = PermissionsManager.getInstance().checkPermissions()
         Log.i(tag, "Permission to scan devices: $permission")
         if (permission != PackageManager.PERMISSION_GRANTED) {
+            PermissionsManager.getInstance().requestPermissions()
             return
         }
 

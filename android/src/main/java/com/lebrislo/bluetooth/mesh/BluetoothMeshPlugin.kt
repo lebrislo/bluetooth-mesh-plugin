@@ -20,11 +20,11 @@ import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.lebrislo.bluetooth.mesh.ble.BleMeshManager
 import com.lebrislo.bluetooth.mesh.models.BleMeshDevice
+import com.lebrislo.bluetooth.mesh.permissions.PermissionsManager
 import com.lebrislo.bluetooth.mesh.plugin.PluginCallManager
 import com.lebrislo.bluetooth.mesh.utils.BluetoothStateReceiver
 import com.lebrislo.bluetooth.mesh.utils.NodesOnlineStateManager
 import com.lebrislo.bluetooth.mesh.utils.NotificationManager
-import com.lebrislo.bluetooth.mesh.utils.PermissionsManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -127,6 +127,10 @@ class BluetoothMeshPlugin : Plugin() {
             }
         }
         this.stopScan()
+    }
+
+    override fun startActivityForResult(call: PluginCall?, intent: Intent?, callbackName: String?) {
+        super.startActivityForResult(call, intent, callbackName)
     }
 
     private fun assertBluetoothAdapter(call: PluginCall?): Boolean {
