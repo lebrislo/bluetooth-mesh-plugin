@@ -3,7 +3,10 @@ package com.lebrislo.bluetooth.mesh.utils
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import androidx.core.app.ActivityCompat
 
@@ -41,9 +44,12 @@ class PermissionsManager private constructor() {
 
     fun requestPermissions(): Int {
         val bluetoothPermission = requestBluetoothPermissions()
-        val locationPermission = requestLocationPermissions()
+        if (bluetoothPermission != PackageManager.PERMISSION_GRANTED) {
+            return PackageManager.PERMISSION_DENIED
+        }
 
-        return if (bluetoothPermission == PackageManager.PERMISSION_GRANTED && locationPermission == PackageManager.PERMISSION_GRANTED) {
+        val locationPermission = requestLocationPermissions()
+        return if (locationPermission == PackageManager.PERMISSION_GRANTED) {
             PackageManager.PERMISSION_GRANTED
         } else {
             PackageManager.PERMISSION_DENIED
@@ -70,22 +76,20 @@ class PermissionsManager private constructor() {
         } else {
             val bluetoothScan = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.BLUETOOTH_SCAN)
             Log.i(tag, "BLUETOOTH_SCAN Permission : $bluetoothScan")
-
-            if (bluetoothScan != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                    act,
-                    arrayOf(Manifest.permission.BLUETOOTH_SCAN),
-                    0
-                )
-            }
-
             val bluetoothConnect = ActivityCompat.checkSelfPermission(ctx, Manifest.permission.BLUETOOTH_CONNECT)
             Log.i(tag, "BLUETOOTH_CONNECT Permission : $bluetoothConnect")
+            val isPermanentlyDeclined = !ActivityCompat.shouldShowRequestPermissionRationale(
+                act,
+                Manifest.permission.BLUETOOTH_SCAN
+            )
 
-            if (bluetoothConnect != PackageManager.PERMISSION_GRANTED) {
+            if (bluetoothScan != PackageManager.PERMISSION_GRANTED || bluetoothConnect != PackageManager.PERMISSION_GRANTED) {
+                if (isPermanentlyDeclined) {
+                    act.openAppSettings()
+                }
                 ActivityCompat.requestPermissions(
                     act,
-                    arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                    arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT),
                     0
                 )
             }
@@ -116,5 +120,13 @@ class PermissionsManager private constructor() {
             return ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION)
         }
         return PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun Activity.openAppSettings() {
+        val intent = Intent().apply {
+            action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+            data = Uri.fromParts("package", packageName, null)
+        }
+        startActivity(intent)
     }
 }

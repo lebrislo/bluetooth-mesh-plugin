@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap
 class DeviceScanner(
     private val meshManagerApi: MeshManagerApi
 ) {
-    private val tag: String = "ScannerRepo"
+    private val tag: String = "DeviceScanner"
     private var meshProxyScannedCallback: ((proxy: ExtendedBluetoothDevice) -> Unit)? = null
     private var isScanning: Boolean = false
 

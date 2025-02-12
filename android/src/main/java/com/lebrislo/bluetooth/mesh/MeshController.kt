@@ -194,8 +194,14 @@ class MeshController(
      * @return Boolean whether the application key was created successfully
      */
     fun createApplicationKey(): Boolean {
-        val applicationKey = meshManagerApi.meshNetwork?.createAppKey()
-        return meshManagerApi.meshNetwork?.addAppKey(applicationKey!!) ?: false
+        val meshNetwork = meshManagerApi.meshNetwork
+        if (meshNetwork == null) {
+            Log.e(tag, "createApplicationKey: Mesh network is null")
+            return false
+        }
+        val applicationKey = meshNetwork.createAppKey()
+        meshNetwork.addAppKey(applicationKey)
+        return true
     }
 
     /**
@@ -206,8 +212,13 @@ class MeshController(
      * @return Boolean whether the application key was removed successfully
      */
     fun removeApplicationKey(appKeyIndex: Int): Boolean {
-        return meshManagerApi.meshNetwork?.getAppKey(appKeyIndex)?.let {
-            meshManagerApi.meshNetwork?.removeAppKey(it)
+        val meshNetwork = meshManagerApi.meshNetwork
+        if (meshNetwork == null) {
+            Log.e(tag, "createApplicationKey: Mesh network is null")
+            return false
+        }
+        return meshNetwork.getAppKey(appKeyIndex)?.let {
+            meshNetwork.removeAppKey(it)
         } ?: false
     }
 
@@ -222,12 +233,16 @@ class MeshController(
      * @return Boolean whether the message was sent successfully
      */
     fun addApplicationKeyToNode(elementAddress: Int, appKeyIndex: Int): Boolean {
-        val netKey = meshManagerApi.meshNetwork?.primaryNetworkKey
-        val appKey = meshManagerApi.meshNetwork?.getAppKey(appKeyIndex)
+        val meshNetwork = meshManagerApi.meshNetwork
+        if (meshNetwork == null) {
+            Log.e(tag, "createApplicationKey: Mesh network is null")
+            return false
+        }
+        val netKey = meshNetwork.primaryNetworkKey ?: return false
+        val appKey = meshNetwork.getAppKey(appKeyIndex) ?: return false
 
-        val configModelAppBind = ConfigAppKeyAdd(netKey!!, appKey!!)
+        val configModelAppBind = ConfigAppKeyAdd(netKey, appKey)
         meshManagerApi.createMeshPdu(elementAddress, configModelAppBind)
-
         return true
     }
 
