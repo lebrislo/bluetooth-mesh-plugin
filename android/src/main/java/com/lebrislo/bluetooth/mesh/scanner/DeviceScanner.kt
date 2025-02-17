@@ -50,7 +50,7 @@ class DeviceScanner(
 
                 MeshManagerApi.MESH_PROXY_UUID -> {
                     val serviceData: ByteArray? = Utils.getServiceData(result, MeshManagerApi.MESH_PROXY_UUID)
-                    Log.v(tag, "Proxy discovered: ${result.device.address}")
+
                     if (meshManagerApi.isAdvertisingWithNetworkIdentity(serviceData)) {
                         if (meshManagerApi.networkIdMatches(serviceData)) {
                             provDeviceDiscovered(result)
@@ -89,6 +89,7 @@ class DeviceScanner(
     }
 
     private fun provDeviceDiscovered(result: ScanResult) {
+        Log.v(tag, "Proxy discovered: ${result.device.address}")
         val device = ExtendedBluetoothDevice(result)
         val address = device.address
 
@@ -188,14 +189,21 @@ class DeviceScanner(
 
         synchronized(this) {
             if (isScanning) return
+            Log.w(tag, "Starting scan")
             isScanning = true
             BluetoothLeScannerCompat.getScanner().startScan(filters, settings, scanCallback)
+
+            // Schedule a task to stop scanning after one minute
+            handler.postDelayed({
+                stopScanDevices()
+            }, 30000) // 30 seconds
         }
     }
 
     fun stopScanDevices() {
         synchronized(this) {
             if (!isScanning) return
+            Log.w(tag, "Stopping scan")
             isScanning = false
             BluetoothLeScannerCompat.getScanner().stopScan(scanCallback)
             deviceTimeouts.values.forEach { handler.removeCallbacks(it) }
