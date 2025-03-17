@@ -309,6 +309,7 @@ class BluetoothMeshPlugin : Plugin() {
 
                 if (bluetoothDevice == null) {
                     Log.d(tag, "connectionToUnprovisionedDevice : Failed to find unprovisioned device")
+                    bleController.restartMeshDevicesScan()
                     return@withContext false
                 }
 
@@ -344,6 +345,7 @@ class BluetoothMeshPlugin : Plugin() {
 
             if (proxy == null) {
                 Log.e(tag, "connectionToProvisionedDevice : Failed to find proxy node")
+                bleController.restartMeshDevicesScan()
                 return@withContext false
             }
 
