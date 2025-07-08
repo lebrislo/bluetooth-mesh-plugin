@@ -2,4 +2,4 @@ include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
 
 include ':mesh'
-project(':mesh').projectDir = new File('/home/lebrislo/repo/Android-nRF-Mesh-Library/mesh')
+project(':mesh').projectDir = new File('../../Android-nRF-Mesh-Library/mesh')
