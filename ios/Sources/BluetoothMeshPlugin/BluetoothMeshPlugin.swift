@@ -1,5 +1,6 @@
 import Foundation
 import Capacitor
+import NordicMesh
 
 /**
  * Please read the Capacitor iOS Plugin Development Guide
@@ -12,12 +13,11 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "echo", returnType: CAPPluginReturnPromise)
     ]
-    private let implementation = BluetoothMesh()
 
     @objc func echo(_ call: CAPPluginCall) {
         let value = call.getString("value") ?? ""
         call.resolve([
-            "value": implementation.echo(value)
+            "value": value
         ])
     }
 }
