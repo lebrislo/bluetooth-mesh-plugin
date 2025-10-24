@@ -9,12 +9,6 @@ import Capacitor
 import CoreBluetooth
 import Foundation
 
-typealias DiscoveredPeripheral = (
-    device: UnprovisionedDevice,
-    bearer: [ProvisioningBearer],
-    rssi: [NSNumber]
-)
-
 class DeviceScanner: NSObject {
     static let shared = DeviceScanner()
 
@@ -80,7 +74,7 @@ extension DeviceScanner: CBCentralManagerDelegate {
         advertisementData: [String: Any],
         rssi RSSI: NSNumber
     ) {
-        deviceStore.addOrUpdate(peripheral)
+        deviceStore.peripheralsDiscovered(peripheral, advertisementData, RSSI)
     }
 }
 
