@@ -13,7 +13,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
     ]
 
     var meshNetworkManager: MeshNetworkManager!
-    var connection: NetworkConnection!
+    static var connection: NetworkConnection!
     var provisioningController: ProvisioningController!
 
     public override init() {
@@ -50,10 +50,10 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         self.provisioningController = ProvisioningController(meshNetowrkManager: self.meshNetworkManager)
 
         meshNetworkManager.delegate = DeviceScanner.shared
-        connection = NetworkConnection(to: meshNetworkManager.meshNetwork!)
-        connection!.dataDelegate = meshNetworkManager
-        meshNetworkManager.transmitter = connection
-        connection!.open()
+        BluetoothMeshPlugin.connection = NetworkConnection(to: meshNetworkManager.meshNetwork!)
+        BluetoothMeshPlugin.connection!.dataDelegate = meshNetworkManager
+        meshNetworkManager.transmitter = BluetoothMeshPlugin.connection
+        BluetoothMeshPlugin.connection!.open()
     }
 
     func createNewMeshNetwork() {
@@ -85,34 +85,20 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
-        switch selectedPeripheral.bearer.count {
-        case 0:
-            call.reject("No bearer found for device with UUID \(uuidString)")
-            return
-        case 1:
-            let onlyBearer = selectedPeripheral.bearer.first!
-            do {
-                onlyBearer.delegate = self
-                try onlyBearer.open()
-            } catch {
-                call.reject("Failed to open bearer: \(error.localizedDescription)")
-                return
-            }
-        default:
-            let meshNetwork = self.meshNetworkManager.meshNetwork!
-            selectedPeripheral.bearer.map { bearer in
-                (bearer as? PBRemoteBearer).map {
-                    guard let node = meshNetwork.node(withAddress: $0.address) else {
-                        return "PB Remote (using 0x\($0.address.hex))"
-                    }
-                    return "PB Remote via \(node.name ?? "Unknown Node") (0x\($0.address.hex))"
-                } ?? "PB GATT"
-                do {
-                    bearer.delegate = self
-                    try bearer.open()
-                } catch {
-                    call.reject("Failed to open bearer: \(error.localizedDescription)")
-                    return
+        if let onlyBearer = selectedPeripheral.bearer.first {
+            self.provisioningController.openProvisioningBearer(onlyBearer) { result in
+                switch result {
+                case .success(let node):
+                    call.resolve([
+                        "provisioningComplete": true,
+                        "uuid": uuidString,
+                        "unicastAddress": node.primaryUnicastAddress
+                    ])
+                case .failure(let error):
+                    call.resolve([
+                        "provisioningComplete": false,
+                        "uuid": uuidString
+                    ])
                 }
             }
         }
@@ -120,33 +106,5 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
 
     func sendNotification(event: String, data: PluginCallResultData? = nil) {
         self.notifyListeners(event, data: data ?? PluginCallResultData())
-    }
-}
-
-extension BluetoothMeshPlugin: GattBearerDelegate {
-    
-    public func bearerDidConnect(_ bearer: Bearer) {
-        print("Bearer connected")
-    }
-    
-    public func bearerDidDiscoverServices(_ bearer: Bearer) {
-        print("Bearer discovered services")
-    }
-        
-    public func bearerDidOpen(_ bearer: Bearer) {
-        print("Bearer opened")
-        guard let unprovDevice = DeviceRepository.shared.unprovDevices.first?.device else {
-            print("No unprovisioned device found")
-            return
-        }
-        guard let provisioningBearer = bearer as? ProvisioningBearer else {
-            print("Bearer is not a ProvisioningBearer")
-            return
-        }
-        self.provisioningController.provision(unprovDevice, provisioningBearer)
-    }
-    
-    public func bearer(_ bearer: Bearer, didClose error: Error?) {
-        print("Bearer \(bearer) closed with error: \(String(describing: error))")
     }
 }
