@@ -8,7 +8,7 @@
 import Capacitor
 import Foundation
 
-class BasePluginCall {
+public class BasePluginCall {
     let call: CAPPluginCall
     private let timeout: TimeInterval
     private var isResolved = false
@@ -32,15 +32,16 @@ class BasePluginCall {
         }
     }
 
-    func resolve(result: JSObject) {
+    public func resolve(_ result: PluginCallResultData) {
         isResolved = true
         timer?.invalidate()
+        print("Resolving call \(String(describing: call.methodName)) with result: \(result)")
         call.resolve(result)
     }
 
     private func reject(message: String, data: PluginCallResultData? = nil) {
         timer?.invalidate()
-        //        call.reject(message, data)
-        //        PluginCallManager.shared.removePluginCall(self)
+        call.reject(message, nil, nil, data)
+        PluginCallManager.shared.removePluginCall(self)
     }
 }

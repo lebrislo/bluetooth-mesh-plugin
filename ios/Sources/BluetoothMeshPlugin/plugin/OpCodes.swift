@@ -1,0 +1,62 @@
+//
+//  OpCodes.swift
+//  BluetoothMeshPlugin
+//
+//  Created by LE BRIS Loris on 13/11/2025.
+//
+
+import Foundation
+
+// MARK: - Config Message Opcodes
+public let CONFIG_APPKEY_ADD: UInt32               = 0x00
+public let CONFIG_APPKEY_UPDATE: UInt32            = 0x01
+public let CONFIG_APPKEY_DELETE: UInt32            = 0x8000
+public let CONFIG_APPKEY_STATUS: UInt32            = 0x02
+
+public let CONFIG_MODEL_APP_BIND: UInt32           = 0x803D
+
+public let CONFIG_COMPOSITION_DATA_GET: UInt32      = 0x8008
+public let CONFIG_COMPOSITION_DATA_STATUS: UInt32   = 0x02
+
+public let CONFIG_NODE_RESET: UInt32                = 0x8049
+public let CONFIG_NODE_RESET_STATUS: UInt32         = 0x804A
+
+
+// MARK: - Generic Message Opcodes
+public let GENERIC_ON_OFF_GET: UInt32               = 0x8201
+public let GENERIC_ON_OFF_SET: UInt32               = 0x8202
+public let GENERIC_ON_OFF_SET_UNACKNOWLEDGED: UInt32 = 0x8203
+public let GENERIC_ON_OFF_STATUS: UInt32            = 0x8204
+
+public let GENERIC_LEVEL_GET: UInt32                 = 0x8205
+public let GENERIC_LEVEL_SET: UInt32                 = 0x8206
+public let GENERIC_LEVEL_SET_UNACKNOWLEDGED: UInt32  = 0x8207
+public let GENERIC_POWER_LEVEL_STATUS: UInt32        = 0x8211
+
+public let GENERIC_POWER_LEVEL_GET: UInt32           = 0x8215
+public let GENERIC_POWER_LEVEL_SET: UInt32           = 0x8216
+public let GENERIC_POWER_LEVEL_SET_UNACKNOWLEDGED: UInt32 = 0x8217
+
+
+// MARK: - Light HSL Opcodes
+public let LIGHT_HSL_GET: UInt32                    = 0x826D
+public let LIGHT_HSL_SET: UInt32                    = 0x8276
+public let LIGHT_HSL_SET_UNACKNOWLEDGED: UInt32     = 0x8277
+public let LIGHT_HSL_STATUS: UInt32                 = 0x8278
+
+
+// MARK: - Light CTL Opcodes
+public let LIGHT_CTL_GET: UInt32                    = 0x825D
+public let LIGHT_CTL_SET: UInt32                    = 0x825E
+public let LIGHT_CTL_SET_UNACKNOWLEDGED: UInt32     = 0x825F
+public let LIGHT_CTL_STATUS: UInt32                 = 0x8260
+
+public let LIGHT_CTL_TEMPERATURE_RANGE_GET: UInt32  = 0x8261
+public let LIGHT_CTL_TEMPERATURE_RANGE_SET: UInt32  = 0x8262
+public let LIGHT_CTL_TEMPERATURE_RANGE_SET_UNACKNOWLEDGED: UInt32 = 0x8263
+public let LIGHT_CTL_TEMPERATURE_RANGE_STATUS: UInt32 = 0x8264
+
+
+// MARK: - Health Model Opcodes
+public let HEALTH_FAULT_GET: UInt32                 = 0x8025
+public let HEALTH_FAULT_STATUS: UInt32              = 0x04

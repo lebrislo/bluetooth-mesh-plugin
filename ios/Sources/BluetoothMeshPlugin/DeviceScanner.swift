@@ -77,12 +77,3 @@ extension DeviceScanner: CBCentralManagerDelegate {
         deviceStore.peripheralsDiscovered(peripheral, advertisementData, RSSI)
     }
 }
-
-extension DeviceScanner: MeshNetworkDelegate {
-    
-    func meshNetworkManager(_ manager: MeshNetworkManager,
-                            didReceiveMessage message: MeshMessage,
-                            sentFrom source: Address, to destination: MeshAddress) {
-        print("Received message \(message) from \(source) to \(destination)")
-    }
-}
