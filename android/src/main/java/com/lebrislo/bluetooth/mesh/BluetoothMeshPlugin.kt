@@ -83,9 +83,10 @@ class BluetoothMeshPlugin : Plugin() {
         bluetoothStateReceiver = BluetoothStateReceiver(this)
         context.registerReceiver(bluetoothStateReceiver, filter)
 
-        this.restartScan()
         CoroutineScope(Dispatchers.Main).launch {
             if (!assertBluetoothEnabled(null)) return@launch
+            delay(2000)
+            restartScan()
             connectionToProvisionedDevice()
         }
         NodesOnlineStateManager.getInstance().resetStatus()
@@ -930,6 +931,31 @@ class BluetoothMeshPlugin : Plugin() {
             )
 
             if (!result) return@launch call.reject("Failed to send Health Fault Get")
+        }
+    }
+
+    @PluginMethod
+    fun sendHealthFaultClear(call: PluginCall) {
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+        val appKeyIndex = call.getInt("appKeyIndex") ?: return call.reject("appKeyIndex is required")
+        val companyId = call.getInt("companyId") ?: return call.reject("companyId is required")
+
+        CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                return@launch call.reject("Failed to connect to Mesh proxy")
+            }
+
+            PluginCallManager.getInstance()
+                .addSigPluginCall(ApplicationMessageOpCodes.HEALTH_FAULT_CLEAR, unicastAddress, call)
+
+            val result = meshController.sendHealthFaultClear(
+                unicastAddress,
+                appKeyIndex,
+                companyId
+            )
+            if (!result) return@launch call.reject("Failed to send Health Fault Clear")
         }
     }
 

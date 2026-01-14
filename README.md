@@ -46,6 +46,7 @@ npx cap sync
 * [`sendVendorModelMessage(...)`](#sendvendormodelmessage)
 * [`sendConfigHeartbeatPublicationSet(...)`](#sendconfigheartbeatpublicationset)
 * [`sendHealthFaultGet(...)`](#sendhealthfaultget)
+* [`sendHealthFaultClear(...)`](#sendhealthfaultclear)
 * [`addListener(string, ...)`](#addlistenerstring-)
 * [`removeAllListeners()`](#removealllisteners)
 * [Interfaces](#interfaces)
@@ -492,6 +493,21 @@ sendConfigHeartbeatPublicationSet(options: ConfigHeartbeatPublicationSet) => Pro
 
 ```typescript
 sendHealthFaultGet(options: ModelMessage & { companyId: number; }) => Promise<ModelMessageStatus>
+```
+
+| Param         | Type                                                                           |
+| ------------- | ------------------------------------------------------------------------------ |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { companyId: number; }</code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
+
+--------------------
+
+
+### sendHealthFaultClear(...)
+
+```typescript
+sendHealthFaultClear(options: ModelMessage & { companyId: number; }) => Promise<ModelMessageStatus>
 ```
 
 | Param         | Type                                                                           |

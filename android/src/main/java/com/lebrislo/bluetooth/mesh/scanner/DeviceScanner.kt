@@ -65,7 +65,7 @@ class DeviceScanner(
         }
 
         override fun onScanFailed(errorCode: Int) {
-            stopScanDevices()
+            //
         }
     }
 
@@ -178,7 +178,7 @@ class DeviceScanner(
         }
 
         val settings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
             .setReportDelay(0)
             .setUseHardwareFilteringIfSupported(false)
             .build()
@@ -189,14 +189,14 @@ class DeviceScanner(
 
         synchronized(this) {
             if (isScanning) return
-            Log.w(tag, "Starting scan")
             isScanning = true
+            Log.w(tag, "Starting scan")
             BluetoothLeScannerCompat.getScanner().startScan(filters, settings, scanCallback)
 
             // Schedule a task to stop scanning after one minute
-            handler.postDelayed({
-                stopScanDevices()
-            }, 30000) // 30 seconds
+//            handler.postDelayed({
+//                stopScanDevices()
+//            }, 30000) // 30 seconds
         }
     }
 

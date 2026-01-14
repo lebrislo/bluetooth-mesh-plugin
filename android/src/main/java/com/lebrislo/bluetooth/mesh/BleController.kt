@@ -21,6 +21,9 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
 
     private var autoReconnect: Boolean = true
 
+    private var lastScanTime = 0L
+    private val MIN_SCAN_INTERVAL = 30000L // 30 seconds
+
     init {
         bleMeshManager.setGattCallbacks(bleCallbacksManager)
 
@@ -125,6 +128,11 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
      * Restart scanning for mesh devices
      */
     fun restartMeshDevicesScan() {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastScanTime < MIN_SCAN_INTERVAL) {
+            Log.w(tag, "Scan throttled - too soon since last scan")
+            return
+        }
         scannerRepository.clearDevices()
         scannerRepository.stopScanDevices()
         scannerRepository.startScanDevices()

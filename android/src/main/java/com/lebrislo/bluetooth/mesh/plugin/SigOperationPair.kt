@@ -11,6 +11,7 @@ import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.GENERIC_POWE
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET_UNACKNOWLEDGED
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_STATUS
+import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.HEALTH_FAULT_CLEAR
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.HEALTH_FAULT_GET
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.HEALTH_FAULT_STATUS
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_CTL_GET
@@ -44,7 +45,7 @@ class SigOperationPair {
                 LIGHT_HSL_GET, LIGHT_HSL_SET, LIGHT_HSL_SET_UNACKNOWLEDGED -> LIGHT_HSL_STATUS
                 LIGHT_CTL_GET, LIGHT_CTL_SET, LIGHT_CTL_SET_UNACKNOWLEDGED -> LIGHT_CTL_STATUS
                 LIGHT_CTL_TEMPERATURE_RANGE_GET, LIGHT_CTL_TEMPERATURE_RANGE_SET, LIGHT_CTL_TEMPERATURE_RANGE_SET_UNACKNOWLEDGED -> LIGHT_CTL_TEMPERATURE_RANGE_STATUS
-                HEALTH_FAULT_GET -> HEALTH_FAULT_STATUS
+                HEALTH_FAULT_GET, HEALTH_FAULT_CLEAR -> HEALTH_FAULT_STATUS
                 else -> 0
             }
         }

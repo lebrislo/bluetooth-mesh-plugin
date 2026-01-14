@@ -21,6 +21,7 @@ import no.nordicsemi.android.mesh.transport.GenericOnOffSetUnacknowledged
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelGet
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSet
 import no.nordicsemi.android.mesh.transport.GenericPowerLevelSetUnacknowledged
+import no.nordicsemi.android.mesh.transport.HealthFaultClear
 import no.nordicsemi.android.mesh.transport.HealthFaultGet
 import no.nordicsemi.android.mesh.transport.LightCtlGet
 import no.nordicsemi.android.mesh.transport.LightCtlSet
@@ -774,6 +775,16 @@ class MeshController(
     fun sendHealthFaultGet(unicastAddress: Int, appKeyIndex: Int, companyId: Int): Boolean {
         meshManagerApi.createMeshPdu(
             unicastAddress, HealthFaultGet(
+                meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
+                companyId
+            )
+        )
+        return true
+    }
+
+    fun sendHealthFaultClear(unicastAddress: Int, appKeyIndex: Int, companyId: Int): Boolean {
+        meshManagerApi.createMeshPdu(
+            unicastAddress, HealthFaultClear(
                 meshManagerApi.meshNetwork!!.getAppKey(appKeyIndex),
                 companyId
             )

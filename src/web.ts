@@ -173,4 +173,9 @@ export class BluetoothMeshWeb extends WebPlugin implements BluetoothMeshPlugin {
     console.log('sendHealthFaultGet');
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
+
+  async sendHealthFaultClear(): Promise<ModelMessageStatus> {
+    console.log('sendHealthFaultClear');
+    return { src: 1, dst: 2, opcode: 3, data: {} };
+  }
 }
