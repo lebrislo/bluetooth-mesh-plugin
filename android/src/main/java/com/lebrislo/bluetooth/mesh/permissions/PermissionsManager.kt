@@ -6,11 +6,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import java.lang.ref.WeakReference
 import java.util.LinkedList
 import java.util.Queue
+import kotlin.text.clear
 
 class PermissionsManager private constructor() {
 
@@ -20,6 +24,7 @@ class PermissionsManager private constructor() {
     private var contextRef: WeakReference<Context>? = null
 
     private val permissionQueue: Queue<String> = LinkedList()
+    private var isRequestingPermissions: Boolean = false
 
     companion object {
         @Volatile
@@ -60,7 +65,15 @@ class PermissionsManager private constructor() {
         get() = contextRef?.get()
 
     fun requestPermissions() {
+        // Prevent multiple concurrent permission requests
+        if (isRequestingPermissions) {
+            return
+        }
+
         val act = activity ?: return
+
+        // Mark that we are now requesting permissions
+        isRequestingPermissions = true
 
         // Clear previous permissions from the queue
         permissionQueue.clear()
@@ -80,7 +93,7 @@ class PermissionsManager private constructor() {
         val act = activity ?: return
 
         if (permissionQueue.isEmpty()) {
-            // All permissions have been processed
+            isRequestingPermissions = false
             return
         }
 
@@ -88,30 +101,31 @@ class PermissionsManager private constructor() {
 
         val isPermanentlyDeclined = !ActivityCompat.shouldShowRequestPermissionRationale(act, nextPermission)
 
-        // Show the permission dialog for the current permission
-        val dialog = createPermissionDialog(
-            activity = act,
-            permissionTextProvider = when (nextPermission) {
-                Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN -> BluetoothPermissionTextProvider()
-                Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION -> LocationPermissionTextProvider()
-                else -> return
-            },
-            isPermanentlyDeclined = isPermanentlyDeclined,
-            onOkClick = {
-                // Request the permission if not permanently declined
-                ActivityCompat.requestPermissions(act, arrayOf(nextPermission), 0)
-            },
-            onGoToAppSettingsClick = {
-                // Open app settings if permission is permanently declined
-                openAppSettings(act)
-            },
-            onDismiss = {
-                permissionQueue.clear()
-            }
-        )
+        Handler(Looper.getMainLooper()).post {
+            val dialog = createPermissionDialog(
+                activity = act,
+                permissionTextProvider = when (nextPermission) {
+                    Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN -> BluetoothPermissionTextProvider()
+                    Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION -> LocationPermissionTextProvider()
+                    else -> return@post
+                },
+                isPermanentlyDeclined = isPermanentlyDeclined,
+                onOkClick = {
+                        ActivityCompat.requestPermissions(act, arrayOf(nextPermission), 12)
+                },
+                onGoToAppSettingsClick = {
+                    openAppSettings(act)
+                },
+                onDismiss = {
+                    permissionQueue.clear()
+                    isRequestingPermissions = false
+                }
+            )
 
-        dialog.show()
+            dialog.show()
+        }
     }
+
 
     fun checkPermissions(): Int {
         val ctx = context ?: return PackageManager.PERMISSION_DENIED

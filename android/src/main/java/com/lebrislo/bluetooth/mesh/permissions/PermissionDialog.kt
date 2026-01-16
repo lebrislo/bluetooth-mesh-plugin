@@ -44,7 +44,7 @@ class BluetoothPermissionTextProvider : PermissionTextProvider {
     }
 }
 
-class LocationPermissionTextProvider : PermissionTextProvider {
+class LocationPermissionTextProvider() : PermissionTextProvider {
     override fun getDescription(isPermanentlyDeclined: Boolean): String {
         return if (isPermanentlyDeclined) {
             "It seems you permanently declined location permission. " +

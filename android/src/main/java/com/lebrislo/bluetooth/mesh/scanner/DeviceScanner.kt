@@ -193,10 +193,10 @@ class DeviceScanner(
             Log.w(tag, "Starting scan")
             BluetoothLeScannerCompat.getScanner().startScan(filters, settings, scanCallback)
 
-            // Schedule a task to stop scanning after one minute
-//            handler.postDelayed({
-//                stopScanDevices()
-//            }, 30000) // 30 seconds
+            // Schedule a task to stop scanning after 20 sec
+            handler.postDelayed({
+                stopScanDevices()
+            }, 20000) // 20 seconds
         }
     }
 
