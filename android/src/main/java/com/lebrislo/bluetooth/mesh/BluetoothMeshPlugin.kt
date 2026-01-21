@@ -961,8 +961,10 @@ class BluetoothMeshPlugin : Plugin() {
 
     fun sendNotification(eventName: String, data: JSObject) {
         if (!hasListeners(eventName)) {
+            Log.w(tag, "No listeners registered for event: $eventName. Notification will not be sent.")
             return
         }
+        Log.d(tag, "Sending notification for event: $eventName with data: $data")
         notifyListeners(eventName, data)
     }
 }

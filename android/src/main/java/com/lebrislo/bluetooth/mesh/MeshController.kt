@@ -239,8 +239,18 @@ class MeshController(
             Log.e(tag, "createApplicationKey: Mesh network is null")
             return false
         }
-        val netKey = meshNetwork.primaryNetworkKey ?: return false
-        val appKey = meshNetwork.getAppKey(appKeyIndex) ?: return false
+
+        val netKey = meshNetwork.primaryNetworkKey
+        if(netKey == null) {
+            Log.e(tag, "addApplicationKeyToNode: Primary network key is null")
+            return false
+        }
+
+        val appKey = meshNetwork.getAppKey(appKeyIndex)
+        if(appKey == null) {
+            Log.e(tag, "addApplicationKeyToNode: Application key is null")
+            return false
+        }
 
         val configModelAppBind = ConfigAppKeyAdd(netKey, appKey)
         meshManagerApi.createMeshPdu(elementAddress, configModelAppBind)
