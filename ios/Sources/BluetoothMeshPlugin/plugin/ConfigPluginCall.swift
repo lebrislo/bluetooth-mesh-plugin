@@ -7,6 +7,7 @@
 
 import Foundation
 import Capacitor
+import NordicMesh
 
 public class ConfigPluginCall: BasePluginCall {
     let meshOperationCallback: UInt32

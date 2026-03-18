@@ -7,6 +7,7 @@
 
 import Capacitor
 import Foundation
+import NordicMesh
 
 public class VendorPluginCall: BasePluginCall {
     let modelId: UInt32

@@ -22,7 +22,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
     var meshNetworkManager: MeshNetworkManager!
     static var connection: NetworkConnection!
     var provisioningController: ProvisioningController!
-    private var configClientHandler: ConfigurationClientHandler?
+    //private var configClientHandler: ConfigurationClientHandler?
 
     public override init() {
         super.init()
@@ -88,18 +88,18 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         // Configuration client delegate bound to this mesh network
-        let configClient = ConfigurationClientHandler(network)
-        self.configClientHandler = configClient
+        //let configClient = ConfigurationClientHandler(network)
+        //self.configClientHandler = configClient
 
-        let element0 = Element(
-            name: "Primary Element",
-            location: .first,
-            models: [
-                Model(sigModelId: .configurationClientModelId, delegate: configClient)
-            ]
-        )
-
-        meshNetworkManager.localElements = [element0]
+//        let element0 = Element(
+//            name: "Primary Element",
+//            location: .first,
+//            models: [
+//                Model(sigModelId: .configurationClientModelId, delegate: configClient)
+//            ]
+//        )
+//
+//        meshNetworkManager.localElements = [element0]
     }
 
     /// Setup the GATT Proxy connection + delegates.

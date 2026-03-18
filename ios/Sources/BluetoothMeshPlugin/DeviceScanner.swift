@@ -8,6 +8,7 @@
 import Capacitor
 import CoreBluetooth
 import Foundation
+import NordicMesh
 
 class DeviceScanner: NSObject {
     static let shared = DeviceScanner()

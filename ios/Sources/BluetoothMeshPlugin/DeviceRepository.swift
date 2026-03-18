@@ -8,6 +8,7 @@
 import Capacitor
 import CoreBluetooth
 import Foundation
+import NordicMesh
 
 final class DeviceRepository {
     static let shared = DeviceRepository()

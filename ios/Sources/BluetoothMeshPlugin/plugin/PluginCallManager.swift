@@ -7,6 +7,7 @@
 
 import Capacitor
 import Foundation
+import NordicMesh
 
 public class PluginCallManager {
     static let shared = PluginCallManager()

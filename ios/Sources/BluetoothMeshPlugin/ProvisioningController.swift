@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import NordicMesh
 
 class ProvisioningController {
     let meshNetowrkManager: MeshNetworkManager!

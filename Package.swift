@@ -10,14 +10,16 @@ let package = Package(
             targets: ["BluetoothMeshPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", branch: "main")
+        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", branch: "main"),
+        .package(name: "NordicMesh", path: "./IOS-nRF-Mesh-Library")
     ],
     targets: [
         .target(
             name: "BluetoothMeshPlugin",
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
-                .product(name: "Cordova", package: "capacitor-swift-pm")
+                .product(name: "Cordova", package: "capacitor-swift-pm"),
+                .product(name: "NordicMesh", package: "NordicMesh")
             ],
             path: "ios/Sources/BluetoothMeshPlugin"),
         .testTarget(
