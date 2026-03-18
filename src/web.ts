@@ -127,13 +127,14 @@ export class BluetoothMeshWeb extends WebPlugin implements BluetoothMeshPlugin {
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  initMeshNetwork(): Promise<MeshNetworkObject> {
-    return Promise.resolve({ meshNetwork: 'meshNetwork' });
+  async initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject> {
+    const mesh = { name: options.networkName, nodes: [] };
+    return { meshNetwork: JSON.stringify(mesh) };
   }
 
   async exportMeshNetwork(): Promise<MeshNetworkObject> {
-    console.log('exportMeshNetwork');
-    return { meshNetwork: 'meshNetwork' };
+    const mesh = { };
+    return { meshNetwork: JSON.stringify(mesh) };
   }
 
   async importMeshNetwork(): Promise<void> {

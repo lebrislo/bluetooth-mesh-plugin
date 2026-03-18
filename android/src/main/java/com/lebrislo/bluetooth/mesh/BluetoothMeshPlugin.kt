@@ -871,6 +871,7 @@ class BluetoothMeshPlugin : Plugin() {
                 companyIdentifier,
                 opcode,
                 payloadData,
+                opPairCode != null
             )
 
             if (!result) return@launch call.reject("Failed to send Vendor Model Message")

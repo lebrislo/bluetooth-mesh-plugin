@@ -141,7 +141,7 @@ class PluginCallManager private constructor() {
         val callResponse = generateVendorPluginCallResponse(meshMessage)
 
         val pluginCall =
-            pluginCalls.find { it is VendorPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
+            pluginCalls.find { it is VendorPluginCall && it.meshOperationCallback == meshMessage.opCode && (it.meshAddress == meshMessage.src || it.meshAddress == 0xFFFF) }
 
         Log.d(tag, "resolveVendorPluginCall: registered call: ${pluginCall != null}")
 
