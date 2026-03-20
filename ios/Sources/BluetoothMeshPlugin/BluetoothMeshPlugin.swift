@@ -53,7 +53,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
 
     // MARK: - Private helpers
 
-    /// Setup Nordic mesh network parameters (was previously inline in init)
+    /// Setup Nordic mesh network parameters
     private func configureNetworkParameters() {
         meshNetworkManager.networkParameters = .basic { parameters in
             parameters.setDefaultTtl(5)
@@ -77,6 +77,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
             parameters.retransmitAcknowledgedMessage(after: 4.2)
             parameters.discardAcknowledgedMessages(after: 40.0)
         }
+        meshNetworkManager.logger = MeshLogger()
     }
 
     /// Create the local node’s primary element and attach the Config Client.
@@ -87,19 +88,13 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
-        // Configuration client delegate bound to this mesh network
-        //let configClient = ConfigurationClientHandler(network)
-        //self.configClientHandler = configClient
-
-//        let element0 = Element(
-//            name: "Primary Element",
-//            location: .first,
-//            models: [
-//                Model(sigModelId: .configurationClientModelId, delegate: configClient)
-//            ]
-//        )
-//
-//        meshNetworkManager.localElements = [element0]
+        let primaryElement = Element(name: "Primary Element", location: .first,
+                models: [
+                    // Generic OnOff Client model:
+                    Model(sigModelId: .genericOnOffClientModelId, delegate: GenericOnOffClientDelegate()),
+                ]
+        )
+        meshNetworkManager.localElements = [primaryElement]
     }
 
     /// Setup the GATT Proxy connection + delegates.
