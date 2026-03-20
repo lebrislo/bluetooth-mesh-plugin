@@ -5,32 +5,26 @@
 //  Created by LE BRIS Loris on 23/10/2025.
 //
 
-import Foundation
 import Capacitor
+import Foundation
 
-class NotificationManager {
+final class NotificationManager {
     static let shared = NotificationManager()
     private init() {}
 
-    private var plugin: BluetoothMeshPlugin?
+    private weak var plugin: BluetoothMeshPlugin?
 
-    private func assertPlugin() throws {
-        guard plugin != nil else {
-            throw NSError(domain: "NotificationManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "Plugin not set"])
-        }
-    }
-
-    /// Set the plugin, must be called before any other method.
     func setPlugin(_ plugin: BluetoothMeshPlugin) {
         self.plugin = plugin
+        print("NotificationManager: plugin set")
     }
 
     func sendNotification(event: String, data: PluginCallResultData? = nil) {
-        do {
-            try assertPlugin()
-            plugin?.sendNotification(event: event, data: data)
-        } catch {
-            print(error.localizedDescription)
+        guard let plugin = plugin else {
+            print("NotificationManager: plugin is nil for event \(event)")
+            return
         }
+
+        plugin.sendNotification(event: event, data: data)
     }
 }

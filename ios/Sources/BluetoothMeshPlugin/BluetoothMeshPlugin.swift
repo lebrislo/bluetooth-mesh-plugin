@@ -19,28 +19,37 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "exportMeshNetwork", returnType: CAPPluginReturnPromise),
     ]
 
+    public static var sharedMeshNetworkManager: MeshNetworkManager!
+
     var meshNetworkManager: MeshNetworkManager!
-    static var connection: NetworkConnection!
+    static var connection: NetworkConnection?
     var provisioningController: ProvisioningController!
-    //private var configClientHandler: ConfigurationClientHandler?
 
-    public override init() {
-        super.init()
+    private struct PendingProxyOperation {
+        let id: UUID
+        let call: CAPPluginCall
+        let execute: () -> Void
+    }
 
+    private var pendingProxyOperations: [PendingProxyOperation] = []
+    private var isWaitingForProxyConnection = false
+    private let proxyConnectionTimeout: TimeInterval = 10.0
+
+    public override func load() {
+        super.load()
+
+        print("BluetoothMeshPlugin.load called")
         NotificationManager.shared.setPlugin(self)
 
-        // 1. Create manager and configure parameters
         meshNetworkManager = MeshNetworkManager()
-        configureNetworkParameters()
+        BluetoothMeshPlugin.sharedMeshNetworkManager = meshNetworkManager
 
-        // 2. Create provisioning controller
+        configureNetworkParameters()
         provisioningController = ProvisioningController(meshNetowrkManager: meshNetworkManager)
 
-        // 3. Try to load existing mesh network from storage
         do {
             let loaded = try meshNetworkManager.load()
             if loaded, meshNetworkManager.meshNetwork != nil {
-                // Rebuild local node + connection
                 setupLocalNode()
                 setupConnection()
             } else {
@@ -53,7 +62,6 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
 
     // MARK: - Private helpers
 
-    /// Setup Nordic mesh network parameters
     private func configureNetworkParameters() {
         meshNetworkManager.networkParameters = .basic { parameters in
             parameters.setDefaultTtl(5)
@@ -80,47 +88,104 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         meshNetworkManager.logger = MeshLogger()
     }
 
-    /// Create the local node’s primary element and attach the Config Client.
-    /// Call this **after** a mesh network has been created, loaded or imported.
     private func setupLocalNode() {
-        guard let network = meshNetworkManager.meshNetwork else {
+        guard meshNetworkManager.meshNetwork != nil else {
             print("BluetoothMeshPlugin: setupLocalNode called with no meshNetwork")
             return
         }
 
-        let primaryElement = Element(name: "Primary Element", location: .first,
-                models: [
-                    // Generic OnOff Client model:
-                    Model(sigModelId: .genericOnOffClientModelId, delegate: GenericOnOffClientDelegate()),
-                ]
+        let primaryElement = Element(
+            name: "Primary Element",
+            location: .first,
+            models: [
+                Model(sigModelId: .genericOnOffClientModelId, delegate: GenericOnOffClientDelegate())
+            ]
         )
         meshNetworkManager.localElements = [primaryElement]
     }
 
-    /// Setup the GATT Proxy connection + delegates.
-    /// Call this whenever the mesh network changes (init/import/load).
     private func setupConnection() {
         guard let network = meshNetworkManager.meshNetwork else {
             print("BluetoothMeshPlugin: setupConnection called with no meshNetwork")
             return
         }
 
-        // Close previous connection if any
         BluetoothMeshPlugin.connection?.close()
 
         meshNetworkManager.delegate = PluginCallManager.shared
-        BluetoothMeshPlugin.connection = NetworkConnection(to: network)
-        BluetoothMeshPlugin.connection.dataDelegate = meshNetworkManager
-        meshNetworkManager.transmitter = BluetoothMeshPlugin.connection
 
-        BluetoothMeshPlugin.connection.open()
+        let connection = NetworkConnection(to: network)
+        connection.dataDelegate = meshNetworkManager
+        connection.delegate = self
+
+        BluetoothMeshPlugin.connection = connection
+        meshNetworkManager.transmitter = connection
+
+        connection.open()
     }
 
-    /// Convenience: export current network as JSON-serializable object
+    private func ensureProxyConnection(
+        for call: CAPPluginCall,
+        perform operation: @escaping () -> Void
+    ) {
+        guard let connection = BluetoothMeshPlugin.connection else {
+            call.reject("Mesh proxy connection is not initialized")
+            return
+        }
+
+        if connection.isConnected {
+            operation()
+            return
+        }
+
+        let operationId = UUID()
+        let pending = PendingProxyOperation(id: operationId, call: call, execute: operation)
+        pendingProxyOperations.append(pending)
+
+        if !isWaitingForProxyConnection {
+            isWaitingForProxyConnection = true
+            connection.open()
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + proxyConnectionTimeout) { [weak self] in
+            guard let self = self else { return }
+
+            guard let index = self.pendingProxyOperations.firstIndex(where: { $0.id == operationId }) else {
+                return
+            }
+
+            self.pendingProxyOperations.remove(at: index)
+
+            if self.pendingProxyOperations.isEmpty {
+                self.isWaitingForProxyConnection = false
+            }
+
+            call.reject("Timed out while waiting for a mesh proxy connection")
+        }
+    }
+
+    private func flushPendingProxyOperations() {
+        let operations = pendingProxyOperations
+        pendingProxyOperations.removeAll()
+        isWaitingForProxyConnection = false
+
+        operations.forEach { $0.execute() }
+    }
+
+    private func rejectPendingProxyOperations(_ message: String) {
+        let operations = pendingProxyOperations
+        pendingProxyOperations.removeAll()
+        isWaitingForProxyConnection = false
+
+        operations.forEach { $0.call.reject(message) }
+    }
+
     private func exportCurrentNetworkAsJSONObject() throws -> Any {
-        let data = meshNetworkManager.export()
+        let data = try meshNetworkManager.export()
         return try JSONSerialization.jsonObject(with: data, options: [])
     }
+
+    // MARK: - Plugin methods
 
     @objc func reloadScanMeshDevices(_ call: CAPPluginCall) {
         DeviceRepository.shared.clearDevices()
@@ -153,6 +218,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
                     "uuid": uuidString,
                     "unicastAddress": node.primaryUnicastAddress,
                 ])
+
             case .failure(let error):
                 print("Provisioning failed with error: \(error)")
                 call.resolve([
@@ -238,20 +304,29 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         let message = ConfigAppKeyAdd(applicationKey: applicationKey)
+        let targetAddress = UInt16(unicastAddress)
 
-        do {
-            PluginCallManager.shared.addConfigPluginCall(CONFIG_APPKEY_ADD, UInt16(unicastAddress), call)
-            try meshNetworkManager.send(message, to: UInt16(unicastAddress))
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
 
-            if !acknowledgement {
-                call.resolve()
+            do {
+                PluginCallManager.shared.addConfigPluginCall(
+                    CONFIG_APPKEY_ADD,
+                    targetAddress,
+                    call
+                )
+
+                try self.meshNetworkManager.send(message, to: targetAddress)
+
+                if !acknowledgement {
+                    call.resolve()
+                }
+            } catch {
+                call.reject("Failed to add application key to node: \(error.localizedDescription)")
             }
-        } catch {
-            call.reject("Failed to add application key to node: \(error.localizedDescription)")
         }
     }
 
-    /// Create a brand-new mesh network and return it to JS (also persisted & connected).
     @objc func initMeshNetwork(_ call: CAPPluginCall) {
         guard let networkName = call.getString("networkName") else {
             call.reject("networkName is required")
@@ -269,7 +344,6 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
 
         _ = meshNetworkManager.createNewMeshNetwork(withName: networkName, by: provisioner)
 
-        // Local node + save + connection
         setupLocalNode()
         _ = meshNetworkManager.save()
         setupConnection()
@@ -282,24 +356,20 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    /// Import a mesh network JSON from JS (e.g. one obtained via export or nRF Mesh app).
-    ///
-    /// Expected TS side:
-    ///   BluetoothMesh.importMeshNetwork({ meshNetwork: exportedObject })
     @objc func importMeshNetwork(_ call: CAPPluginCall) {
-        guard let meshNetworkObject = call.getObject("meshNetwork") else {
+        guard let meshNetwork = call.getString("meshNetwork") else {
             call.reject("meshNetwork is required")
             return
         }
 
         do {
-            let data = try JSONSerialization.data(withJSONObject: meshNetworkObject, options: [])
+            guard let data = meshNetwork.data(using: .utf8) else {
+                call.reject("Failed to encode meshNetwork as UTF-8")
+                return
+            }
 
-            // Replace current network in manager
-            _ = try meshNetworkManager.`import`(from: data)
+            _ = try meshNetworkManager.import(from: data)
 
-            // Rebuild local node + save + connection
-            setupLocalNode()
             _ = meshNetworkManager.save()
             setupConnection()
 
@@ -324,6 +394,37 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     func sendNotification(event: String, data: PluginCallResultData? = nil) {
-        notifyListeners(event, data: data ?? PluginCallResultData())
+        let payload = data ?? PluginCallResultData()
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            print("BluetoothMeshPlugin: notifyListeners event=\(event), payload=\(payload)")
+            self.notifyListeners(event, data: payload, retainUntilConsumed: true)
+        }
+    }
+}
+
+// MARK: - BearerDelegate
+
+extension BluetoothMeshPlugin: BearerDelegate {
+    public func bearerDidOpen(_ bearer: Bearer) {
+        print("BluetoothMeshPlugin: proxy bearer opened")
+        flushPendingProxyOperations()
+    }
+
+    public func bearer(_ bearer: Bearer, didClose error: Error?) {
+        if let error = error {
+            print("BluetoothMeshPlugin: proxy bearer closed with error: \(error.localizedDescription)")
+            rejectPendingProxyOperations("Mesh proxy connection closed: \(error.localizedDescription)")
+        } else {
+            print("BluetoothMeshPlugin: proxy bearer closed")
+            rejectPendingProxyOperations("Mesh proxy connection closed")
+        }
+    }
+}
+
+extension MeshNetworkManager {
+    static var instance: MeshNetworkManager {
+        BluetoothMeshPlugin.sharedMeshNetworkManager
     }
 }

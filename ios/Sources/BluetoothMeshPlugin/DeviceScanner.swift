@@ -1,10 +1,3 @@
-//
-//  DeviceScanner.swift
-//  Pods
-//
-//  Created by LE BRIS Loris on 23/10/2025.
-//
-
 import Capacitor
 import CoreBluetooth
 import Foundation
@@ -18,19 +11,17 @@ class DeviceScanner: NSObject {
 
     override init() {
         super.init()
-        self.centralManager = CBCentralManager(
-            delegate: self,
-            queue: .main,
-            options: [CBCentralManagerOptionShowPowerAlertKey: true]
-        )
+        self.centralManager = CBCentralManager(delegate: self, queue: .main)
     }
 
     public func startScan() {
         print("Central state: \(centralManager.state) / auth: \(CBCentralManager.authorization)")
+
         guard centralManager.state == .poweredOn else {
             print("Bluetooth is not powered on (state=\(centralManager.state)).")
             return
         }
+
         guard CBCentralManager.authorization == .allowedAlways else {
             print("Bluetooth permission not granted (authorization=\(CBCentralManager.authorization)).")
             return
@@ -40,6 +31,10 @@ class DeviceScanner: NSObject {
             withServices: [MeshProvisioningService.uuid, MeshProxyService.uuid],
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: true]
         )
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
+            self?.stopScan()
+        }
     }
 
     public func stopScan() {
@@ -48,10 +43,11 @@ class DeviceScanner: NSObject {
     }
 }
 
-// MARK: - CBCentralManagerDelegate
 extension DeviceScanner: CBCentralManagerDelegate {
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        print("Central Manager did update state: \(central.state.rawValue), auth: \(CBCentralManager.authorization.rawValue)")
+        print(
+            "Central Manager did update state: \(central.state.rawValue), auth: \(CBCentralManager.authorization.rawValue)"
+        )
 
         switch central.state {
         case .poweredOn:
