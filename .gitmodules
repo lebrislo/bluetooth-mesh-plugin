@@ -1,3 +1,6 @@
 [submodule "IOS-nRF-Mesh-Library"]
 	path = IOS-nRF-Mesh-Library
 	url = git@github.com:scheiber-sa/IOS-nRF-Mesh-Library.git
+[submodule "Android-nRF-Mesh-Library"]
+	path = Android-nRF-Mesh-Library
+	url = git@github.com:scheiber-sa/Android-nRF-Mesh-Library.git
