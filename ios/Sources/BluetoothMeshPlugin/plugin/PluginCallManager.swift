@@ -29,7 +29,7 @@ public class PluginCallManager {
 
     public func resolveSigPluginCall(_ response: RoutedMeshMessage) {
         let callResponse = SigPluginCall.generateSigPluginCallResponse(response)
-        
+
         print("\(pluginCalls.count) plugin calls before.")
 
         let index = pluginCalls.firstIndex { call in
@@ -41,7 +41,7 @@ public class PluginCallManager {
             pluginCalls.remove(at: index)
             sigCall.resolve(callResponse)
         }
-        
+
         print("\(pluginCalls.count) plugin calls after.")
 
         NotificationManager.shared.sendNotification(
@@ -143,9 +143,9 @@ extension PluginCallManager: MeshNetworkDelegate {
             break
         }
 
-        //        if message is ConfigNodeResetStatus {
-        //            NodesOnlineStateManager.shared.removeNode(source)
-        //        }
+        if message is ConfigNodeResetStatus {
+            NodesOnlineStateManager.shared.removeNode(unicastAddress: source)
+        }
     }
 }
 

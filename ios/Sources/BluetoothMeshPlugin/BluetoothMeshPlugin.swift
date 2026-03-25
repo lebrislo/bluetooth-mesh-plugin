@@ -10,6 +10,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "BluetoothMesh"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "reloadScanMeshDevices", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getNodesOnlineStates", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "provisionDevice", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "createApplicationKey", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "removeApplicationKey", returnType: CAPPluginReturnPromise),
@@ -58,6 +59,10 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         } catch {
             print("BluetoothMeshPlugin: failed to load mesh network: \(error)")
         }
+
+        self.setupNodeOnlineStateMonitoring()
+        NodesOnlineStateManager.shared.resetStatus()
+        NodesOnlineStateManager.shared.startMonitoring()
     }
 
     // MARK: - Private helpers
@@ -113,6 +118,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         BluetoothMeshPlugin.connection?.close()
 
         meshNetworkManager.delegate = PluginCallManager.shared
+        meshNetworkManager.heartbeatDelegate = NodesOnlineStateManager.shared
 
         let connection = NetworkConnection(to: network)
         connection.dataDelegate = meshNetworkManager
@@ -194,6 +200,12 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve()
     }
 
+    @objc func getNodesOnlineStates(_ call: CAPPluginCall) {
+        let nodesOnlineState = NodesOnlineStateManager.shared.getNodesOnlineStates()
+
+        return call.resolve(nodesOnlineState)
+    }
+
     @objc func provisionDevice(_ call: CAPPluginCall) {
         guard let uuidString = call.getString("uuid") else {
             call.reject("UUID is required")
@@ -213,6 +225,8 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         provisioningController.openProvisioningBearer(onlyBearer) { result in
             switch result {
             case .success(let node):
+                /* Add the newly provisioned node to the online state manager so that its state can be tracked and emitted to JS */
+                NodesOnlineStateManager.shared.addNode(unicastAddress: node.primaryUnicastAddress)
                 call.resolve([
                     "provisioningComplete": true,
                     "uuid": uuidString,
@@ -373,9 +387,20 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
             _ = meshNetworkManager.save()
             setupConnection()
 
+            self.setupNodeOnlineStateMonitoring()
+
             call.resolve()
         } catch {
             call.reject("Failed to import mesh network: \(error.localizedDescription)")
+        }
+    }
+
+    private func setupNodeOnlineStateMonitoring() {
+        NodesOnlineStateManager.shared.clearNodes()
+        meshNetworkManager.meshNetwork?.nodes.forEach { node in
+            if node.uuid != meshNetworkManager.meshNetwork?.localProvisioner?.uuid {
+                NodesOnlineStateManager.shared.addNode(unicastAddress: node.primaryUnicastAddress)
+            }
         }
     }
 
