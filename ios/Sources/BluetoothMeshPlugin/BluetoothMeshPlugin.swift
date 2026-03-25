@@ -107,7 +107,8 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
             name: "Primary Element",
             location: .first,
             models: [
-                Model(sigModelId: .genericOnOffClientModelId, delegate: GenericOnOffClientDelegate())
+                Model(sigModelId: .genericOnOffClientModelId, delegate: GenericOnOffClientDelegate()),
+                Model(sigModelId: .genericPowerLevelClientModelId, delegate: GenericPowerLevelClientDelegate())
             ]
         )
         meshNetworkManager.localElements = [primaryElement]
