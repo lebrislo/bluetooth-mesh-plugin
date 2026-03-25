@@ -151,12 +151,12 @@ extension PluginCallManager: MeshNetworkDelegate {
 
 public struct RoutedMeshMessage {
     public let message: MeshMessage
-    public let src: Address
-    public let dst: MeshAddress
+    public let src: Int
+    public let dst: Int
 
     public init(message: MeshMessage, src: Address, dst: MeshAddress) {
         self.message = message
-        self.src = src
-        self.dst = dst
+        self.src = Int(src)
+        self.dst = Int(dst.address)
     }
 }

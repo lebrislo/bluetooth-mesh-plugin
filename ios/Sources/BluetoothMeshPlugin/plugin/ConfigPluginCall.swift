@@ -22,7 +22,7 @@ public class ConfigPluginCall: BasePluginCall {
     static func generateConfigPluginCallResponse(_ response: RoutedMeshMessage) -> PluginCallResultData {
         var result = PluginCallResultData()
         result["src"] = response.src
-        result["dst"] = response.dst.address
+        result["dst"] = response.dst
         result["opcode"] = response.message.opCode
 
         if let msg = response.message as? ConfigAppKeyStatus {

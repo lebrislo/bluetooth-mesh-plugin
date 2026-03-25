@@ -18,6 +18,10 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "initMeshNetwork", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "importMeshNetwork", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "exportMeshNetwork", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendGenericOnOffSet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendGenericOnOffGet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendGenericPowerLevelSet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendGenericPowerLevelGet", returnType: CAPPluginReturnPromise),
     ]
 
     public static var sharedMeshNetworkManager: MeshNetworkManager!
@@ -415,6 +419,196 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve(["meshNetwork": json])
         } catch {
             call.reject("Failed to serialize mesh network: \(error.localizedDescription)")
+        }
+    }
+
+    @objc func sendGenericOnOffSet(_ call: CAPPluginCall) {
+        guard let unicastAddress = call.getInt("unicastAddress") else {
+            call.reject("unicastAddress is required")
+            return
+        }
+        guard let appKeyIndex = call.getInt("appKeyIndex") else {
+            call.reject("appKeyIndex is required")
+            return
+        }
+        guard let onOff = call.getBool("onOff") else {
+            call.reject("onOff is required")
+            return
+        }
+        let acknowledgement = call.getBool("acknowledgement", false)
+
+        guard let network = meshNetworkManager.meshNetwork else {
+            call.reject("Mesh network not initialized")
+            return
+        }
+
+        guard let appKey = network.applicationKeys.first(where: { $0.index == UInt16(appKeyIndex) }) else {
+            call.reject("Application key with index \(appKeyIndex) not found")
+            return
+        }
+
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                PluginCallManager.shared.addSigPluginCall(
+                    GENERIC_ON_OFF_SET,
+                    UInt16(unicastAddress),
+                    call
+                )
+
+                // Send the Generic OnOff Set message to the target node
+                try self.meshNetworkManager
+                    .send(
+                        GenericOnOffSet(onOff),
+                        to: MeshAddress(UInt16(unicastAddress)),
+                        using: appKey
+                    )
+
+                if !acknowledgement {
+                    call.resolve()
+                }
+            } catch {
+                call.reject("Failed to send Generic OnOff Set message: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    @objc func sendGenericOnOffGet(_ call: CAPPluginCall) {
+        guard let unicastAddress = call.getInt("unicastAddress") else {
+            call.reject("unicastAddress is required")
+            return
+        }
+        guard let appKeyIndex = call.getInt("appKeyIndex") else {
+            call.reject("appKeyIndex is required")
+            return
+        }
+
+        guard let network = meshNetworkManager.meshNetwork else {
+            call.reject("Mesh network not initialized")
+            return
+        }
+
+        guard let appKey = network.applicationKeys.first(where: { $0.index == UInt16(appKeyIndex) }) else {
+            call.reject("Application key with index \(appKeyIndex) not found")
+            return
+        }
+
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                PluginCallManager.shared.addSigPluginCall(
+                    GENERIC_ON_OFF_GET,
+                    UInt16(unicastAddress),
+                    call
+                )
+
+                // Send the Generic OnOff Get message to the target address
+                try self.meshNetworkManager
+                    .send(
+                        GenericOnOffGet(),
+                        to: MeshAddress(UInt16(unicastAddress)),
+                        using: appKey
+                    )
+            } catch {
+                call.reject("Failed to send Generic OnOff Get message: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    @objc func sendGenericPowerLevelSet(_ call: CAPPluginCall) {
+        guard let unicastAddress = call.getInt("unicastAddress") else {
+            call.reject("unicastAddress is required")
+            return
+        }
+        guard let appKeyIndex = call.getInt("appKeyIndex") else {
+            call.reject("appKeyIndex is required")
+            return
+        }
+        guard let powerLevel = call.getInt("powerLevel") else {
+            call.reject("powerLevel is required")
+            return
+        }
+        let acknowledgement = call.getBool("acknowledgement", false)
+
+        guard let network = meshNetworkManager.meshNetwork else {
+            call.reject("Mesh network not initialized")
+            return
+        }
+
+        guard let appKey = network.applicationKeys.first(where: { $0.index == UInt16(appKeyIndex) }) else {
+            call.reject("Application key with index \(appKeyIndex) not found")
+            return
+        }
+
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                PluginCallManager.shared.addSigPluginCall(
+                    GENERIC_POWER_LEVEL_SET,
+                    UInt16(unicastAddress),
+                    call
+                )
+
+                // Send the Generic Power Level Set message to the target node
+                try self.meshNetworkManager
+                    .send(
+                        GenericPowerLevelSet(power: UInt16(powerLevel)),
+                        to: MeshAddress(UInt16(unicastAddress)),
+                        using: appKey
+                    )
+
+                if !acknowledgement {
+                    call.resolve()
+                }
+            } catch {
+                call.reject("Failed to send Generic Power Level Set message: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    @objc func sendGenericPowerLevelGet(_ call: CAPPluginCall) {
+        guard let unicastAddress = call.getInt("unicastAddress") else {
+            call.reject("unicastAddress is required")
+            return
+        }
+        guard let appKeyIndex = call.getInt("appKeyIndex") else {
+            call.reject("appKeyIndex is required")
+            return
+        }
+
+        guard let network = meshNetworkManager.meshNetwork else {
+            call.reject("Mesh network not initialized")
+            return
+        }
+
+        guard let appKey = network.applicationKeys.first(where: { $0.index == UInt16(appKeyIndex) }) else {
+            call.reject("Application key with index \(appKeyIndex) not found")
+            return
+        }
+
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                PluginCallManager.shared.addSigPluginCall(
+                    GENERIC_POWER_LEVEL_GET,
+                    UInt16(unicastAddress),
+                    call
+                )
+
+                // Send the Generic Power Level Get message to the target address
+                try self.meshNetworkManager
+                    .send(
+                        GenericPowerLevelGet(),
+                        to: MeshAddress(UInt16(unicastAddress)),
+                        using: appKey
+                    )
+            } catch {
+                call.reject("Failed to send Generic Power Level Get message: \(error.localizedDescription)")
+            }
         }
     }
 
