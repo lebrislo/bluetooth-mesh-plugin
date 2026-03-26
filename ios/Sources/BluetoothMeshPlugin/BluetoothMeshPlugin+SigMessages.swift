@@ -16,7 +16,7 @@ extension BluetoothMeshPlugin {
         let acknowledgement = call.getBool("acknowledgement", false)
 
         sendSigModelMessage(
-            meshOperation: GENERIC_ON_OFF_SET,
+            meshOperation: GenericOnOffSet.opCode,
             destination: destination,
             appKey: appKey,
             acknowledgement: acknowledgement,
@@ -41,7 +41,7 @@ extension BluetoothMeshPlugin {
         }
 
         sendSigModelMessage(
-            meshOperation: GENERIC_ON_OFF_GET,
+            meshOperation: GenericOnOffGet.opCode,
             destination: destination,
             appKey: appKey,
             acknowledgement: true,
@@ -69,7 +69,7 @@ extension BluetoothMeshPlugin {
         let acknowledgement = call.getBool("acknowledgement", false)
 
         sendSigModelMessage(
-            meshOperation: GENERIC_POWER_LEVEL_SET,
+            meshOperation: GenericPowerLevelSet.opCode,
             destination: destination,
             appKey: appKey,
             acknowledgement: acknowledgement,
@@ -94,7 +94,7 @@ extension BluetoothMeshPlugin {
         }
 
         sendSigModelMessage(
-            meshOperation: GENERIC_POWER_LEVEL_GET,
+            meshOperation: GenericPowerLevelGet.opCode,
             destination: destination,
             appKey: appKey,
             acknowledgement: true,
@@ -124,7 +124,7 @@ extension BluetoothMeshPlugin {
         let acknowledgement = call.getBool("acknowledgement", false)
 
         sendSigModelMessage(
-            meshOperation: LIGHT_HSL_SET,
+            meshOperation: LightHSLSet.opCode,
             destination: destination,
             appKey: appKey,
             acknowledgement: acknowledgement,
@@ -149,7 +149,7 @@ extension BluetoothMeshPlugin {
         }
 
         sendSigModelMessage(
-            meshOperation: LIGHT_HSL_GET,
+            meshOperation: LightHSLGet.opCode,
             destination: destination,
             appKey: appKey,
             acknowledgement: true,
@@ -164,10 +164,125 @@ extension BluetoothMeshPlugin {
             )
         }
     }
+
+    @objc func sendLightCtlSet(_ call: CAPPluginCall) {
+        guard
+            let destination = requiredUInt16("unicastAddress", in: call),
+            let appKey = requiredAppKey(in: call),
+            let lightness = requiredUInt16("lightness", in: call),
+            let temperature = requiredUInt16("temperature", in: call),
+            let deltaUv = requiredInt16("deltaUv", in: call)
+        else {
+            return
+        }
+
+        let acknowledgement = call.getBool("acknowledgement", false)
+
+        sendSigModelMessage(
+            meshOperation: LightCTLSet.opCode,
+            destination: destination,
+            appKey: appKey,
+            acknowledgement: acknowledgement,
+            failureDescription: "Light HSL Set",
+            call: call
+        ) {
+            [weak self]
+            destination,
+            appKey in
+            guard let self = self else { return }
+            try self.meshNetworkManager.send(
+                LightCTLSet(lightness: lightness, temperature: temperature, deltaUV: deltaUv),
+                to: MeshAddress(destination),
+                using: appKey
+            )
+        }
+    }
+
+    @objc func sendLightCtlGet(_ call: CAPPluginCall) {
+        guard
+            let destination = requiredUInt16("unicastAddress", in: call),
+            let appKey = requiredAppKey(in: call)
+        else {
+            return
+        }
+
+        sendSigModelMessage(
+            meshOperation: LightCTLGet.opCode,
+            destination: destination,
+            appKey: appKey,
+            acknowledgement: true,
+            failureDescription: "Light CTL Get",
+            call: call
+        ) { [weak self] destination, appKey in
+            guard let self = self else { return }
+            try self.meshNetworkManager.send(
+                LightCTLGet(),
+                to: MeshAddress(destination),
+                using: appKey
+            )
+        }
+    }
+
+    @objc func sendLightCtlTemperatureRangeSet(_ call: CAPPluginCall) {
+        guard
+            let destination = requiredUInt16("unicastAddress", in: call),
+            let appKey = requiredAppKey(in: call),
+            let rangeMin = requiredUInt16("rangeMin", in: call),
+            let rangeMax = requiredUInt16("rangeMax", in: call)
+        else {
+            return
+        }
+
+        let acknowledgement = call.getBool("acknowledgement", false)
+
+        sendSigModelMessage(
+            meshOperation: LightCTLTemperatureRangeSet.opCode,
+            destination: destination,
+            appKey: appKey,
+            acknowledgement: acknowledgement,
+            failureDescription: "Light HSL Set",
+            call: call
+        ) {
+            [weak self]
+            destination,
+            appKey in
+            guard let self = self else { return }
+            try self.meshNetworkManager.send(
+                LightCTLTemperatureRangeSet(rangeMin...rangeMax),
+                to: MeshAddress(destination),
+                using: appKey
+            )
+        }
+    }
+
+    @objc func sendLightCtlTemperatureRangeGet(_ call: CAPPluginCall) {
+        guard
+            let destination = requiredUInt16("unicastAddress", in: call),
+            let appKey = requiredAppKey(in: call)
+        else {
+            return
+        }
+
+        sendSigModelMessage(
+            meshOperation: LightCTLTemperatureRangeGet.opCode,
+            destination: destination,
+            appKey: appKey,
+            acknowledgement: true,
+            failureDescription: "Light CTL Temperature Range Get",
+            call: call
+        ) { [weak self] destination, appKey in
+            guard let self = self else { return }
+            try self.meshNetworkManager.send(
+                LightCTLTemperatureRangeGet(),
+                to: MeshAddress(destination),
+                using: appKey
+            )
+        }
+    }
 }
 
-private extension BluetoothMeshPlugin {
-    func requiredUInt16(_ key: String, in call: CAPPluginCall) -> UInt16? {
+extension BluetoothMeshPlugin {
+    fileprivate func requiredUInt16(_ key: String, in call: CAPPluginCall) -> UInt16? {
         guard let value = call.getInt(key) else {
             call.reject("\(key) is required")
             return nil
@@ -175,7 +290,15 @@ private extension BluetoothMeshPlugin {
         return UInt16(value)
     }
 
-    func requiredBool(_ key: String, in call: CAPPluginCall) -> Bool? {
+    fileprivate func requiredInt16(_ key: String, in call: CAPPluginCall) -> Int16? {
+        guard let value = call.getInt(key) else {
+            call.reject("\(key) is required")
+            return nil
+        }
+        return Int16(value)
+    }
+
+    fileprivate func requiredBool(_ key: String, in call: CAPPluginCall) -> Bool? {
         guard let value = call.getBool(key) else {
             call.reject("\(key) is required")
             return nil
@@ -183,7 +306,7 @@ private extension BluetoothMeshPlugin {
         return value
     }
 
-    func requiredAppKey(in call: CAPPluginCall) -> ApplicationKey? {
+    fileprivate func requiredAppKey(in call: CAPPluginCall) -> ApplicationKey? {
         guard let appKeyIndex = call.getInt("appKeyIndex") else {
             call.reject("appKeyIndex is required")
             return nil
@@ -202,7 +325,7 @@ private extension BluetoothMeshPlugin {
         return appKey
     }
 
-    func sendSigModelMessage(
+    fileprivate func sendSigModelMessage(
         meshOperation: UInt32,
         destination: UInt16,
         appKey: ApplicationKey,
@@ -214,6 +337,7 @@ private extension BluetoothMeshPlugin {
         ensureProxyConnection(for: call) {
             do {
                 PluginCallManager.shared.addSigPluginCall(meshOperation, destination, call)
+                print("send \(failureDescription)")
                 try send(destination, appKey)
 
                 if !acknowledgement {

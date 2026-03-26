@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import NordicMesh
 
 final class OperationPairs {
     /// Returns the status operation code for a given configuration operation code.
@@ -14,17 +15,17 @@ final class OperationPairs {
     /// - Returns: The corresponding status operation code, or 0 if none is defined.
     static func getConfigOperationPair(_ operationCode: UInt32) -> UInt32 {
         switch operationCode {
-        case CONFIG_APPKEY_ADD,
-            CONFIG_MODEL_APP_BIND,
-            CONFIG_APPKEY_UPDATE,
-            CONFIG_APPKEY_DELETE:
-            return CONFIG_APPKEY_STATUS
+        case ConfigAppKeyAdd.opCode,
+            ConfigModelAppBind.opCode,
+            ConfigAppKeyUpdate.opCode,
+            ConfigAppKeyDelete.opCode:
+            return ConfigAppKeyStatus.opCode
 
-        case CONFIG_COMPOSITION_DATA_GET:
-            return CONFIG_COMPOSITION_DATA_STATUS
+        case ConfigCompositionDataGet.opCode:
+            return ConfigCompositionDataStatus.opCode
 
-        case CONFIG_NODE_RESET:
-            return CONFIG_NODE_RESET_STATUS
+        case ConfigNodeReset.opCode:
+            return ConfigNodeResetStatus.opCode
 
         default:
             return 0
@@ -33,39 +34,39 @@ final class OperationPairs {
 
     static func getSigOperationPair(_ operationCode: UInt32) -> UInt32 {
         switch operationCode {
-        case GENERIC_ON_OFF_GET,
-            GENERIC_ON_OFF_SET,
-            GENERIC_ON_OFF_SET_UNACKNOWLEDGED:
-            return GENERIC_ON_OFF_STATUS
+        case GenericOnOffGet.opCode,
+            GenericOnOffSet.opCode,
+            GenericOnOffSetUnacknowledged.opCode:
+            return GenericOnOffStatus.opCode
 
-        case GENERIC_LEVEL_GET,
-            GENERIC_LEVEL_SET,
-            GENERIC_LEVEL_SET_UNACKNOWLEDGED:
-            // Same as your Kotlin: uses GENERIC_POWER_LEVEL_STATUS
-            return GENERIC_POWER_LEVEL_STATUS
+        case GenericLevelGet.opCode,
+            GenericLevelSet.opCode,
+            GenericLevelSetUnacknowledged.opCode:
+            // Same as your Kotlin: uses GenericPowerLevelStatus opcode.
+            return GenericPowerLevelStatus.opCode
 
-        case GENERIC_POWER_LEVEL_GET,
-            GENERIC_POWER_LEVEL_SET,
-            GENERIC_POWER_LEVEL_SET_UNACKNOWLEDGED:
-            return GENERIC_POWER_LEVEL_STATUS
+        case GenericPowerLevelGet.opCode,
+            GenericPowerLevelSet.opCode,
+            GenericPowerLevelSetUnacknowledged.opCode:
+            return GenericPowerLevelStatus.opCode
 
-        case LIGHT_HSL_GET,
-            LIGHT_HSL_SET,
-            LIGHT_HSL_SET_UNACKNOWLEDGED:
-            return LIGHT_HSL_STATUS
+        case LightHSLGet.opCode,
+            LightHSLSet.opCode,
+            LightHSLSetUnacknowledged.opCode:
+            return LightHSLStatus.opCode
 
-        case LIGHT_CTL_GET,
-            LIGHT_CTL_SET,
-            LIGHT_CTL_SET_UNACKNOWLEDGED:
-            return LIGHT_CTL_STATUS
+        case LightCTLGet.opCode,
+            LightCTLSet.opCode,
+            LightCTLSetUnacknowledged.opCode:
+            return LightCTLStatus.opCode
 
-        case LIGHT_CTL_TEMPERATURE_RANGE_GET,
-            LIGHT_CTL_TEMPERATURE_RANGE_SET,
-            LIGHT_CTL_TEMPERATURE_RANGE_SET_UNACKNOWLEDGED:
-            return LIGHT_CTL_TEMPERATURE_RANGE_STATUS
+        case LightCTLTemperatureRangeGet.opCode,
+            LightCTLTemperatureRangeSet.opCode,
+            LightCTLTemperatureRangeSetUnacknowledged.opCode:
+            return LightCTLTemperatureRangeStatus.opCode
 
-        case HEALTH_FAULT_GET:
-            return HEALTH_FAULT_STATUS
+        case HealthFaultGet.opCode:
+            return HealthFaultStatus.opCode
 
         default:
             return 0

@@ -86,7 +86,7 @@ extension BluetoothMeshPlugin {
 
             do {
                 PluginCallManager.shared.addConfigPluginCall(
-                    CONFIG_APPKEY_ADD,
+                    ConfigAppKeyAdd.opCode,
                     targetAddress,
                     call
                 )
