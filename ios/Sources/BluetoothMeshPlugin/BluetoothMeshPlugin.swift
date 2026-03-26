@@ -22,6 +22,8 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "sendGenericOnOffGet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendGenericPowerLevelSet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendGenericPowerLevelGet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendLightHslSet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendLightHslGet", returnType: CAPPluginReturnPromise),
     ]
 
     public static var sharedMeshNetworkManager: MeshNetworkManager!
@@ -108,7 +110,8 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
             location: .first,
             models: [
                 Model(sigModelId: .genericOnOffClientModelId, delegate: GenericOnOffClientDelegate()),
-                Model(sigModelId: .genericPowerLevelClientModelId, delegate: GenericPowerLevelClientDelegate())
+                Model(sigModelId: .genericPowerLevelClientModelId, delegate: GenericPowerLevelClientDelegate()),
+                Model(sigModelId: .lightHSLClientModelId, delegate: LightHSLClientDelegate()),
             ]
         )
         meshNetworkManager.localElements = [primaryElement]
@@ -517,7 +520,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
             }
         }
     }
-    
+
     @objc func sendGenericPowerLevelSet(_ call: CAPPluginCall) {
         guard let unicastAddress = call.getInt("unicastAddress") else {
             call.reject("unicastAddress is required")
@@ -569,7 +572,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
             }
         }
     }
-    
+
     @objc func sendGenericPowerLevelGet(_ call: CAPPluginCall) {
         guard let unicastAddress = call.getInt("unicastAddress") else {
             call.reject("unicastAddress is required")
@@ -609,6 +612,109 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
                     )
             } catch {
                 call.reject("Failed to send Generic Power Level Get message: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    @objc func sendLightHslSet(_ call: CAPPluginCall) {
+        guard let unicastAddress = call.getInt("unicastAddress") else {
+            call.reject("unicastAddress is required")
+            return
+        }
+        guard let appKeyIndex = call.getInt("appKeyIndex") else {
+            call.reject("appKeyIndex is required")
+            return
+        }
+        guard let hue = call.getInt("hue") else {
+            call.reject("hue is required")
+            return
+        }
+        guard let saturation = call.getInt("saturation") else {
+            call.reject("saturation is required")
+            return
+        }
+        guard let lightness = call.getInt("lightness") else {
+            call.reject("lightness is required")
+            return
+        }
+        let acknowledgement = call.getBool("acknowledgement", false)
+
+        guard let network = meshNetworkManager.meshNetwork else {
+            call.reject("Mesh network not initialized")
+            return
+        }
+
+        guard let appKey = network.applicationKeys.first(where: { $0.index == UInt16(appKeyIndex) }) else {
+            call.reject("Application key with index \(appKeyIndex) not found")
+            return
+        }
+
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                PluginCallManager.shared.addSigPluginCall(
+                    LIGHT_HSL_SET,
+                    UInt16(unicastAddress),
+                    call
+                )
+
+                // Send the Generic Power Level Set message to the target node
+                try self.meshNetworkManager
+                    .send(
+                        LightHSLSet(lightness: UInt16(lightness), hue: UInt16(hue), saturation: UInt16(saturation)),
+                        to: MeshAddress(UInt16(unicastAddress)),
+                        using: appKey
+                    )
+
+                if !acknowledgement {
+                    call.resolve()
+                }
+            } catch {
+                call.reject("Failed to send Light HSL Set message: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    @objc func sendLightHslGet(_ call: CAPPluginCall) {
+        guard let unicastAddress = call.getInt("unicastAddress") else {
+            call.reject("unicastAddress is required")
+            return
+        }
+        guard let appKeyIndex = call.getInt("appKeyIndex") else {
+            call.reject("appKeyIndex is required")
+            return
+        }
+
+        guard let network = meshNetworkManager.meshNetwork else {
+            call.reject("Mesh network not initialized")
+            return
+        }
+
+        guard let appKey = network.applicationKeys.first(where: { $0.index == UInt16(appKeyIndex) }) else {
+            call.reject("Application key with index \(appKeyIndex) not found")
+            return
+        }
+
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                PluginCallManager.shared.addSigPluginCall(
+                    LIGHT_HSL_GET,
+                    UInt16(unicastAddress),
+                    call
+                )
+
+                // Send the Generic Power Level Get message to the target address
+                try self.meshNetworkManager
+                    .send(
+                        LightHSLGet(),
+                        to: MeshAddress(UInt16(unicastAddress)),
+                        using: appKey
+                    )
+            } catch {
+                call.reject("Failed to send Light HSL Get message: \(error.localizedDescription)")
             }
         }
     }

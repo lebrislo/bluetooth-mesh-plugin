@@ -30,8 +30,6 @@ public class PluginCallManager {
     public func resolveSigPluginCall(_ response: RoutedMeshMessage) {
         let callResponse = SigPluginCall.generateSigPluginCallResponse(response)
 
-        print("\(pluginCalls.count) plugin calls before.")
-
         let index = pluginCalls.firstIndex { call in
             guard let c = call as? SigPluginCall else { return false }
             return c.meshOperationCallback == response.message.opCode && c.meshAddress == response.src
@@ -41,8 +39,6 @@ public class PluginCallManager {
             pluginCalls.remove(at: index)
             sigCall.resolve(callResponse)
         }
-
-        print("\(pluginCalls.count) plugin calls after.")
 
         NotificationManager.shared.sendNotification(
             event: "meshModelMessageEvent",
