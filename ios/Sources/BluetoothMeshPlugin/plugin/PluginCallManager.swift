@@ -131,7 +131,7 @@ extension PluginCallManager: MeshNetworkDelegate {
             PluginCallManager.shared.resolveSigPluginCall(routedMessage)
             break
 
-        case is VendorResponse:
+        case is VendorResponse, is UnknownMessage:
             PluginCallManager.shared.resolveVendorPluginCall(routedMessage)
             break
 

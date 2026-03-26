@@ -37,7 +37,7 @@ public class VendorPluginCall: BasePluginCall {
         result["dst"] = response.dst
         result["opcode"] = response.message.opCode
         result["vendorModelId"] = (response.message as? VendorResponse)?.companyIdentifier
-        result["data"] = response.message.parameters
+        result["data"] = response.message.parameters?.map(Int.init) ?? []
         return result
     }
 }
