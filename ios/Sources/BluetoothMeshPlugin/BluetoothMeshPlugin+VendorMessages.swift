@@ -117,6 +117,43 @@ private struct RuntimeAckVendorMessage: AcknowledgedVendorMessage {
 }
 
 extension BluetoothMeshPlugin {
+    private func extractPayloadData(from call: CAPPluginCall) -> Data? {
+        // Case 1: payload arrives as a plain JS array / number[]
+        if let arr = call.getArray("payload", Int.self) {
+            return Data(arr.map { UInt8($0 & 0xFF) })
+        }
+
+        // Case 2: payload arrives as NSArray of NSNumber
+        if let arr = call.getArray("payload") as? [NSNumber] {
+            return Data(arr.map { UInt8(truncating: $0) })
+        }
+
+        // Case 3: payload arrives as object like { "0": 1, "1": 2, "2": 255 }
+        if let obj = call.getObject("payload") {
+            let sortedKeys = obj.keys.sorted {
+                (Int($0) ?? Int.max) < (Int($1) ?? Int.max)
+            }
+
+            var bytes = [UInt8]()
+            bytes.reserveCapacity(sortedKeys.count)
+
+            for key in sortedKeys {
+                if let value = obj[key] as? Int {
+                    bytes.append(UInt8(value & 0xFF))
+                } else if let value = obj[key] as? NSNumber {
+                    bytes.append(UInt8(truncating: value))
+                } else {
+                    return nil
+                }
+            }
+
+            return Data(bytes)
+        }
+
+        // Case 4: absent payload = empty payload
+        return Data()
+    }
+
     @objc func sendVendorModelMessage(_ call: CAPPluginCall) {
         guard
             let destination = requiredUInt16("unicastAddress", in: call),
@@ -138,12 +175,10 @@ extension BluetoothMeshPlugin {
 
         let rawResponseOpcode = call.getInt("opPairCode")
 
-        let payloadData: Data = {
-            if let arr = call.getArray("payload") as? [Int] {
-                return Data(arr.map { UInt8($0 & 0xFF) })
-            }
-            return Data()
-        }()
+        guard let payloadData = extractPayloadData(from: call) else {
+            call.reject("Invalid payload format")
+            return
+        }
 
         ensureProxyConnection(for: call) {
             Task {

@@ -35,7 +35,6 @@ public class BasePluginCall {
     public func resolve(_ result: PluginCallResultData) {
         isResolved = true
         timer?.invalidate()
-        print("Resolving call \(String(describing: call.methodName)) with result: \(result)")
         call.resolve(result)
     }
 

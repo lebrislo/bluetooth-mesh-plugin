@@ -24,11 +24,19 @@ extension BluetoothMeshPlugin {
             call: call
         ) { [weak self] destination, appKey in
             guard let self = self else { return }
-            try self.meshNetworkManager.send(
-                GenericOnOffSet(onOff),
-                to: MeshAddress(destination),
-                using: appKey
-            )
+            if acknowledgement {
+                try self.meshNetworkManager.send(
+                    GenericOnOffSet(onOff),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            } else {
+                try self.meshNetworkManager.send(
+                    GenericOnOffSetUnacknowledged(onOff),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            }
         }
     }
 
@@ -77,11 +85,19 @@ extension BluetoothMeshPlugin {
             call: call
         ) { [weak self] destination, appKey in
             guard let self = self else { return }
-            try self.meshNetworkManager.send(
-                GenericPowerLevelSet(power: powerLevel),
-                to: MeshAddress(destination),
-                using: appKey
-            )
+            if acknowledgement {
+                try self.meshNetworkManager.send(
+                    GenericPowerLevelSet(power: powerLevel),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            } else {
+                try self.meshNetworkManager.send(
+                    GenericPowerLevelSetUnacknowledged(power: powerLevel),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            }
         }
     }
 
@@ -132,11 +148,19 @@ extension BluetoothMeshPlugin {
             call: call
         ) { [weak self] destination, appKey in
             guard let self = self else { return }
-            try self.meshNetworkManager.send(
-                LightHSLSet(lightness: lightness, hue: hue, saturation: saturation),
-                to: MeshAddress(destination),
-                using: appKey
-            )
+            if acknowledgement {
+                try self.meshNetworkManager.send(
+                    LightHSLSet(lightness: lightness, hue: hue, saturation: saturation),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            } else {
+                try self.meshNetworkManager.send(
+                    LightHSLSetUnacknowledged(lightness: lightness, hue: hue, saturation: saturation),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            }
         }
     }
 
@@ -190,11 +214,19 @@ extension BluetoothMeshPlugin {
             destination,
             appKey in
             guard let self = self else { return }
-            try self.meshNetworkManager.send(
-                LightCTLSet(lightness: lightness, temperature: temperature, deltaUV: deltaUv),
-                to: MeshAddress(destination),
-                using: appKey
-            )
+            if acknowledgement {
+                try self.meshNetworkManager.send(
+                    LightCTLSet(lightness: lightness, temperature: temperature, deltaUV: deltaUv),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            } else {
+                try self.meshNetworkManager.send(
+                    LightCTLSetUnacknowledged(lightness: lightness, temperature: temperature, deltaUV: deltaUv),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            }
         }
     }
 
@@ -247,11 +279,19 @@ extension BluetoothMeshPlugin {
             destination,
             appKey in
             guard let self = self else { return }
-            try self.meshNetworkManager.send(
-                LightCTLTemperatureRangeSet(rangeMin...rangeMax),
-                to: MeshAddress(destination),
-                using: appKey
-            )
+            if acknowledgement {
+                try self.meshNetworkManager.send(
+                    LightCTLTemperatureRangeSet(rangeMin...rangeMax),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            } else {
+                try self.meshNetworkManager.send(
+                    LightCTLTemperatureRangeSetUnacknowledged(rangeMin...rangeMax),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            }
         }
     }
 
@@ -293,7 +333,9 @@ extension BluetoothMeshPlugin {
     ) {
         ensureProxyConnection(for: call) {
             do {
-                PluginCallManager.shared.addSigPluginCall(meshOperation, destination, call)
+                if acknowledgement {
+                    PluginCallManager.shared.addSigPluginCall(meshOperation, destination, call)
+                }
                 try send(destination, appKey)
 
                 if !acknowledgement {

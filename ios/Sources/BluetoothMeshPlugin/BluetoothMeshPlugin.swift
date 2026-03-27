@@ -81,25 +81,25 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
     private func configureNetworkParameters() {
         meshNetworkManager.networkParameters = .basic { parameters in
             parameters.setDefaultTtl(5)
-//            parameters.discardIncompleteSegmentedMessages(after: 10.0)
-//            parameters.transmitSegmentAcknowledgmentMessage(
-//                usingSegmentReceptionInterval: 0.06,
-//                multipliedByMinimumDelayIncrement: 2.5
-//            )
-//            parameters.retransmitSegmentAcknowledgmentMessages(
-//                exactly: 1,
-//                timesWhenNumberOfSegmentsIsGreaterThan: 3
-//            )
-//            parameters.transmitSegments(withInterval: 0.06)
-//            parameters.retransmitUnacknowledgedSegmentsToUnicastAddress(
-//                atMost: 1,
-//                timesAndWithoutProgress: 1,
-//                timesWithRetransmissionInterval: 0.200,
-//                andIncrement: 2.5
-//            )
-//            parameters.retransmitAllSegmentsToGroupAddress(exactly: 1, timesWithInterval: 0.250)
-//            parameters.retransmitAcknowledgedMessage(after: 4.2)
-//            parameters.discardAcknowledgedMessages(after: 40.0)
+            parameters.discardIncompleteSegmentedMessages(after: 10.0)
+            parameters.transmitSegmentAcknowledgmentMessage(
+                usingSegmentReceptionInterval: 0.06,
+                multipliedByMinimumDelayIncrement: 2.5
+            )
+            parameters.retransmitSegmentAcknowledgmentMessages(
+                exactly: 1,
+                timesWhenNumberOfSegmentsIsGreaterThan: 3
+            )
+            parameters.transmitSegments(withInterval: 0.06)
+            parameters.retransmitUnacknowledgedSegmentsToUnicastAddress(
+                atMost: 1,
+                timesAndWithoutProgress: 1,
+                timesWithRetransmissionInterval: 0.200,
+                andIncrement: 2.5
+            )
+            parameters.retransmitAllSegmentsToGroupAddress(exactly: 1, timesWithInterval: 0.250)
+            parameters.retransmitAcknowledgedMessage(after: 4.2)
+            parameters.discardAcknowledgedMessages(after: 40.0)
         }
         meshNetworkManager.logger = MeshLogger()
     }
@@ -338,7 +338,6 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
 
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            print("BluetoothMeshPlugin: notifyListeners event=\(event), payload=\(payload)")
             self.notifyListeners(event, data: payload, retainUntilConsumed: true)
         }
     }
