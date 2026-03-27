@@ -9,11 +9,7 @@ import Foundation
 import NordicMesh
 
 final class OperationPairs {
-    /// Returns the status operation code for a given configuration operation code.
-    ///
-    /// - Parameter operationCode: The operation code.
-    /// - Returns: The corresponding status operation code, or 0 if none is defined.
-    static func getConfigOperationPair(_ operationCode: UInt32) -> UInt32 {
+    static func getMeshOperationPair(_ operationCode: UInt32) -> UInt32 {
         switch operationCode {
         case ConfigAppKeyAdd.opCode,
             ConfigModelAppBind.opCode,
@@ -26,14 +22,10 @@ final class OperationPairs {
 
         case ConfigNodeReset.opCode:
             return ConfigNodeResetStatus.opCode
-
-        default:
-            return 0
-        }
-    }
-
-    static func getSigOperationPair(_ operationCode: UInt32) -> UInt32 {
-        switch operationCode {
+            
+        case HealthFaultGet.opCode:
+            return HealthFaultStatus.opCode
+            
         case GenericOnOffGet.opCode,
             GenericOnOffSet.opCode,
             GenericOnOffSetUnacknowledged.opCode:
@@ -42,8 +34,7 @@ final class OperationPairs {
         case GenericLevelGet.opCode,
             GenericLevelSet.opCode,
             GenericLevelSetUnacknowledged.opCode:
-            // Same as your Kotlin: uses GenericPowerLevelStatus opcode.
-            return GenericPowerLevelStatus.opCode
+            return GenericLevelStatus.opCode
 
         case GenericPowerLevelGet.opCode,
             GenericPowerLevelSet.opCode,
@@ -64,9 +55,6 @@ final class OperationPairs {
             LightCTLTemperatureRangeSet.opCode,
             LightCTLTemperatureRangeSetUnacknowledged.opCode:
             return LightCTLTemperatureRangeStatus.opCode
-
-        case HealthFaultGet.opCode:
-            return HealthFaultStatus.opCode
 
         default:
             return 0

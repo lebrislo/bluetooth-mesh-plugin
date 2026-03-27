@@ -5,8 +5,8 @@
 //  Created by LE BRIS Loris on 22/10/2025.
 //
 
-import Foundation
 import Capacitor
+import Foundation
 import NordicMesh
 
 public class ConfigPluginCall: BasePluginCall {
@@ -33,6 +33,10 @@ public class ConfigPluginCall: BasePluginCall {
             result["data"] = configModelAppStatusResponse(msg)
         } else if let msg = response.message as? ConfigCompositionDataStatus {
             result["data"] = configCompositionDataStatusResponse(msg)
+        } else if let msg = response.message as? HealthFaultStatus {
+            result["data"] = healthFaultStatusResponse(msg)
+        } else if let msg = response.message as? HealthCurrentStatus {
+            result["data"] = healthCurrentStatusResponse(msg)
         } else {
             result["data"] = PluginCallResultData()
         }
@@ -62,36 +66,54 @@ public class ConfigPluginCall: BasePluginCall {
         return data
     }
 
-    private static func configCompositionDataStatusResponse(_ meshMessage: ConfigCompositionDataStatus) -> PluginCallResultData {
+    private static func configCompositionDataStatusResponse(_ meshMessage: ConfigCompositionDataStatus)
+        -> PluginCallResultData
+    {
         var data = PluginCallResultData()
-//        data["status"] = meshMessage
-//        data["companyIdentifier"] = meshMessage.companyIdentifier
-//        data["productIdentifier"] = meshMessage.productIdentifier
-//        data["versionIdentifier"] = meshMessage.versionIdentifier
-//        data["crpl"] = meshMessage.crpl
-//        data["features"] = meshMessage.features
-//        data["relayFeatureSupported"] = meshMessage.isRelayFeatureSupported
-//        data["proxyFeatureSupported"] = meshMessage.isProxyFeatureSupported
-//        data["friendFeatureSupported"] = meshMessage.isFriendFeatureSupported
-//        data["lowPowerFeatureSupported"] = meshMessage.isLowPowerFeatureSupported
-//
-//        var elements: JSArray = []
-//        for element in meshMessage.elements {
-//            var elementData = PluginCallResultData()
-//            elementData["locationDescriptor"] = element.value.locationDescriptor
-//            elementData["elementAddress"] = element.value.elementAddress
-//
-//            var models: JSArray = []
-//            for model in element.value.meshModels {
-//                var modelData: PluginCallResultData = [:]
-//                modelData["modelId"] = model.value.modelId
-//                modelData["modelName"] = model.value.modelName
-//                models.append(modelData)
-//            }
-//            elementData["models"] = models
-//            elements.append(elementData)
-//        }
-//        data["elements"] = elements
+        //        data["status"] = meshMessage
+        //        data["companyIdentifier"] = meshMessage.companyIdentifier
+        //        data["productIdentifier"] = meshMessage.productIdentifier
+        //        data["versionIdentifier"] = meshMessage.versionIdentifier
+        //        data["crpl"] = meshMessage.crpl
+        //        data["features"] = meshMessage.features
+        //        data["relayFeatureSupported"] = meshMessage.isRelayFeatureSupported
+        //        data["proxyFeatureSupported"] = meshMessage.isProxyFeatureSupported
+        //        data["friendFeatureSupported"] = meshMessage.isFriendFeatureSupported
+        //        data["lowPowerFeatureSupported"] = meshMessage.isLowPowerFeatureSupported
+        //
+        //        var elements: JSArray = []
+        //        for element in meshMessage.elements {
+        //            var elementData = PluginCallResultData()
+        //            elementData["locationDescriptor"] = element.value.locationDescriptor
+        //            elementData["elementAddress"] = element.value.elementAddress
+        //
+        //            var models: JSArray = []
+        //            for model in element.value.meshModels {
+        //                var modelData: PluginCallResultData = [:]
+        //                modelData["modelId"] = model.value.modelId
+        //                modelData["modelName"] = model.value.modelName
+        //                models.append(modelData)
+        //            }
+        //            elementData["models"] = models
+        //            elements.append(elementData)
+        //        }
+        //        data["elements"] = elements
+        return data
+    }
+
+    private static func healthFaultStatusResponse(_ msg: HealthFaultStatus) -> PluginCallResultData {
+        var data: PluginCallResultData = [:]
+        data["testId"] = msg.testId
+        data["companyId"] = msg.companyIdentifier
+        data["faults"] = msg.faults
+        return data
+    }
+
+    private static func healthCurrentStatusResponse(_ msg: HealthCurrentStatus) -> PluginCallResultData {
+        var data: PluginCallResultData = [:]
+        data["testId"] = msg.testId
+        data["companyId"] = msg.companyIdentifier
+        data["faults"] = msg.faults
         return data
     }
 }

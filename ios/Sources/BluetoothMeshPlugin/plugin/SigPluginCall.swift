@@ -37,10 +37,6 @@ public class SigPluginCall: BasePluginCall {
             result["data"] = lightCtlStatusResponse(msg)
         } else if let msg = response.message as? LightCTLTemperatureRangeStatus {
             result["data"] = lightCtlTemperatureRangeStatusResponse(msg)
-        } else if let msg = response.message as? HealthFaultStatus {
-            result["data"] = healthFaultStatusResponse(msg)
-        } else if let msg = response.message as? HealthCurrentStatus {
-            result["data"] = healthCurrentStatusResponse(msg)
         } else {
             result["data"] = PluginCallResultData()
         }
@@ -87,22 +83,6 @@ public class SigPluginCall: BasePluginCall {
         data["status"] = msg.status
         data["min"] = msg.min
         data["max"] = msg.max
-        return data
-    }
-
-    private static func healthFaultStatusResponse(_ msg: HealthFaultStatus) -> PluginCallResultData {
-        var data: PluginCallResultData = [:]
-        data["testId"] = msg.testId
-        data["companyId"] = msg.companyIdentifier
-        data["faults"] = msg.faults
-        return data
-    }
-
-    private static func healthCurrentStatusResponse(_ msg: HealthCurrentStatus) -> PluginCallResultData {
-        var data: PluginCallResultData = [:]
-        data["testId"] = msg.testId
-        data["companyId"] = msg.companyIdentifier
-        data["faults"] = msg.faults
         return data
     }
 }

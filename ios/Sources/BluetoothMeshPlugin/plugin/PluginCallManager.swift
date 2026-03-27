@@ -21,7 +21,7 @@ public class PluginCallManager {
     }
 
     public func addSigPluginCall(_ meshOperation: UInt32, _ meshAddress: UInt16, _ call: CAPPluginCall) {
-        let operationPair = OperationPairs.getSigOperationPair(meshOperation)
+        let operationPair = OperationPairs.getMeshOperationPair(meshOperation)
         pluginCalls.append(
             SigPluginCall(operationPair, meshAddress, call)
         )
@@ -47,7 +47,7 @@ public class PluginCallManager {
     }
 
     public func addConfigPluginCall(_ meshOperation: UInt32, _ meshAddress: UInt16, _ call: CAPPluginCall) {
-        let operationPair = OperationPairs.getConfigOperationPair(meshOperation)
+        let operationPair = OperationPairs.getMeshOperationPair(meshOperation)
         pluginCalls.append(
             ConfigPluginCall(operationPair, meshAddress, call)
         )
@@ -117,7 +117,9 @@ extension PluginCallManager: MeshNetworkDelegate {
         case is ConfigNodeResetStatus,
             is ConfigModelAppStatus,
             is ConfigAppKeyStatus,
-            is ConfigCompositionDataStatus:
+            is ConfigCompositionDataStatus,
+            is HealthFaultStatus,
+            is HealthCurrentStatus:
             PluginCallManager.shared.resolveConfigPluginCall(routedMessage)
             break
 
@@ -125,9 +127,7 @@ extension PluginCallManager: MeshNetworkDelegate {
             is GenericPowerLevelStatus,
             is LightHSLStatus,
             is LightCTLStatus,
-            is LightCTLTemperatureRangeStatus,
-            is HealthFaultStatus,
-            is HealthCurrentStatus:
+            is LightCTLTemperatureRangeStatus:
             PluginCallManager.shared.resolveSigPluginCall(routedMessage)
             break
 

@@ -101,4 +101,61 @@ extension BluetoothMeshPlugin {
             }
         }
     }
+
+    @objc func sendConfigHeartbeatPublicationSet(_ call: CAPPluginCall) {
+        guard let unicastAddress = call.getInt("unicastAddress") else {
+            call.reject("unicastAddress is required")
+            return
+        }
+        guard let destinationAddress = call.getInt("destinationAddress") else {
+            call.reject("destinationAddress is required")
+            return
+        }
+        guard let count = call.getInt("count") else {
+            call.reject("count is required")
+            return
+        }
+        guard let period = call.getInt("period") else {
+            call.reject("period is required")
+            return
+        }
+        guard let ttl = call.getInt("ttl") else {
+            call.reject("ttl is required")
+            return
+        }
+        guard let netKeyIndex = call.getInt("netKeyIndex") else {
+            call.reject("netKeyIndex is required")
+            return
+        }
+
+        call.resolve()
+    }
+
+    @objc func sendHealthFaultGet(_ call: CAPPluginCall) {
+        guard
+            let destination = requiredUInt16("unicastAddress", in: call),
+            let appKey = requiredAppKey(in: call),
+                let companyId = requiredUInt16("companyId", in: call)
+        else { return }
+        
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                PluginCallManager.shared.addConfigPluginCall(
+                    HealthFaultGet.opCode,
+                    destination,
+                    call
+                )
+
+                try self.meshNetworkManager.send(
+                    HealthFaultGet(for: companyId),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            } catch {
+                call.reject("Failed to add application key to node: \(error.localizedDescription)")
+            }
+        }
+    }
 }
