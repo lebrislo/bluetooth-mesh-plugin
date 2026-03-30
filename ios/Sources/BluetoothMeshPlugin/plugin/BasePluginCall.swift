@@ -12,34 +12,41 @@ public class BasePluginCall {
     let call: CAPPluginCall
     private let timeout: TimeInterval
     private var isResolved = false
-    private var timer: Timer?
+    private var timeoutWorkItem: DispatchWorkItem?
 
-    init(call: CAPPluginCall, timeout: TimeInterval = 10.0) {
+    init(call: CAPPluginCall, timeout: TimeInterval = 3.0) {
         self.call = call
         self.timeout = timeout
         self.startTimeout()
     }
 
     private func startTimeout() {
-        timer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { [weak self] _ in
+        let workItem = DispatchWorkItem { [weak self] in
             guard let self = self, !self.isResolved else { return }
             var rejectObject = PluginCallResultData()
             rejectObject["methodName"] = self.call.methodName
             for (key, value) in self.call.options {
-                rejectObject[key as! String] = value
+                guard let key = key as? String else { continue }
+                rejectObject[key] = value
             }
             self.reject(message: "Operation timed out", data: rejectObject)
         }
+        timeoutWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: workItem)
     }
 
     public func resolve(_ result: PluginCallResultData) {
+        guard !isResolved else { return }
         isResolved = true
-        timer?.invalidate()
+        timeoutWorkItem?.cancel()
         call.resolve(result)
+        PluginCallManager.shared.removePluginCall(self)
     }
 
     private func reject(message: String, data: PluginCallResultData? = nil) {
-        timer?.invalidate()
+        guard !isResolved else { return }
+        isResolved = true
+        timeoutWorkItem?.cancel()
         call.reject(message, nil, nil, data)
         PluginCallManager.shared.removePluginCall(self)
     }

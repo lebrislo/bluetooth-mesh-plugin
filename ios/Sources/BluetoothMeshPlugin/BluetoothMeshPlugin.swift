@@ -52,10 +52,10 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
     public override func load() {
         super.load()
 
-        print("BluetoothMeshPlugin.load called")
         NotificationManager.shared.setPlugin(self)
 
         meshNetworkManager = MeshNetworkManager()
+        meshNetworkManager.logger = MeshLogger()
         BluetoothMeshPlugin.sharedMeshNetworkManager = meshNetworkManager
 
         configureNetworkParameters()
@@ -103,7 +103,6 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
             parameters.retransmitAcknowledgedMessage(after: 4.2)
             parameters.discardAcknowledgedMessages(after: 40.0)
         }
-        meshNetworkManager.logger = MeshLogger()
     }
 
     private func setupLocalNode() {

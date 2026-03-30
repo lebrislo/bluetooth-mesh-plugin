@@ -120,7 +120,7 @@ extension PluginCallManager: MeshNetworkDelegate {
             is ConfigCompositionDataStatus,
             is HealthFaultStatus,
             is HealthCurrentStatus:
-            PluginCallManager.shared.resolveConfigPluginCall(routedMessage)
+            self.resolveConfigPluginCall(routedMessage)
             break
 
         case is GenericOnOffStatus,
@@ -128,11 +128,11 @@ extension PluginCallManager: MeshNetworkDelegate {
             is LightHSLStatus,
             is LightCTLStatus,
             is LightCTLTemperatureRangeStatus:
-            PluginCallManager.shared.resolveSigPluginCall(routedMessage)
+            self.resolveSigPluginCall(routedMessage)
             break
 
         case is VendorResponse, is UnknownMessage:
-            PluginCallManager.shared.resolveVendorPluginCall(routedMessage)
+            self.resolveVendorPluginCall(routedMessage)
             break
 
         default:
@@ -142,6 +142,16 @@ extension PluginCallManager: MeshNetworkDelegate {
         if message is ConfigNodeResetStatus {
             NodesOnlineStateManager.shared.removeNode(unicastAddress: source)
         }
+    }
+
+    public func meshNetworkManager(
+        _ manager: MeshNetworkManager,
+        failedToSendMessage message: MeshMessage,
+        from localElement: Element,
+        to destination: MeshAddress,
+        error: Error
+    ) {
+        print("Failed to send message \(message) from \(localElement) to \(destination): \(error)")
     }
 }
 
