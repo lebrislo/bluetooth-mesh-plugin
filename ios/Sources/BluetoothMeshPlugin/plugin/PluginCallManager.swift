@@ -87,7 +87,7 @@ public class PluginCallManager {
 
         let index = pluginCalls.firstIndex { call in
             guard let c = call as? VendorPluginCall else { return false }
-            return c.meshOperationCallback == response.message.opCode && c.meshAddress == response.src
+            return c.meshOperationCallback == response.message.opCode && (c.meshAddress == response.src || c.meshAddress == Address.allNodes)
         }
 
         if let index = index, let vendorCall = pluginCalls[index] as? VendorPluginCall {
