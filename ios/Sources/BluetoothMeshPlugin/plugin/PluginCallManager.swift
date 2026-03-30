@@ -49,19 +49,19 @@ public class PluginCallManager {
     public func addConfigPluginCall(_ meshOperation: UInt32, _ meshAddress: UInt16, _ call: CAPPluginCall) {
         let operationPair = OperationPairs.getMeshOperationPair(meshOperation)
         pluginCalls.append(
-            ConfigPluginCall(operationPair, meshAddress, call)
+            FoundationPluginCall(operationPair, meshAddress, call)
         )
     }
 
     public func resolveConfigPluginCall(_ response: RoutedMeshMessage) {
-        let callResponse = ConfigPluginCall.generateConfigPluginCallResponse(response)
+        let callResponse = FoundationPluginCall.generateFoundationPluginCallResponse(response)
 
         let index = pluginCalls.firstIndex { call in
-            guard let c = call as? ConfigPluginCall else { return false }
+            guard let c = call as? FoundationPluginCall else { return false }
             return c.meshOperationCallback == response.message.opCode && c.meshAddress == response.src
         }
 
-        if let index = index, let configCall = pluginCalls[index] as? ConfigPluginCall {
+        if let index = index, let configCall = pluginCalls[index] as? FoundationPluginCall {
             pluginCalls.remove(at: index)
             configCall.resolve(callResponse)
         }

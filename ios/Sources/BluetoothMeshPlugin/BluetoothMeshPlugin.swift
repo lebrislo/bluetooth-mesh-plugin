@@ -30,6 +30,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "sendLightCtlTemperatureRangeGet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendVendorModelMessage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "sendHealthFaultGet", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendHealthFaultClear", returnType: CAPPluginReturnPromise),
     ]
 
     public static var sharedMeshNetworkManager: MeshNetworkManager!

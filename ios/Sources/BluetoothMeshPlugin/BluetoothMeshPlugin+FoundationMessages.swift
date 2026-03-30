@@ -158,4 +158,32 @@ extension BluetoothMeshPlugin {
             }
         }
     }
+    
+    @objc func sendHealthFaultClear(_ call: CAPPluginCall) {
+        guard
+            let destination = requiredUInt16("unicastAddress", in: call),
+            let appKey = requiredAppKey(in: call),
+                let companyId = requiredUInt16("companyId", in: call)
+        else { return }
+        
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                PluginCallManager.shared.addConfigPluginCall(
+                    HealthFaultClear.opCode,
+                    destination,
+                    call
+                )
+
+                try self.meshNetworkManager.send(
+                    HealthFaultClear(for: companyId),
+                    to: MeshAddress(destination),
+                    using: appKey
+                )
+            } catch {
+                call.reject("Failed to add application key to node: \(error.localizedDescription)")
+            }
+        }
+    }
 }

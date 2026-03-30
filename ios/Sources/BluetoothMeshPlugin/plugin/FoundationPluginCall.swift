@@ -1,5 +1,5 @@
 //
-//  ConfigPluginCall.swift
+//  FoundationPluginCall.swift
 //  BluetoothMeshPlugin
 //
 //  Created by LE BRIS Loris on 22/10/2025.
@@ -9,7 +9,7 @@ import Capacitor
 import Foundation
 import NordicMesh
 
-public class ConfigPluginCall: BasePluginCall {
+public class FoundationPluginCall: BasePluginCall {
     let meshOperationCallback: UInt32
     let meshAddress: UInt16
 
@@ -19,7 +19,7 @@ public class ConfigPluginCall: BasePluginCall {
         super.init(call: call)
     }
 
-    static func generateConfigPluginCallResponse(_ response: RoutedMeshMessage) -> PluginCallResultData {
+    static func generateFoundationPluginCallResponse(_ response: RoutedMeshMessage) -> PluginCallResultData {
         var result = PluginCallResultData()
         result["src"] = response.src
         result["dst"] = response.dst
