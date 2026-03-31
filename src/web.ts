@@ -3,7 +3,6 @@ import { WebPlugin } from '@capacitor/core';
 import type { BluetoothConnectionStatus, BluetoothState, MeshNetworkObject, ModelMessageStatus, NodesOnlineStates, BluetoothMeshPlugin, Permissions, ProvisioningCapabilities, ProvisioningStatus, ScanMeshDevices, UnprovisionStatus } from './definitions';
 
 export class BluetoothMeshWeb extends WebPlugin implements BluetoothMeshPlugin {
-
   async isBluetoothEnabled(): Promise<BluetoothState> {
     console.log('isBluetoothEnabled');
     return { enabled: true };
@@ -85,6 +84,11 @@ export class BluetoothMeshWeb extends WebPlugin implements BluetoothMeshPlugin {
   async addApplicationKeyToNode(): Promise<ModelMessageStatus> {
     console.log('addApplicationKeyToNode');
     return { src: 1, dst: 2, opcode: 3, data: {} };
+  }
+
+  sendAppKeyGet(options: { unicastAddress: number; netKeyIndex: number; appKeyIndex: number; }): Promise<ModelMessageStatus> {
+    console.log('getApplicationKey', options);
+    return Promise.resolve({ src: 1, dst: 2, opcode: 3, data: {} });
   }
 
   async bindApplicationKeyToModel(): Promise<ModelMessageStatus> {

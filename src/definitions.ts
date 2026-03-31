@@ -120,6 +120,7 @@ export interface BluetoothMeshPlugin {
   createApplicationKey(): Promise<ModelMessageStatus>;
   removeApplicationKey(options: { appKeyIndex: number }): Promise<ModelMessageStatus>;
   addApplicationKeyToNode(options: ModelMessage): Promise<ModelMessageStatus>;
+  sendAppKeyGet(options: { unicastAddress: number, netKeyIndex: number }): Promise<ModelMessageStatus>;
   bindApplicationKeyToModel(options: ModelMessage & {
     modelId: number;
   }): Promise<ModelMessageStatus>;

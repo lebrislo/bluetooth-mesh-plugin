@@ -15,6 +15,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "createApplicationKey", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "removeApplicationKey", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "addApplicationKeyToNode", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sendAppKeyGet", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "initMeshNetwork", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "importMeshNetwork", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "exportMeshNetwork", returnType: CAPPluginReturnPromise),

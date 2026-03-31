@@ -31,6 +31,8 @@ public class FoundationPluginCall: BasePluginCall {
             result["data"] = configNodeResetStatusResponse(msg)
         } else if let msg = response.message as? ConfigModelAppStatus {
             result["data"] = configModelAppStatusResponse(msg)
+        }else if let msg = response.message as? ConfigAppKeyList {
+            result["data"] = configAppKeyListResponse(msg)
         } else if let msg = response.message as? ConfigCompositionDataStatus {
             result["data"] = configCompositionDataStatusResponse(msg)
         } else if let msg = response.message as? HealthFaultStatus {
@@ -48,6 +50,13 @@ public class FoundationPluginCall: BasePluginCall {
         data["status"] = meshMessage.status.rawValue
         data["netKeyIndex"] = meshMessage.networkKeyIndex
         data["appKeyIndex"] = meshMessage.applicationKeyIndex
+        return data
+    }
+    private static func configAppKeyListResponse(_ meshMessage: ConfigAppKeyList) -> PluginCallResultData {
+        var data = PluginCallResultData()
+        data["status"] = meshMessage.status.rawValue
+        data["netKeyIndex"] = meshMessage.networkKeyIndex
+        data["applicationKeyIndexes"] = meshMessage.applicationKeyIndexes
         return data
     }
 

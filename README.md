@@ -31,6 +31,7 @@ npx cap sync
 * [`createApplicationKey()`](#createapplicationkey)
 * [`removeApplicationKey(...)`](#removeapplicationkey)
 * [`addApplicationKeyToNode(...)`](#addapplicationkeytonode)
+* [`sendAppKeyGet(...)`](#sendappkeyget)
 * [`bindApplicationKeyToModel(...)`](#bindapplicationkeytomodel)
 * [`getCompositionData(...)`](#getcompositiondata)
 * [`sendGenericOnOffSet(...)`](#sendgenericonoffset)
@@ -275,6 +276,21 @@ addApplicationKeyToNode(options: ModelMessage) => Promise<ModelMessageStatus>
 | Param         | Type                                                  |
 | ------------- | ----------------------------------------------------- |
 | **`options`** | <code><a href="#modelmessage">ModelMessage</a></code> |
+
+**Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
+
+--------------------
+
+
+### sendAppKeyGet(...)
+
+```typescript
+sendAppKeyGet(options: { unicastAddress: number; netKeyIndex: number; }) => Promise<ModelMessageStatus>
+```
+
+| Param         | Type                                                          |
+| ------------- | ------------------------------------------------------------- |
+| **`options`** | <code>{ unicastAddress: number; netKeyIndex: number; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 

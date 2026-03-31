@@ -101,6 +101,41 @@ extension BluetoothMeshPlugin {
             }
         }
     }
+    
+    @objc func sendAppKeyGet(_ call: CAPPluginCall) {
+        
+        guard
+            let netKeyIndex = requiredUInt16("netKeyIndex", in: call),
+            let unicastAddress = call.getInt("unicastAddress")
+        else {
+            return call.reject("Missing required parameters: netKeyIndex, unicastAddress")
+        }
+        
+        guard let networkKey = meshNetworkManager.meshNetwork?.networkKeys.first(where: { $0.index == netKeyIndex })
+        else {
+            return call.reject("Network key with index \(netKeyIndex) not found")
+        }
+
+        let message = ConfigAppKeyGet(networkKey: networkKey)
+        let targetAddress = UInt16(unicastAddress)
+
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                PluginCallManager.shared.addConfigPluginCall(
+                    ConfigAppKeyGet.opCode,
+                    targetAddress,
+                    call
+                )
+
+                try self.meshNetworkManager.send(message, to: targetAddress)
+
+            } catch {
+                call.reject("Failed to get application key from node: \(error.localizedDescription)")
+            }
+        }
+    }
 
     @objc func sendConfigHeartbeatPublicationSet(_ call: CAPPluginCall) {
         guard let unicastAddress = call.getInt("unicastAddress") else {

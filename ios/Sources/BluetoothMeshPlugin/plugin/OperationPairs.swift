@@ -16,6 +16,9 @@ final class OperationPairs {
             ConfigAppKeyUpdate.opCode,
             ConfigAppKeyDelete.opCode:
             return ConfigAppKeyStatus.opCode
+            
+        case ConfigAppKeyGet.opCode:
+            return ConfigAppKeyList.opCode
 
         case ConfigCompositionDataGet.opCode:
             return ConfigCompositionDataStatus.opCode

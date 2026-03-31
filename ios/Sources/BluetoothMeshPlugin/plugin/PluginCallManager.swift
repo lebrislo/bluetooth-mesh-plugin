@@ -117,6 +117,7 @@ extension PluginCallManager: MeshNetworkDelegate {
         case is ConfigNodeResetStatus,
             is ConfigModelAppStatus,
             is ConfigAppKeyStatus,
+            is ConfigAppKeyList,
             is ConfigCompositionDataStatus,
             is HealthFaultStatus,
             is HealthCurrentStatus:
