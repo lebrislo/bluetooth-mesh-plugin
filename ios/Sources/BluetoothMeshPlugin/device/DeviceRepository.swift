@@ -54,6 +54,12 @@ final class DeviceRepository {
             devices.first(where: { $0.getMeshUUID() == uuidString })
         }
     }
+    
+    public func getPeripheral(deviceId: String) -> DiscoveredPeripheral? {
+        repositoryQueue.sync {
+            devices.first(where: { $0.peripheral.identifier.uuidString == deviceId })
+        }
+    }
 
     public func clearDevices() {
         repositoryQueue.async {
@@ -178,7 +184,8 @@ struct DiscoveredPeripheral {
 
     func getJSObject() -> PluginCallResultData {
         [
-            "uuid": getMeshUUID(),
+            "meshUuid": getMeshUUID(),
+            "deviceId": peripheral.identifier.uuidString,
             "name": device?.name ?? peripheral.name ?? "Unknown",
             "rssi": rssi.last ?? NSNumber(value: 0)
         ]

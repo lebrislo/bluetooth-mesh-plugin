@@ -15,9 +15,16 @@ export interface Permissions {
 
 export interface BleMeshDevice {
   name: string;
-  uuid: string;
+  meshUuid: string;
   rssi: number;
-  macAddress: string;
+
+  /**
+   * ID of the device, which will be needed for further calls.
+   * On **Android** this is the BLE MAC address.
+   * On **iOS** and **web** it is an identifier.
+   */
+  deviceId: string;
+  macAddress?: string;
 }
 
 export interface ScanMeshDevices {
@@ -39,8 +46,9 @@ export interface ProvisioningCapabilities {
 
 export interface ProvisioningStatus {
   provisioningComplete: boolean;
-  uuid: string;
+  deviceId: string;
   unicastAddress?: number;
+  uuid?: string;
 }
 
 export interface UnprovisionStatus {
@@ -104,10 +112,10 @@ export interface BluetoothMeshPlugin {
   reloadScanMeshDevices(): Promise<void>;
   getNodesOnlineStates(): Promise<NodesOnlineStates>;
   getProvisioningCapabilities(options: {
-    macAddress: string;
-    uuid: string;
+  deviceId: string;
+  meshUuid: string;
   }): Promise<ProvisioningCapabilities>;
-  provisionDevice(options: { macAddress: string; uuid: string }): Promise<ProvisioningStatus>;
+  provisionDevice(options: { deviceId: string; meshUuid: string }): Promise<ProvisioningStatus>;
   unprovisionDevice(options: { unicastAddress: number }): Promise<UnprovisionStatus>;
   createApplicationKey(): Promise<ModelMessageStatus>;
   removeApplicationKey(options: { appKeyIndex: number }): Promise<ModelMessageStatus>;

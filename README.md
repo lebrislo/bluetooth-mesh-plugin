@@ -198,12 +198,12 @@ getNodesOnlineStates() => Promise<NodesOnlineStates>
 ### getProvisioningCapabilities(...)
 
 ```typescript
-getProvisioningCapabilities(options: { macAddress: string; uuid: string; }) => Promise<ProvisioningCapabilities>
+getProvisioningCapabilities(options: { deviceId: string; meshUuid: string; }) => Promise<ProvisioningCapabilities>
 ```
 
-| Param         | Type                                               |
-| ------------- | -------------------------------------------------- |
-| **`options`** | <code>{ macAddress: string; uuid: string; }</code> |
+| Param         | Type                                                 |
+| ------------- | ---------------------------------------------------- |
+| **`options`** | <code>{ deviceId: string; meshUuid: string; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#provisioningcapabilities">ProvisioningCapabilities</a>&gt;</code>
 
@@ -213,12 +213,12 @@ getProvisioningCapabilities(options: { macAddress: string; uuid: string; }) => P
 ### provisionDevice(...)
 
 ```typescript
-provisionDevice(options: { macAddress: string; uuid: string; }) => Promise<ProvisioningStatus>
+provisionDevice(options: { deviceId: string; meshUuid: string; }) => Promise<ProvisioningStatus>
 ```
 
-| Param         | Type                                               |
-| ------------- | -------------------------------------------------- |
-| **`options`** | <code>{ macAddress: string; uuid: string; }</code> |
+| Param         | Type                                                 |
+| ------------- | ---------------------------------------------------- |
+| **`options`** | <code>{ deviceId: string; meshUuid: string; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#provisioningstatus">ProvisioningStatus</a>&gt;</code>
 
@@ -582,12 +582,13 @@ removeAllListeners() => Promise<void>
 
 #### BleMeshDevice
 
-| Prop             | Type                |
-| ---------------- | ------------------- |
-| **`name`**       | <code>string</code> |
-| **`uuid`**       | <code>string</code> |
-| **`rssi`**       | <code>number</code> |
-| **`macAddress`** | <code>string</code> |
+| Prop             | Type                | Description                                                                                                                                       |
+| ---------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`name`**       | <code>string</code> |                                                                                                                                                   |
+| **`meshUuid`**   | <code>string</code> |                                                                                                                                                   |
+| **`rssi`**       | <code>number</code> |                                                                                                                                                   |
+| **`deviceId`**   | <code>string</code> | ID of the device, which will be needed for further calls. On **Android** this is the BLE MAC address. On **iOS** and **web** it is an identifier. |
+| **`macAddress`** | <code>string</code> |                                                                                                                                                   |
 
 
 #### NodesOnlineStates
@@ -625,8 +626,9 @@ removeAllListeners() => Promise<void>
 | Prop                       | Type                 |
 | -------------------------- | -------------------- |
 | **`provisioningComplete`** | <code>boolean</code> |
-| **`uuid`**                 | <code>string</code>  |
+| **`deviceId`**             | <code>string</code>  |
 | **`unicastAddress`**       | <code>number</code>  |
+| **`uuid`**                 | <code>string</code>  |
 
 
 #### UnprovisionStatus

@@ -221,18 +221,18 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func provisionDevice(_ call: CAPPluginCall) {
-        guard let uuidString = call.getString("uuid") else {
-            call.reject("UUID is required")
+        guard let deviceId = call.getString("deviceId") else {
+            call.reject("deviceId is required")
             return
         }
 
-        guard let selectedPeripheral = DeviceRepository.shared.getPeripheral(uuidString: uuidString) else {
-            call.reject("Device with UUID \(uuidString) not found")
+        guard let selectedPeripheral = DeviceRepository.shared.getPeripheral(deviceId: deviceId) else {
+            call.reject("Device with deviceId \(deviceId) not found")
             return
         }
 
         guard let onlyBearer = selectedPeripheral.bearer.first else {
-            call.reject("No bearer available for peripheral \(uuidString)")
+            call.reject("No bearer available for peripheral \(deviceId)")
             return
         }
 
@@ -243,7 +243,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
                 NodesOnlineStateManager.shared.addNode(unicastAddress: node.primaryUnicastAddress)
                 call.resolve([
                     "provisioningComplete": true,
-                    "uuid": uuidString,
+                    "deviceId": deviceId,
                     "unicastAddress": node.primaryUnicastAddress,
                 ])
 
@@ -251,7 +251,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
                 print("Provisioning failed with error: \(error)")
                 call.resolve([
                     "provisioningComplete": false,
-                    "uuid": uuidString,
+                    "deviceId": deviceId,
                 ])
             }
         }

@@ -64,7 +64,7 @@ export class BluetoothMeshWeb extends WebPlugin implements BluetoothMeshPlugin {
 
   async provisionDevice(): Promise<ProvisioningStatus> {
     console.log('provisionDevice');
-    return { provisioningComplete: true, uuid: '1234' };
+    return { provisioningComplete: true, deviceId: '1234' };
   }
 
   async unprovisionDevice(): Promise<UnprovisionStatus> {
