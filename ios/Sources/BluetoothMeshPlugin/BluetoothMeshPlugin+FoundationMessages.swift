@@ -3,6 +3,33 @@ import Foundation
 import NordicMesh
 
 extension BluetoothMeshPlugin {
+    
+    @objc func unprovisionDevice(_ call: CAPPluginCall) {
+        guard let unicastAddress = call.getInt("unicastAddress") else {
+            call.reject("unicastAddress is required")
+            return
+        }
+        
+        let message = ConfigNodeReset()
+        let targetAddress = UInt16(unicastAddress)
+
+        ensureProxyConnection(for: call) { [weak self] in
+            guard let self = self else { return }
+
+            do {
+                PluginCallManager.shared.addConfigPluginCall(
+                    ConfigNodeReset.opCode,
+                    targetAddress,
+                    call
+                )
+
+                try self.meshNetworkManager.send(message, to: targetAddress)
+
+            } catch {
+                call.reject("Failed to send unprovisioning message: \(error.localizedDescription)")
+            }
+        }
+    }
 
     @objc func createApplicationKey(_ call: CAPPluginCall) {
         guard let network = meshNetworkManager.meshNetwork else {
