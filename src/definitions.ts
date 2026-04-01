@@ -70,7 +70,7 @@ export interface ModelMessageStatus {
 }
 
 export interface MeshNetworkObject {
-  meshNetwork: string;
+  meshNetwork: object;
 }
 
 export interface ConfigHeartbeatPublicationSet {

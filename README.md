@@ -585,7 +585,7 @@ removeAllListeners() => Promise<void>
 
 | Prop              | Type                |
 | ----------------- | ------------------- |
-| **`meshNetwork`** | <code>string</code> |
+| **`meshNetwork`** | <code>object</code> |
 
 
 #### ScanMeshDevices

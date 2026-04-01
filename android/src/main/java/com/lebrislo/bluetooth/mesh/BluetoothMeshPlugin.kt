@@ -210,7 +210,12 @@ class BluetoothMeshPlugin : Plugin() {
         val network = meshController.exportMeshNetwork()
 
         return if (network != null) {
-            call.resolve(JSObject().put("meshNetwork", network))
+            try {
+                val networkJson = JSObject(network)
+                call.resolve(JSObject().put("meshNetwork", networkJson))
+            } catch (e: Exception) {
+                call.reject("Failed to parse mesh network JSON: ${e.message}")
+            }
         } else {
             call.reject("Failed to initialize mesh network")
         }
@@ -221,7 +226,12 @@ class BluetoothMeshPlugin : Plugin() {
         val result = meshController.exportMeshNetwork()
 
         return if (result != null) {
-            call.resolve(JSObject().put("meshNetwork", result))
+            try {
+                val networkJson = JSObject(result)
+                call.resolve(JSObject().put("meshNetwork", networkJson))
+            } catch (e: Exception) {
+                call.reject("Failed to parse mesh network JSON: ${e.message}")
+            }
         } else {
             call.reject("Failed to export mesh network")
         }
