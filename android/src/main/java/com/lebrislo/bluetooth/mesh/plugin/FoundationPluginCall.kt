@@ -7,12 +7,14 @@ import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
 import no.nordicsemi.android.mesh.transport.ConfigModelAppStatus
 import no.nordicsemi.android.mesh.transport.ConfigNodeResetStatus
+import no.nordicsemi.android.mesh.transport.HealthCurrentStatus
+import no.nordicsemi.android.mesh.transport.HealthFaultStatus
 import no.nordicsemi.android.mesh.transport.MeshMessage
 
 /**
- * This class is used to generate a response for a Config plugin call.
+ * This class is used to generate a response for a Foundation plugin call.
  */
-class ConfigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, call: PluginCall) : BasePluginCall(call) {
+class FoundationPluginCall(val meshOperationCallback: Int, val meshAddress: Int, call: PluginCall) : BasePluginCall(call) {
     companion object {
         /**
          * Generates a response for a Config plugin call.
@@ -20,7 +22,7 @@ class ConfigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, cal
          * @param meshMessage Mesh message.
          */
         @JvmStatic
-        fun generateConfigPluginCallResponse(meshMessage: MeshMessage): JSObject {
+        fun generateFoundationPluginCallResponse(meshMessage: MeshMessage): JSObject {
             val result = JSObject()
             result.put("src", meshMessage.src)
             result.put("dst", meshMessage.dst)
@@ -31,6 +33,8 @@ class ConfigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, cal
                     is ConfigNodeResetStatus -> configNodeResetStatusResponse(meshMessage)
                     is ConfigModelAppStatus -> configModelAppStatusResponse(meshMessage)
                     is ConfigCompositionDataStatus -> configCompositionDataStatusResponse(meshMessage)
+                    is HealthFaultStatus -> healthFaultStatusResponse(meshMessage)
+                    is HealthCurrentStatus -> healthCurrentStatusResponse(meshMessage)
                     else -> JSObject()
                 }
             )
@@ -93,6 +97,30 @@ class ConfigPluginCall(val meshOperationCallback: Int, val meshAddress: Int, cal
 
             data.put("elements", elements)
 
+            return data
+        }
+
+        private fun healthFaultStatusResponse(meshMessage: HealthFaultStatus): JSObject {
+            val data = JSObject()
+            data.put("testId", meshMessage.testId)
+            data.put("companyId", meshMessage.companyId)
+            val faults = JSArray()
+            if (meshMessage.faultArray != null) {
+                meshMessage.faultArray.forEach { faults.put(it) }
+            }
+            data.put("faults", faults)
+            return data
+        }
+
+        private fun healthCurrentStatusResponse(meshMessage: HealthCurrentStatus): JSObject {
+            val data = JSObject()
+            data.put("testId", meshMessage.testId)
+            data.put("companyId", meshMessage.companyId)
+            val faults = JSArray()
+            if (meshMessage.faultArray != null) {
+                meshMessage.faultArray.forEach { faults.put(it) }
+            }
+            data.put("faults", faults)
             return data
         }
     }

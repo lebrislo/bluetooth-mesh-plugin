@@ -3,9 +3,8 @@ package com.lebrislo.bluetooth.mesh.plugin
 import android.util.Log
 import com.getcapacitor.PluginCall
 import com.lebrislo.bluetooth.mesh.BluetoothMeshPlugin.Companion.MESH_MODEL_MESSAGE_EVENT_STRING
-import com.lebrislo.bluetooth.mesh.plugin.ConfigOperationPair.Companion.getConfigOperationPair
-import com.lebrislo.bluetooth.mesh.plugin.ConfigPluginCall.Companion.generateConfigPluginCallResponse
-import com.lebrislo.bluetooth.mesh.plugin.SigOperationPair.Companion.getSigOperationPair
+import com.lebrislo.bluetooth.mesh.plugin.FoundationPluginCall.Companion.generateFoundationPluginCallResponse
+import com.lebrislo.bluetooth.mesh.plugin.OperationPair.Companion.getOperationPair
 import com.lebrislo.bluetooth.mesh.plugin.SigPluginCall.Companion.generateSigPluginCallResponse
 import com.lebrislo.bluetooth.mesh.plugin.VendorPluginCall.Companion.generateVendorPluginCallResponse
 import com.lebrislo.bluetooth.mesh.utils.NotificationManager
@@ -52,7 +51,7 @@ class PluginCallManager private constructor() {
         if (!MeshAddress.isValidUnicastAddress(meshAddress)) {
             return call.resolve()
         }
-        val operationPair = getSigOperationPair(meshOperation)
+        val operationPair = getOperationPair(meshOperation)
         pluginCalls.add(SigPluginCall(operationPair, meshAddress, call))
     }
 
@@ -80,34 +79,34 @@ class PluginCallManager private constructor() {
     }
 
     /**
-     * Add a Config plugin call to the list of plugin calls to watch for a response.
+     * Add a Foundation plugin call to the list of plugin calls to watch for a response.
      *
      * @param meshOperation Mesh operation.
      * @param meshAddress Mesh address.
      * @param call Plugin call.
      */
-    fun addConfigPluginCall(meshOperation: Int, meshAddress: Int, call: PluginCall) {
-        val operationPair = getConfigOperationPair(meshOperation)
-        pluginCalls.add(ConfigPluginCall(operationPair, meshAddress, call))
+    fun addFoundationPluginCall(meshOperation: Int, meshAddress: Int, call: PluginCall) {
+        val operationPair = getOperationPair(meshOperation)
+        pluginCalls.add(FoundationPluginCall(operationPair, meshAddress, call))
     }
 
     /**
-     * Resolve a Config plugin call.
+     * Resolve a Foundation plugin call.
      * If the call is not found in the list of plugin calls, a notification is sent to the listeners.
      *
      * @param meshMessage Mesh message.
      */
-    fun resolveConfigPluginCall(meshMessage: MeshMessage) {
-        Log.d(tag, "resolveConfigPluginCall ${meshMessage.opCode} from ${meshMessage.src}")
-        val callResponse = generateConfigPluginCallResponse(meshMessage)
+    fun resolveFoundationPluginCall(meshMessage: MeshMessage) {
+        Log.d(tag, "resolveFoundationPluginCall ${meshMessage.opCode} from ${meshMessage.src}")
+        val callResponse = generateFoundationPluginCallResponse(meshMessage)
 
         val pluginCall =
-            pluginCalls.find { it is ConfigPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
+            pluginCalls.find { it is FoundationPluginCall && it.meshOperationCallback == meshMessage.opCode && it.meshAddress == meshMessage.src }
 
-        Log.d(tag, "resolveConfigPluginCall: registered call: ${pluginCall != null}")
+        Log.d(tag, "resolveFoundationPluginCall: registered call: ${pluginCall != null}")
 
         if (pluginCall != null) {
-            pluginCall as ConfigPluginCall
+            pluginCall as FoundationPluginCall
             pluginCall.resolve(callResponse)
             pluginCalls.remove(pluginCall)
         }

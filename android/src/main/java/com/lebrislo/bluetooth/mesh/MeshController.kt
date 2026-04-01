@@ -9,6 +9,7 @@ import no.nordicsemi.android.mesh.Features
 import no.nordicsemi.android.mesh.MeshManagerApi
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyAdd
+import no.nordicsemi.android.mesh.transport.ConfigAppKeyGet
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataGet
 import no.nordicsemi.android.mesh.transport.ConfigHeartbeatPublicationSet
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind
@@ -215,7 +216,7 @@ class MeshController(
     fun removeApplicationKey(appKeyIndex: Int): Boolean {
         val meshNetwork = meshManagerApi.meshNetwork
         if (meshNetwork == null) {
-            Log.e(tag, "createApplicationKey: Mesh network is null")
+            Log.e(tag, "removeApplicationKey: Mesh network is null")
             return false
         }
         return meshNetwork.getAppKey(appKeyIndex)?.let {
@@ -236,7 +237,7 @@ class MeshController(
     fun addApplicationKeyToNode(elementAddress: Int, appKeyIndex: Int): Boolean {
         val meshNetwork = meshManagerApi.meshNetwork
         if (meshNetwork == null) {
-            Log.e(tag, "createApplicationKey: Mesh network is null")
+            Log.e(tag, "addApplicationKeyToNode: Mesh network is null")
             return false
         }
 
@@ -254,6 +255,23 @@ class MeshController(
 
         val configModelAppBind = ConfigAppKeyAdd(netKey, appKey)
         meshManagerApi.createMeshPdu(elementAddress, configModelAppBind)
+        return true
+    }
+
+    fun sendAppKeyGet(elementAddress: Int, netKeyIndex: Int): Boolean {
+        val meshNetwork = meshManagerApi.meshNetwork
+        if (meshNetwork == null) {
+            Log.e(tag, "sendAppKeyGet: Mesh network is null")
+            return false
+        }
+
+        val netKey = meshNetwork.getNetKey(netKeyIndex)
+        if(netKey == null) {
+            Log.e(tag, "sendAppKeyGet: Network key is null")
+            return false
+        }
+
+        meshManagerApi.createMeshPdu(elementAddress, ConfigAppKeyGet(netKey))
         return true
     }
 

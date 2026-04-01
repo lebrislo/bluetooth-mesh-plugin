@@ -400,17 +400,17 @@ class BluetoothMeshPlugin : Plugin() {
 
     @PluginMethod
     fun provisionDevice(call: PluginCall) {
-        val macAddress = call.getString("macAddress") ?: return call.reject("macAddress is required")
-        val uuid = call.getString("uuid") ?: return call.reject("uuid is required")
+        val deviceId = call.getString("deviceId") ?: return call.reject("deviceId is required")
+        val meshUuid = call.getString("meshUuid") ?: return call.reject("meshUuid is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             if (!assertBluetoothEnabled(call)) return@launch
-            val connected = connectionToUnprovisionedDevice(macAddress, uuid)
+            val connected = connectionToUnprovisionedDevice(deviceId, meshUuid)
             if (!connected) {
-                return@launch call.reject("Failed to connect to device : $macAddress $uuid")
+                return@launch call.reject("Failed to connect to device : $deviceId $meshUuid")
             }
 
-            val deferred = meshController.provisionDevice(UUID.fromString(uuid))
+            val deferred = meshController.provisionDevice(UUID.fromString(meshUuid))
 
             val meshDevice = deferred.await() ?: return@launch call.reject("Failed to provision device")
 
@@ -422,7 +422,7 @@ class BluetoothMeshPlugin : Plugin() {
                 is BleMeshDevice.Provisioned -> {
                     val result = JSObject().apply {
                         put("provisioningComplete", true)
-                        put("uuid", meshDevice.node.uuid)
+                        put("deviceId", deviceId)
                         put("unicastAddress", meshDevice.node.unicastAddress)
                     }
                     return@launch call.resolve(result)
@@ -431,7 +431,7 @@ class BluetoothMeshPlugin : Plugin() {
                 is BleMeshDevice.Unprovisioned -> {
                     val result = JSObject().apply {
                         put("provisioningComplete", false)
-                        put("uuid", meshDevice.node.deviceUuid)
+                        put("deviceId", deviceId)
                     }
                     return@launch call.resolve(result)
                 }
@@ -451,7 +451,7 @@ class BluetoothMeshPlugin : Plugin() {
             }
 
             PluginCallManager.getInstance()
-                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_NODE_RESET, unicastAddress, call)
+                .addFoundationPluginCall(ConfigMessageOpCodes.CONFIG_NODE_RESET, unicastAddress, call)
 
             meshController.unprovisionDevice(unicastAddress)
         }
@@ -496,13 +496,34 @@ class BluetoothMeshPlugin : Plugin() {
 
             if (acknowledgement) {
                 PluginCallManager.getInstance()
-                    .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
+                    .addFoundationPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_ADD, unicastAddress, call)
             }
 
             val result = meshController.addApplicationKeyToNode(unicastAddress, appKeyIndex)
 
             if (!result) return@launch call.reject("Failed to add application key to node")
             if (!acknowledgement) return@launch call.resolve()
+        }
+    }
+
+    @PluginMethod
+    fun sendAppKeyGet(call: PluginCall) {
+        val netKeyIndex = call.getInt("netKeyIndex") ?: return call.reject("netKeyIndex is required")
+        val unicastAddress = call.getInt("unicastAddress") ?: return call.reject("unicastAddress is required")
+
+        CoroutineScope(Dispatchers.Main).launch {
+            if (!assertBluetoothEnabled(call)) return@launch
+            val connected = connectionToProvisionedDevice()
+            if (!connected) {
+                return@launch call.reject("Failed to connect to Mesh proxy")
+            }
+
+            PluginCallManager.getInstance()
+                .addFoundationPluginCall(ConfigMessageOpCodes.CONFIG_APPKEY_GET, unicastAddress, call)
+
+            val result = meshController.sendAppKeyGet(unicastAddress, netKeyIndex)
+
+            if (!result) return@launch call.reject("Failed to send AppKey Get")
         }
     }
 
@@ -522,7 +543,7 @@ class BluetoothMeshPlugin : Plugin() {
 
             if (acknowledgement) {
                 PluginCallManager.getInstance()
-                    .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_MODEL_APP_BIND, unicastAddress, call)
+                    .addFoundationPluginCall(ConfigMessageOpCodes.CONFIG_MODEL_APP_BIND, unicastAddress, call)
             }
 
             val result = meshController.bindApplicationKeyToModel(unicastAddress, appKeyIndex, modelId)
@@ -545,7 +566,7 @@ class BluetoothMeshPlugin : Plugin() {
             }
 
             PluginCallManager.getInstance()
-                .addConfigPluginCall(ConfigMessageOpCodes.CONFIG_COMPOSITION_DATA_GET, unicastAddress, call)
+                .addFoundationPluginCall(ConfigMessageOpCodes.CONFIG_COMPOSITION_DATA_GET, unicastAddress, call)
 
             val result = meshController.compositionDataGet(unicastAddress)
 
@@ -923,7 +944,7 @@ class BluetoothMeshPlugin : Plugin() {
             }
 
             PluginCallManager.getInstance()
-                .addSigPluginCall(ApplicationMessageOpCodes.HEALTH_FAULT_GET, unicastAddress, call)
+                .addFoundationPluginCall(ApplicationMessageOpCodes.HEALTH_FAULT_GET, unicastAddress, call)
 
             val result = meshController.sendHealthFaultGet(
                 unicastAddress,
@@ -949,7 +970,7 @@ class BluetoothMeshPlugin : Plugin() {
             }
 
             PluginCallManager.getInstance()
-                .addSigPluginCall(ApplicationMessageOpCodes.HEALTH_FAULT_CLEAR, unicastAddress, call)
+                .addFoundationPluginCall(ApplicationMessageOpCodes.HEALTH_FAULT_CLEAR, unicastAddress, call)
 
             val result = meshController.sendHealthFaultClear(
                 unicastAddress,

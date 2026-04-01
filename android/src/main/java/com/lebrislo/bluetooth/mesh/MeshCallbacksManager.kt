@@ -164,12 +164,12 @@ class MeshCallbacksManager(
     override fun onMeshMessageReceived(src: Int, meshMessage: MeshMessage) {
         Log.d(tag, "onMeshMessageReceived ${meshMessage.javaClass.simpleName}")
         when (meshMessage) {
-            is ConfigNodeResetStatus, is ConfigModelAppStatus, is ConfigAppKeyStatus, is ConfigCompositionDataStatus -> {
-                PluginCallManager.getInstance().resolveConfigPluginCall(meshMessage)
+            is ConfigNodeResetStatus, is ConfigModelAppStatus, is ConfigAppKeyStatus, is ConfigCompositionDataStatus, is HealthFaultStatus, is HealthCurrentStatus -> {
+                PluginCallManager.getInstance().resolveFoundationPluginCall(meshMessage)
             }
 
             is GenericOnOffStatus, is GenericPowerLevelStatus, is LightHslStatus, is LightCtlStatus,
-            is LightCtlTemperatureRangeStatus, is HealthFaultStatus, is HealthCurrentStatus -> {
+            is LightCtlTemperatureRangeStatus -> {
                 PluginCallManager.getInstance().resolveSigPluginCall(meshMessage)
             }
 
