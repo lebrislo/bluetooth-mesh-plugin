@@ -250,8 +250,8 @@ class BluetoothMeshPlugin : Plugin() {
                     if (it.scanResult == null) return
 
                     put(JSObject().apply {
-                        put("uuid", it.getDeviceUuid().toString())
-                        put("macAddress", it.scanResult.device.address)
+                        put("meshUuid", it.getDeviceUuid().toString())
+                        put("deviceId", it.scanResult.device.address)
                         put("rssi", it.rssi)
                         put("name", it.name)
                     })
@@ -262,8 +262,8 @@ class BluetoothMeshPlugin : Plugin() {
                     if (it.scanResult == null) return
 
                     put(JSObject().apply {
-                        put("uuid", it.getDeviceUuid().toString())
-                        put("macAddress", it.scanResult.device.address)
+                        put("meshUuid", it.getDeviceUuid().toString())
+                        put("deviceId", it.scanResult.device.address)
                         put("rssi", it.rssi)
                         put("name", it.name)
                     })
@@ -360,17 +360,17 @@ class BluetoothMeshPlugin : Plugin() {
 
     @PluginMethod
     fun getProvisioningCapabilities(call: PluginCall) {
-        val macAddress = call.getString("macAddress") ?: return call.reject("macAddress is required")
-        val uuid = call.getString("uuid") ?: return call.reject("uuid is required")
+        val deviceId = call.getString("deviceId") ?: return call.reject("deviceId is required")
+        val meshUuid = call.getString("meshUuid") ?: return call.reject("meshUuid is required")
 
         CoroutineScope(Dispatchers.Main).launch {
             if (!assertBluetoothEnabled(call)) return@launch
-            val connected = connectionToUnprovisionedDevice(macAddress, uuid)
+            val connected = connectionToUnprovisionedDevice(deviceId, meshUuid)
             if (!connected) {
-                return@launch call.reject("Failed to connect to device : $macAddress $uuid")
+                return@launch call.reject("Failed to connect to device : $deviceId $meshUuid")
             }
 
-            val deferred = meshController.getProvisioningCapabilities(UUID.fromString(uuid))
+            val deferred = meshController.getProvisioningCapabilities(UUID.fromString(meshUuid))
 
             val unprovisionedDevice = deferred.await()
             if (unprovisionedDevice != null) {

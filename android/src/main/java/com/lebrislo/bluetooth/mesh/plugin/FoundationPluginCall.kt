@@ -3,6 +3,7 @@ package com.lebrislo.bluetooth.mesh.plugin
 import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
 import com.getcapacitor.PluginCall
+import no.nordicsemi.android.mesh.transport.ConfigAppKeyList
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
 import no.nordicsemi.android.mesh.transport.ConfigModelAppStatus
@@ -30,6 +31,7 @@ class FoundationPluginCall(val meshOperationCallback: Int, val meshAddress: Int,
             result.put(
                 "data", when (meshMessage) {
                     is ConfigAppKeyStatus -> configAppKeyStatusResponse(meshMessage)
+                    is ConfigAppKeyList -> configAppKeyListResponse(meshMessage)
                     is ConfigNodeResetStatus -> configNodeResetStatusResponse(meshMessage)
                     is ConfigModelAppStatus -> configModelAppStatusResponse(meshMessage)
                     is ConfigCompositionDataStatus -> configCompositionDataStatusResponse(meshMessage)
@@ -46,6 +48,16 @@ class FoundationPluginCall(val meshOperationCallback: Int, val meshAddress: Int,
             data.put("status", meshMessage.statusCode)
             data.put("netKeyIndex", meshMessage.netKeyIndex)
             data.put("appKeyIndex", meshMessage.appKeyIndex)
+            return data
+        }
+
+        private fun configAppKeyListResponse(meshMessage: ConfigAppKeyList): JSObject {
+            val data = JSObject()
+            data.put("status", meshMessage.statusCode)
+            data.put("netKeyIndex", meshMessage.netKeyIndex)
+            val keyIndexes = JSArray()
+            meshMessage.keyIndexes.forEach { keyIndexes.put(it) }
+            data.put("applicationKeyIndexes", keyIndexes)
             return data
         }
 

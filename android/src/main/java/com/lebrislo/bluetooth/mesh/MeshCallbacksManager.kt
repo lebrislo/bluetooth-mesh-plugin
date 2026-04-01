@@ -11,6 +11,7 @@ import no.nordicsemi.android.mesh.MeshProvisioningStatusCallbacks
 import no.nordicsemi.android.mesh.MeshStatusCallbacks
 import no.nordicsemi.android.mesh.provisionerstates.ProvisioningState
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode
+import no.nordicsemi.android.mesh.transport.ConfigAppKeyList
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyStatus
 import no.nordicsemi.android.mesh.transport.ConfigCompositionDataStatus
 import no.nordicsemi.android.mesh.transport.ConfigModelAppStatus
@@ -164,7 +165,7 @@ class MeshCallbacksManager(
     override fun onMeshMessageReceived(src: Int, meshMessage: MeshMessage) {
         Log.d(tag, "onMeshMessageReceived ${meshMessage.javaClass.simpleName}")
         when (meshMessage) {
-            is ConfigNodeResetStatus, is ConfigModelAppStatus, is ConfigAppKeyStatus, is ConfigCompositionDataStatus, is HealthFaultStatus, is HealthCurrentStatus -> {
+            is ConfigNodeResetStatus, is ConfigModelAppStatus, is ConfigAppKeyStatus, is ConfigAppKeyList, is ConfigCompositionDataStatus, is HealthFaultStatus, is HealthCurrentStatus -> {
                 PluginCallManager.getInstance().resolveFoundationPluginCall(meshMessage)
             }
 

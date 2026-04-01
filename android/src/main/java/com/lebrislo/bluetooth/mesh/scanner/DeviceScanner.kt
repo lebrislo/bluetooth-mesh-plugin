@@ -130,8 +130,8 @@ class DeviceScanner(
             put("unprovisioned", JSArray().apply {
                 unprovisionedDevices.values.forEach {
                     put(JSObject().apply {
-                        put("uuid", it.getDeviceUuid().toString())
-                        put("macAddress", it.address)
+                        put("meshUuid", it.getDeviceUuid().toString())
+                        put("deviceId", it.address)
                         put("rssi", it.rssi)
                         put("name", it.name)
                     })
@@ -140,8 +140,8 @@ class DeviceScanner(
             put("provisioned", JSArray().apply {
                 provisionedDevices.values.forEach {
                     put(JSObject().apply {
-                        put("uuid", it.getDeviceUuid().toString())
-                        put("macAddress", it.address)
+                        put("meshUuid", it.getDeviceUuid().toString())
+                        put("deviceId", it.address)
                         put("rssi", it.rssi)
                         put("name", it.name)
                     })
