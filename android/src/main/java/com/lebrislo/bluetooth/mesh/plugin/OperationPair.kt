@@ -11,6 +11,7 @@ import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.GENERIC_POWE
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_SET_UNACKNOWLEDGED
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.GENERIC_POWER_LEVEL_STATUS
+import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.HEALTH_FAULT_CLEAR
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.HEALTH_FAULT_GET
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.HEALTH_FAULT_STATUS
 import no.nordicsemi.android.mesh.opcodes.ApplicationMessageOpCodes.LIGHT_CTL_GET
