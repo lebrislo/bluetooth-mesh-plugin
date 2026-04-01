@@ -300,9 +300,10 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
                 return
             }
 
-            _ = try meshNetworkManager.import(from: data)
+            try meshNetworkManager.import(from: data)
 
-            _ = meshNetworkManager.save()
+            self.setupLocalNode()
+            meshNetworkManager.save()
             setupConnection()
 
             self.setupNodeOnlineStateMonitoring()
