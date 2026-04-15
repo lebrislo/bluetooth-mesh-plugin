@@ -3,8 +3,15 @@ import CoreBluetooth
 import Foundation
 import NordicMesh
 
+protocol DeviceScannerDelegate: AnyObject {
+    func deviceScanner(_ scanner: DeviceScanner, didUpdateBluetoothState state: CBManagerState)
+    func deviceScannerDidLoseBluetooth(_ scanner: DeviceScanner)
+}
+
 class DeviceScanner: NSObject {
     static let shared = DeviceScanner()
+    
+    weak var delegate: DeviceScannerDelegate?
 
     private var centralManager: CBCentralManager!
     private let deviceStore = DeviceRepository.shared
@@ -13,6 +20,10 @@ class DeviceScanner: NSObject {
         super.init()
         self.centralManager = CBCentralManager(delegate: self, queue: .main)
     }
+    
+    public var isBluetoothEnabled: Bool {
+            centralManager.state == .poweredOn
+        }
 
     public func startScan() {
         print("Central state: \(centralManager.state) / auth: \(CBCentralManager.authorization)")
@@ -48,6 +59,8 @@ extension DeviceScanner: CBCentralManagerDelegate {
         print(
             "Central Manager did update state: \(central.state.rawValue), auth: \(CBCentralManager.authorization.rawValue)"
         )
+        
+        delegate?.deviceScanner(self, didUpdateBluetoothState: central.state)
 
         switch central.state {
         case .poweredOn:

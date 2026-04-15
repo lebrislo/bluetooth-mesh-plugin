@@ -6,9 +6,13 @@ import NordicMesh
 @objc(BluetoothMeshPlugin)
 public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
 
+    private let BLUETOOTH_ADAPTER_EVENT_STRING = "bluetoothAdapterEvent"
+    private let BLUETOOTH_CONNECTION_EVENT_STRING = "bluetoothConnectionEvent"
+
     public let identifier = "BluetoothMeshPlugin"
     public let jsName = "BluetoothMesh"
     public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "isBluetoothEnabled", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "reloadScanMeshDevices", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getNodesOnlineStates", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "provisionDevice", returnType: CAPPluginReturnPromise),
@@ -55,6 +59,8 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
         super.load()
 
         NotificationManager.shared.setPlugin(self)
+        
+        DeviceScanner.shared.delegate = self
 
         meshNetworkManager = MeshNetworkManager()
         meshNetworkManager.logger = MeshLogger()
@@ -208,6 +214,12 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     // MARK: - Plugin methods
+
+    @objc func isBluetoothEnabled(_ call: CAPPluginCall) {
+        call.resolve([
+            "enabled": DeviceScanner.shared.isBluetoothEnabled
+        ])
+    }
 
     @objc func reloadScanMeshDevices(_ call: CAPPluginCall) {
         DeviceRepository.shared.clearDevices()
@@ -363,6 +375,84 @@ extension BluetoothMeshPlugin: BearerDelegate {
             print("BluetoothMeshPlugin: proxy bearer closed")
             rejectPendingProxyOperations("Mesh proxy connection closed")
         }
+    }
+}
+
+extension BluetoothMeshPlugin: DeviceScannerDelegate {
+    func deviceScanner(_ scanner: DeviceScanner, didUpdateBluetoothState state: CBManagerState) {
+        switch state {
+        case .poweredOn:
+            sendNotification(
+                event: BLUETOOTH_ADAPTER_EVENT_STRING,
+                data: [
+                    "enabled": true,
+                    "state": "poweredOn"
+                ]
+            )
+
+        case .poweredOff:
+            sendNotification(
+                event: BLUETOOTH_ADAPTER_EVENT_STRING,
+                data: [
+                    "enabled": false,
+                    "state": "poweredOff"
+                ]
+            )
+
+        case .unauthorized:
+            sendNotification(
+                event: BLUETOOTH_ADAPTER_EVENT_STRING,
+                data: [
+                    "enabled": false,
+                    "state": "unauthorized"
+                ]
+            )
+
+        case .unsupported:
+            sendNotification(
+                event: BLUETOOTH_ADAPTER_EVENT_STRING,
+                data: [
+                    "enabled": false,
+                    "state": "unsupported"
+                ]
+            )
+
+        case .resetting:
+            sendNotification(
+                event: BLUETOOTH_ADAPTER_EVENT_STRING,
+                data: [
+                    "enabled": false,
+                    "state": "resetting"
+                ]
+            )
+
+        case .unknown:
+            sendNotification(
+                event: BLUETOOTH_ADAPTER_EVENT_STRING,
+                data: [
+                    "enabled": false,
+                    "state": "unknown"
+                ]
+            )
+
+        @unknown default:
+            sendNotification(
+                event: BLUETOOTH_ADAPTER_EVENT_STRING,
+                data: [
+                    "enabled": false,
+                    "state": "unknown"
+                ]
+            )
+        }
+    }
+
+    func deviceScannerDidLoseBluetooth(_ scanner: DeviceScanner) {
+        sendNotification(
+            event: BLUETOOTH_CONNECTION_EVENT_STRING,
+            data: [
+                "connected": false
+            ]
+        )
     }
 }
 
