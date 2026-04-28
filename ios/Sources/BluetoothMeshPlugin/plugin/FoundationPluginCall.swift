@@ -9,14 +9,19 @@ import Capacitor
 import Foundation
 import NordicMesh
 
-public class FoundationPluginCall: BasePluginCall {
+public final class FoundationPluginCall: BasePluginCall {
     let meshOperationCallback: UInt32
     let meshAddress: UInt16
 
-    init(_ meshOperationCallback: UInt32, _ meshAddress: UInt16, _ call: CAPPluginCall) {
+    init(
+        _ meshOperationCallback: UInt32,
+        _ meshAddress: UInt16,
+        _ call: CAPPluginCall,
+        timeout: TimeInterval? = nil
+    ) {
         self.meshOperationCallback = meshOperationCallback
         self.meshAddress = meshAddress
-        super.init(call: call)
+        super.init(call: call, timeout: timeout)
     }
 
     static func generateFoundationPluginCallResponse(_ response: RoutedMeshMessage) -> PluginCallResultData {
@@ -31,7 +36,7 @@ public class FoundationPluginCall: BasePluginCall {
             result["data"] = configNodeResetStatusResponse(msg)
         } else if let msg = response.message as? ConfigModelAppStatus {
             result["data"] = configModelAppStatusResponse(msg)
-        }else if let msg = response.message as? ConfigAppKeyList {
+        } else if let msg = response.message as? ConfigAppKeyList {
             result["data"] = configAppKeyListResponse(msg)
         } else if let msg = response.message as? ConfigCompositionDataStatus {
             result["data"] = configCompositionDataStatusResponse(msg)

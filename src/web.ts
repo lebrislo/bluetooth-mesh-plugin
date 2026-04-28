@@ -98,7 +98,7 @@ export class BluetoothMeshWeb extends WebPlugin implements BluetoothMeshPlugin {
 
   async getCompositionData(): Promise<MeshNetworkObject> {
     console.log('compositionDataGet');
-    return { meshNetwork: 'meshNetwork' };
+    return { meshNetwork: {} };
   }
 
   async sendGenericOnOffSet(): Promise<ModelMessageStatus> {
@@ -131,14 +131,12 @@ export class BluetoothMeshWeb extends WebPlugin implements BluetoothMeshPlugin {
     return { src: 1, dst: 2, opcode: 3, data: {} };
   }
 
-  async initMeshNetwork(options: { networkName: string }): Promise<MeshNetworkObject> {
-    const mesh = { name: options.networkName, nodes: [] };
-    return { meshNetwork: JSON.stringify(mesh) };
+  async initMeshNetwork(): Promise<MeshNetworkObject> {
+    return { meshNetwork: {} };
   }
 
   async exportMeshNetwork(): Promise<MeshNetworkObject> {
-    const mesh = { };
-    return { meshNetwork: JSON.stringify(mesh) };
+    return { meshNetwork: {} };
   }
 
   async importMeshNetwork(): Promise<void> {

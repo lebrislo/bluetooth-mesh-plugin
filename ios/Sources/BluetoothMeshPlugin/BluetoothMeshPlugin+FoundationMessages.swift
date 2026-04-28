@@ -3,13 +3,13 @@ import Foundation
 import NordicMesh
 
 extension BluetoothMeshPlugin {
-    
+
     @objc func unprovisionDevice(_ call: CAPPluginCall) {
         guard let unicastAddress = call.getInt("unicastAddress") else {
             call.reject("unicastAddress is required")
             return
         }
-        
+
         let message = ConfigNodeReset()
         let targetAddress = UInt16(unicastAddress)
 
@@ -128,16 +128,16 @@ extension BluetoothMeshPlugin {
             }
         }
     }
-    
+
     @objc func sendAppKeyGet(_ call: CAPPluginCall) {
-        
+
         guard
             let netKeyIndex = requiredUInt16("netKeyIndex", in: call),
             let unicastAddress = call.getInt("unicastAddress")
         else {
             return call.reject("Missing required parameters: netKeyIndex, unicastAddress")
         }
-        
+
         guard let networkKey = meshNetworkManager.meshNetwork?.networkKeys.first(where: { $0.index == netKeyIndex })
         else {
             return call.reject("Network key with index \(netKeyIndex) not found")
@@ -197,9 +197,9 @@ extension BluetoothMeshPlugin {
         guard
             let destination = requiredUInt16("unicastAddress", in: call),
             let appKey = requiredAppKey(in: call),
-                let companyId = requiredUInt16("companyId", in: call)
+            let companyId = requiredUInt16("companyId", in: call)
         else { return }
-        
+
         ensureProxyConnection(for: call) { [weak self] in
             guard let self = self else { return }
 
@@ -220,14 +220,16 @@ extension BluetoothMeshPlugin {
             }
         }
     }
-    
+
     @objc func sendHealthFaultClear(_ call: CAPPluginCall) {
         guard
             let destination = requiredUInt16("unicastAddress", in: call),
             let appKey = requiredAppKey(in: call),
-                let companyId = requiredUInt16("companyId", in: call)
-        else { return }
-        
+            let companyId = requiredUInt16("companyId", in: call)
+        else {
+            return
+        }
+
         ensureProxyConnection(for: call) { [weak self] in
             guard let self = self else { return }
 

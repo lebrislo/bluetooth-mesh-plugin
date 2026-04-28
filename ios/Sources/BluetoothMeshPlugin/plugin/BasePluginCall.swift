@@ -9,15 +9,17 @@ import Capacitor
 import Foundation
 
 public class BasePluginCall {
+    public static let defaultTimeout: TimeInterval = 3.0
+
     let call: CAPPluginCall
     private let timeout: TimeInterval
     private var isResolved = false
     private var timeoutWorkItem: DispatchWorkItem?
 
-    init(call: CAPPluginCall, timeout: TimeInterval = 3.0) {
+    init(call: CAPPluginCall, timeout: TimeInterval? = nil) {
         self.call = call
-        self.timeout = timeout
-        self.startTimeout()
+        self.timeout = timeout ?? Self.defaultTimeout
+        startTimeout()
     }
 
     private func startTimeout() {

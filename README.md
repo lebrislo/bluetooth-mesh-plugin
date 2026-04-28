@@ -480,12 +480,12 @@ sendLightCtlTemperatureRangeGet(options: ModelMessage) => Promise<ModelMessageSt
 ### sendVendorModelMessage(...)
 
 ```typescript
-sendVendorModelMessage(options: ModelMessage & { modelId: number; opcode: number; payload?: Uint8Array; opPairCode?: number; }) => Promise<ModelMessageStatus>
+sendVendorModelMessage(options: ModelMessage & { modelId: number; opcode: number; payload?: Uint8Array; opPairCode?: number; timeout?: number; }) => Promise<ModelMessageStatus>
 ```
 
-| Param         | Type                                                                                                                                                              |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { modelId: number; opcode: number; payload?: <a href="#uint8array">Uint8Array</a>; opPairCode?: number; }</code> |
+| Param         | Type                                                                                                                                                                                |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#modelmessage">ModelMessage</a> & { modelId: number; opcode: number; payload?: <a href="#uint8array">Uint8Array</a>; opPairCode?: number; timeout?: number; }</code> |
 
 **Returns:** <code>Promise&lt;<a href="#modelmessagestatus">ModelMessageStatus</a>&gt;</code>
 

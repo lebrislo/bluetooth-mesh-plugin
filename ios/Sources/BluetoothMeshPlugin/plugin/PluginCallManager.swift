@@ -46,11 +46,22 @@ public class PluginCallManager {
         )
     }
 
-    public func addConfigPluginCall(_ meshOperation: UInt32, _ meshAddress: UInt16, _ call: CAPPluginCall) {
+    public func addConfigPluginCall(
+        _ meshOperation: UInt32,
+        _ meshAddress: UInt16,
+        _ call: CAPPluginCall,
+        timeout: TimeInterval? = nil
+    ) {
         let operationPair = OperationPairs.getMeshOperationPair(meshOperation)
-        pluginCalls.append(
-            FoundationPluginCall(operationPair, meshAddress, call)
+
+        let pluginCall = FoundationPluginCall(
+            operationPair,
+            meshAddress,
+            call,
+            timeout: timeout
         )
+
+        pluginCalls.append(pluginCall)
     }
 
     public func resolveConfigPluginCall(_ response: RoutedMeshMessage) {
@@ -77,9 +88,10 @@ public class PluginCallManager {
         _ opCode: UInt32,
         _ opPairCode: UInt32,
         _ meshAddress: UInt16,
-        _ call: CAPPluginCall
+        _ call: CAPPluginCall,
+        timeout: TimeInterval? = nil
     ) {
-        pluginCalls.append(VendorPluginCall(modelId, opCode, opPairCode, meshAddress, call))
+        pluginCalls.append(VendorPluginCall(modelId, opCode, opPairCode, meshAddress, call, timeout: timeout))
     }
 
     public func resolveVendorPluginCall(_ response: RoutedMeshMessage) {
@@ -87,7 +99,8 @@ public class PluginCallManager {
 
         let index = pluginCalls.firstIndex { call in
             guard let c = call as? VendorPluginCall else { return false }
-            return c.meshOperationCallback == response.message.opCode && (c.meshAddress == response.src || c.meshAddress == Address.allNodes)
+            return c.meshOperationCallback == response.message.opCode
+                && (c.meshAddress == response.src || c.meshAddress == Address.allNodes)
         }
 
         if let index = index, let vendorCall = pluginCalls[index] as? VendorPluginCall {

@@ -21,14 +21,15 @@ public class VendorPluginCall: BasePluginCall {
         _ meshOperation: UInt32,
         _ meshOperationCallback: UInt32,
         _ meshAddress: UInt16,
-        _ call: CAPPluginCall
+        _ call: CAPPluginCall,
+        timeout: TimeInterval? = nil
     ) {
         self.modelId = modelId
         self.meshOperation = meshOperation
         self.meshOperationCallback = meshOperationCallback
         self.meshAddress = meshAddress
         self.pluginCall = call
-        super.init(call: call)
+        super.init(call: call, timeout: timeout)
     }
 
     static func generateVendorPluginCallResponse(_ response: RoutedMeshMessage) -> PluginCallResultData {

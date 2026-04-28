@@ -15,6 +15,8 @@ class DeviceScanner: NSObject {
 
     private var centralManager: CBCentralManager!
     private let deviceStore = DeviceRepository.shared
+    private var autoStopWorkItem: DispatchWorkItem?
+    private var scanSessionId: Int = 0
 
     override init() {
         super.init()
@@ -26,6 +28,14 @@ class DeviceScanner: NSObject {
         }
 
     public func startScan() {
+        // Invalidate any pending auto-stop from a previous scan session.
+        autoStopWorkItem?.cancel()
+        autoStopWorkItem = nil
+        scanSessionId += 1
+        let currentSessionId = scanSessionId
+
+        let now = ISO8601DateFormatter().string(from: Date())
+        print("Starting scan at \(now) [session=\(currentSessionId)]")
         print("Central state: \(centralManager.state) / auth: \(CBCentralManager.authorization)")
 
         guard centralManager.state == .poweredOn else {
@@ -43,14 +53,25 @@ class DeviceScanner: NSObject {
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: true]
         )
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
-            self?.stopScan()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            guard self.scanSessionId == currentSessionId else { return }
+            self.stopScan(reason: "auto-timeout")
         }
+        autoStopWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 30, execute: workItem)
     }
 
     public func stopScan() {
+        stopScan(reason: "manual")
+    }
+
+    private func stopScan(reason: String) {
+        autoStopWorkItem?.cancel()
+        autoStopWorkItem = nil
         centralManager.stopScan()
-        print("Stopped scanning for devices.")
+        let now = ISO8601DateFormatter().string(from: Date())
+        print("Stopped scanning for devices at \(now) [reason=\(reason)] [session=\(scanSessionId)]")
     }
 }
 

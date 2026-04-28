@@ -155,6 +155,7 @@ export interface BluetoothMeshPlugin {
     opcode: number;
     payload?: Uint8Array;
     opPairCode?: number
+    timeout?: number;
   }): Promise<ModelMessageStatus>;
   sendConfigHeartbeatPublicationSet(options: ConfigHeartbeatPublicationSet): Promise<void>;
   sendHealthFaultGet(options: ModelMessage & { companyId: number }): Promise<ModelMessageStatus>;

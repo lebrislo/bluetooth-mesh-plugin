@@ -179,6 +179,8 @@ extension BluetoothMeshPlugin {
             call.reject("Invalid payload format")
             return
         }
+        
+        let timeout = call.getInt("timeout").map(TimeInterval.init)
 
         ensureProxyConnection(for: call) {
             Task {
@@ -197,7 +199,8 @@ extension BluetoothMeshPlugin {
                             msg.opCode,
                             msg.responseOpCode,
                             destination,
-                            call
+                            call,
+                            timeout: timeout
                         )
 
                         try await self.meshNetworkManager.send(
