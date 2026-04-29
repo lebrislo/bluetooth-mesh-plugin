@@ -80,7 +80,7 @@ public class SigPluginCall: BasePluginCall {
         -> PluginCallResultData
     {
         var data: PluginCallResultData = [:]
-        data["status"] = msg.status
+        data["status"] = msg.status.rawValue
         data["min"] = msg.min
         data["max"] = msg.max
         return data

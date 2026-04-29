@@ -126,6 +126,7 @@ public class BluetoothMeshPlugin: CAPPlugin, CAPBridgedPlugin {
                 Model(sigModelId: .genericOnOffClientModelId, delegate: GenericOnOffClientDelegate()),
                 Model(sigModelId: .genericPowerLevelClientModelId, delegate: GenericPowerLevelClientDelegate()),
                 Model(sigModelId: .lightHSLClientModelId, delegate: LightHSLClientDelegate()),
+                Model(sigModelId: .lightCTLClientModelId, delegate: LightCTLClientDelegate()),
             ]
         )
         meshNetworkManager.localElements = [primaryElement]
