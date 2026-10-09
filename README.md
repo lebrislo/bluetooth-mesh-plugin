@@ -590,10 +590,11 @@ removeAllListeners() => Promise<void>
 
 #### ScanMeshDevices
 
-| Prop                | Type                         |
-| ------------------- | ---------------------------- |
-| **`unprovisioned`** | <code>BleMeshDevice[]</code> |
-| **`provisioned`**   | <code>BleMeshDevice[]</code> |
+| Prop                     | Type                         |
+| ------------------------ | ---------------------------- |
+| **`unprovisioned`**      | <code>BleMeshDevice[]</code> |
+| **`provisioned`**        | <code>BleMeshDevice[]</code> |
+| **`unknownProvisioned`** | <code>BleMeshDevice[]</code> |
 
 
 #### BleMeshDevice

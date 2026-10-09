@@ -34,7 +34,7 @@ export class BluetoothMeshWeb extends WebPlugin implements BluetoothMeshPlugin {
 
   async fetchMeshDevices(): Promise<ScanMeshDevices> {
     console.log('scanMeshDevices');
-    return { unprovisioned: [], provisioned: [] };
+    return { unprovisioned: [], provisioned: [], unknownProvisioned: [] };
   }
 
   async reloadScanMeshDevices(): Promise<void> {

@@ -30,6 +30,7 @@ export interface BleMeshDevice {
 export interface ScanMeshDevices {
   unprovisioned: BleMeshDevice[];
   provisioned: BleMeshDevice[];
+  unknownProvisioned: BleMeshDevice[];
 }
 
 export interface ProvisioningCapabilities {

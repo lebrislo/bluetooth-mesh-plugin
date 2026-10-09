@@ -125,6 +125,15 @@ class BleController(private val bleMeshManager: BleMeshManager, private val mesh
     }
 
     /**
+     * Get the list of unknown provisioned devices
+     *
+     * @return List<ExtendedBluetoothDevice>
+     */
+    fun getUnknownProvisionedDevices(): List<ExtendedBluetoothDevice> {
+        return scannerRepository.getUnknownProvisionedDevices()
+    }
+
+    /**
      * Restart scanning for mesh devices
      */
     fun restartMeshDevicesScan() {

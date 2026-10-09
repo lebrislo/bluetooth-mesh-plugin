@@ -34,6 +34,7 @@ class DeviceScanner(
     private var isScanning: Boolean = false
 
     private val unprovisionedDevices: ConcurrentHashMap<String, ExtendedBluetoothDevice> = ConcurrentHashMap()
+    private val unknownProvisionedDevices: ConcurrentHashMap<String, ExtendedBluetoothDevice> = ConcurrentHashMap()
     private val provisionedDevices: ConcurrentHashMap<String, ExtendedBluetoothDevice> = ConcurrentHashMap()
     private val handler = Handler(Looper.getMainLooper())
     private val deviceTimeouts: ConcurrentHashMap<String, Runnable> = ConcurrentHashMap()
@@ -54,10 +55,14 @@ class DeviceScanner(
                     if (meshManagerApi.isAdvertisingWithNetworkIdentity(serviceData)) {
                         if (meshManagerApi.networkIdMatches(serviceData)) {
                             provDeviceDiscovered(result)
+                        } else {
+                            unknownProvDeviceDiscovered(result)
                         }
                     } else if (meshManagerApi.isAdvertisedWithNodeIdentity(serviceData)) {
                         if (checkIfNodeIdentityMatches(serviceData!!)) {
                             provDeviceDiscovered(result)
+                        } else {
+                            unknownProvDeviceDiscovered(result)
                         }
                     }
                 }
@@ -82,9 +87,38 @@ class DeviceScanner(
                         Log.d(tag, "Removed from provisioned devices: $address")
                     }
                 }
+                synchronized(unknownProvisionedDevices) {
+                    unknownProvisionedDevices.remove(address)?.let {
+                        Log.d(tag, "Removed from unknown provisioned devices: $address")
+                    }
+                }
                 notifyMeshDeviceScanned()
             }
             resetDeviceTimeout(address, unprovisionedDevices)
+        }
+    }
+
+    private fun unknownProvDeviceDiscovered(result: ScanResult) {
+        val device = ExtendedBluetoothDevice(result)
+        val address = device.address
+
+        synchronized(unknownProvisionedDevices) {
+            if (!unknownProvisionedDevices.containsKey(address)) {
+                unknownProvisionedDevices[address] = device
+                Log.d(tag, "Added unknown provisioned device: $address")
+                synchronized(provisionedDevices) {
+                    provisionedDevices.remove(address)?.let {
+                        Log.d(tag, "Removed from provisioned devices: $address")
+                    }
+                }
+                synchronized(unprovisionedDevices) {
+                    unprovisionedDevices.remove(address)?.let {
+                        Log.d(tag, "Removed from unprovisioned devices: $address")
+                    }
+                }
+                notifyMeshDeviceScanned()
+            }
+            resetDeviceTimeout(address, unknownProvisionedDevices)
         }
     }
 
@@ -100,6 +134,11 @@ class DeviceScanner(
                 synchronized(unprovisionedDevices) {
                     unprovisionedDevices.remove(address)?.let {
                         Log.d(tag, "Removed from unprovisioned devices: $address")
+                    }
+                }
+                synchronized(unknownProvisionedDevices) {
+                    unknownProvisionedDevices.remove(address)?.let {
+                        Log.d(tag, "Removed from unknown provisioned devices: $address")
                     }
                 }
                 notifyMeshDeviceScanned()
@@ -147,6 +186,16 @@ class DeviceScanner(
                     })
                 }
             })
+            put("unknownProvisioned", JSArray().apply {
+                unknownProvisionedDevices.values.forEach {
+                    put(JSObject().apply {
+                        put("meshUuid", it.getDeviceUuid().toString())
+                        put("deviceId", it.address)
+                        put("rssi", it.rssi)
+                        put("name", it.name)
+                    })
+                }
+            })
         }
 
         NotificationManager.getInstance().sendNotification(BluetoothMeshPlugin.MESH_DEVICE_SCAN_EVENT, scanNotification)
@@ -160,9 +209,14 @@ class DeviceScanner(
         return provisionedDevices.values.toList()
     }
 
+    fun getUnknownProvisionedDevices(): List<ExtendedBluetoothDevice> {
+        return unknownProvisionedDevices.values.toList()
+    }
+
     fun clearDevices() {
         unprovisionedDevices.clear()
         provisionedDevices.clear()
+        unknownProvisionedDevices.clear()
     }
 
     fun setMeshProxyScannedCallback(callback: (proxy: ExtendedBluetoothDevice) -> Unit) {

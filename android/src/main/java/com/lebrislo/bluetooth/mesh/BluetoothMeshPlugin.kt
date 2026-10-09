@@ -253,6 +253,7 @@ class BluetoothMeshPlugin : Plugin() {
 
         val unprovisionedDevices = bleController.getUnprovisionedDevices()
         val provisionedDevices = bleController.getProvisionedDevices()
+        val unknownProvisionedDevices = bleController.getUnknownProvisionedDevices()
         // return a dict of devices, unprovisioned and provisioned
         val result = JSObject().apply {
             put("unprovisioned", JSArray().apply {
@@ -269,6 +270,18 @@ class BluetoothMeshPlugin : Plugin() {
             })
             put("provisioned", JSArray().apply {
                 provisionedDevices.forEach {
+                    if (it.scanResult == null) return
+
+                    put(JSObject().apply {
+                        put("meshUuid", it.getDeviceUuid().toString())
+                        put("deviceId", it.scanResult.device.address)
+                        put("rssi", it.rssi)
+                        put("name", it.name)
+                    })
+                }
+            })
+            put("unknownProvisioned", JSArray().apply {
+                unknownProvisionedDevices.forEach {
                     if (it.scanResult == null) return
 
                     put(JSObject().apply {
